@@ -6,6 +6,9 @@ import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 
+const BLUR_PLACEHOLDER =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNFOEU0REYiLz48L3N2Zz4=";
+
 export default function EventsSection() {
   const { events } = useSiteData();
   const t = useT();
@@ -45,6 +48,9 @@ export default function EventsSection() {
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    quality={75}
+                    placeholder="blur"
+                    blurDataURL={BLUR_PLACEHOLDER}
                   />
                 </div>
                 {/* Hover overlay */}

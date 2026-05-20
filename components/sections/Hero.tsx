@@ -8,6 +8,10 @@ import { useT } from "@/lib/i18n";
 
 const INTERVAL = 7000;
 
+// 1x1 SVG blur placeholder (로딩 중 표시)
+const BLUR_PLACEHOLDER =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
+
 export default function Hero() {
   const { heroSlides, clinicInfo, hydrated } = useSiteData();
   const t = useT();
@@ -42,34 +46,45 @@ export default function Hero() {
       className="relative h-screen min-h-[600px] overflow-hidden flex items-center transition-opacity duration-500"
       style={{ opacity: hydrated ? 1 : 0 }}
     >
-      {/* Background images with Ken Burns */}
+      {/* Background images with Ken Burns — 활성 슬라이드 + 인접 슬라이드만 렌더링 */}
       <div className="absolute inset-0">
-        {heroSlides.map((s, i) => (
-          <div
-            key={s.id}
-            className={`absolute inset-0 transition-opacity duration-[1200ms] ease-out ${
-              i === activeIndex ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <div className={i === activeIndex ? "ken-burns" : ""} style={{ width: "100%", height: "100%" }}>
-              <Image
-                src={s.image}
-                alt={s.title}
-                fill
-                priority={i === 0}
-                className="object-cover"
-                sizes="100vw"
+        {heroSlides.map((s, i) => {
+          // 현재/이전/다음 슬라이드만 렌더링 (나머지는 skip → 불필요한 이미지 다운로드 방지)
+          const nextIdx = (activeIndex + 1) % heroSlides.length;
+          const prevIdx = (activeIndex - 1 + heroSlides.length) % heroSlides.length;
+          const shouldRender = i === activeIndex || i === nextIdx || i === prevIdx;
+          if (!shouldRender) return null;
+
+          return (
+            <div
+              key={s.id}
+              className={`absolute inset-0 transition-opacity duration-[1200ms] ease-out ${
+                i === activeIndex ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <div className={i === activeIndex ? "ken-burns" : ""} style={{ width: "100%", height: "100%" }}>
+                <Image
+                  src={s.image}
+                  alt={s.title}
+                  fill
+                  priority={i === activeIndex}
+                  className="object-cover"
+                  sizes="100vw"
+                  quality={75}
+                  placeholder="blur"
+                  blurDataURL={BLUR_PLACEHOLDER}
+                />
+              </div>
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.5) 100%)",
+                }}
               />
             </div>
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.5) 100%)",
-              }}
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Content with slide-up text */}

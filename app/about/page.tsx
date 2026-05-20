@@ -6,6 +6,9 @@ import { useSiteData, getBannerImage } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 
+const BLUR_PLACEHOLDER =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
+
 export default function AboutPage() {
   const { about, clinicInfo, menus } = useSiteData();
   const banner = getBannerImage(menus, "/about");
@@ -28,6 +31,9 @@ export default function AboutPage() {
             fill
             className="object-cover"
             sizes="100vw"
+            quality={75}
+            placeholder="blur"
+            blurDataURL={BLUR_PLACEHOLDER}
           />
         </div>
         <div className="container-default relative text-ink-inverse">
@@ -115,6 +121,9 @@ export default function AboutPage() {
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, 33vw"
+                      quality={75}
+                      placeholder="blur"
+                      blurDataURL={BLUR_PLACEHOLDER}
                     />
                   )}
                 </div>
