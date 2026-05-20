@@ -2,13 +2,23 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import type { PopupItem } from "@/lib/storage";
 
 const DISMISS_EVENT = "popup_dismissed_event";
 const DISMISS_SCHEDULE = "popup_dismissed_schedule";
+
+function usePreloadImages(urls: string[]) {
+  useEffect(() => {
+    urls.forEach((url) => {
+      if (!url) return;
+      const img = new window.Image();
+      img.src = url;
+    });
+  }, [urls]);
+}
 
 export default function PopupModal() {
   const { popup, schedulePopup } = useSiteData();
@@ -35,6 +45,10 @@ export default function PopupModal() {
     }
     return [];
   }, [popup]);
+
+  // Preload popup images before the modal opens
+  const imageUrls = useMemo(() => popupItems.map((item) => item.image).filter(Boolean), [popupItems]);
+  usePreloadImages(imageUrls);
 
   useEffect(() => {
     if (!eventActive && !scheduleActive) return;
@@ -149,6 +163,7 @@ export default function PopupModal() {
                 fill
                 className="object-cover"
                 sizes="480px"
+                priority
               />
               <div
                 className="absolute inset-0"

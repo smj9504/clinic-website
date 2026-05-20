@@ -96,55 +96,7 @@ export default function MenusAdminPage() {
       <PageHeader
         title="메뉴 관리"
         description="상단 네비게이션에 표시되는 메뉴를 관리합니다. 이름 변경, 순서 조정, 숨김 처리, 삭제가 가능합니다."
-        actions={
-          <Button onClick={() => setShowAdd(!showAdd)} variant="primary">
-            + 메뉴 추가
-          </Button>
-        }
       />
-
-      {showAdd && (
-        <Card className="mb-6 border-accent">
-          <h3
-            className="font-semibold mb-4"
-            style={{ letterSpacing: "-0.02em" }}
-          >
-            새 메뉴 추가
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="메뉴명">
-              <TextInput
-                placeholder="예: 자주 묻는 질문"
-                value={newItem.label}
-                onChange={(e) =>
-                  setNewItem((p) => ({ ...p, label: e.target.value }))
-                }
-              />
-            </Field>
-            <Field label="링크 경로" hint="예: /community/faq, /events, https://...">
-              <TextInput
-                placeholder="/path 또는 https://..."
-                value={newItem.href}
-                onChange={(e) =>
-                  setNewItem((p) => ({ ...p, href: e.target.value }))
-                }
-              />
-            </Field>
-          </div>
-          <div className="flex gap-2 mt-2">
-            <Button onClick={add}>추가</Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setShowAdd(false);
-                setNewItem({ label: "", href: "" });
-              }}
-            >
-              취소
-            </Button>
-          </div>
-        </Card>
-      )}
 
       <Card className="p-0 overflow-hidden">
         <table className="w-full">
@@ -278,6 +230,7 @@ export default function MenusAdminPage() {
                           size="sm"
                           variant="danger"
                           onClick={() => remove(m.id)}
+                          disabled
                         >
                           삭제
                         </Button>

@@ -332,7 +332,6 @@ export default function ScheduleAdminPage() {
         <p className="text-sm text-yellow-900" style={{ lineHeight: 1.6 }}>
           💡 매월 초에 제목과 월 표시를 변경하고, &ldquo;공휴일 자동 추가&rdquo; 버튼을 클릭하면
           해당 월의 공휴일(설날, 추석, 대체공휴일 포함)이 자동으로 휴진 항목에 추가됩니다.
-          공공데이터포털 API 키가 필요합니다.
         </p>
       </Card>
 
