@@ -1,0 +1,288 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ─── Color ─── */
+  --color-bg: #FBFAF7;
+  --color-bg-alt: #F3EFE8;
+  --color-surface: #FFFFFF;
+  --color-surface-dark: #1A1715;
+  --color-ink: #1A1715;
+  --color-ink-soft: #3D3833;
+  --color-ink-muted: #8A8278;
+  --color-ink-inverse: #FBFAF7;
+  --color-accent: #6B4423;
+  --color-accent-soft: #A07855;
+  --color-line: #E8E2D8;
+  --color-line-strong: #C9BFB0;
+
+  /* ─── Typography ─── */
+  --font-display: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
+  --font-body: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+}
+
+img { max-width: 100%; display: block; }
+
+/* ─── Reusable Utilities ─── */
+@layer components {
+  .container-default {
+    @apply mx-auto;
+    max-width: 1200px;
+    padding-left: clamp(1rem, 4vw, 3rem);
+    padding-right: clamp(1rem, 4vw, 3rem);
+  }
+
+  .container-wide {
+    @apply mx-auto;
+    max-width: 1440px;
+    padding-left: clamp(1rem, 4vw, 3rem);
+    padding-right: clamp(1rem, 4vw, 3rem);
+  }
+
+  /* Section label - eyebrow text */
+  .section-label {
+    @apply text-xs font-semibold uppercase text-accent;
+    letter-spacing: 0.2em;
+  }
+
+  /* Section title - main heading */
+  .section-title {
+    @apply font-display font-semibold leading-tight;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    letter-spacing: -0.04em;
+  }
+
+  .section-divider {
+    @apply w-8 h-px bg-accent mt-6;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-8 py-4 rounded-full text-sm font-semibold transition-all duration-200 ease-out;
+    background: var(--color-ink-inverse);
+    color: var(--color-ink);
+    letter-spacing: -0.02em;
+  }
+  .btn-primary:hover {
+    background: var(--color-accent-soft);
+    color: var(--color-ink-inverse);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-8 py-4 rounded-full text-sm font-semibold transition-all duration-200 ease-out border;
+    border-color: rgba(251, 250, 247, 0.5);
+    color: var(--color-ink-inverse);
+    letter-spacing: -0.02em;
+  }
+  .btn-secondary:hover {
+    background: rgba(251, 250, 247, 0.1);
+    border-color: var(--color-ink-inverse);
+  }
+
+  /* More link */
+  .more-link {
+    @apply inline-flex items-center gap-2 text-sm font-medium pb-1 border-b transition-all duration-200;
+    border-color: var(--color-line-strong);
+    letter-spacing: -0.02em;
+  }
+  .more-link:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    gap: 0.75rem;
+  }
+}
+
+/* ─── Animations ─── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.anim-fade-up { animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+.anim-delay-200 { animation-delay: 200ms; }
+.anim-delay-400 { animation-delay: 400ms; }
+.anim-delay-600 { animation-delay: 600ms; }
+.anim-delay-800 { animation-delay: 800ms; }
+
+/* ─── Scroll Reveal ─── */
+.reveal-fade-up {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-fade-up.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-fade {
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-fade.revealed {
+  opacity: 1;
+}
+
+.reveal-slide-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-slide-left.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-slide-right {
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-slide-right.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-scale.revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Staggered children items */
+[data-reveal-item] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-reveal-item].revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Ken Burns for Hero ─── */
+@keyframes kenBurns {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.08); }
+}
+
+.ken-burns {
+  animation: kenBurns 8s ease-out forwards;
+}
+
+/* ─── Hero progress bar ─── */
+@keyframes progressFill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.hero-progress-bar {
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: progressFill var(--hero-interval, 7s) linear forwards;
+}
+
+/* ─── Hero text slide-up ─── */
+@keyframes heroTextUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-text-up {
+  opacity: 0;
+  animation: heroTextUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Card lift hover ─── */
+.card-lift {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 60px rgba(26, 23, 21, 0.1), 0 8px 24px rgba(26, 23, 21, 0.06);
+}
+
+/* ─── Treatment cell hover ─── */
+.treatment-cell {
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.4s ease;
+}
+.treatment-cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(107, 68, 35, 0.06) 0%, rgba(107, 68, 35, 0.02) 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.treatment-cell:hover::before {
+  opacity: 1;
+}
+
+/* ─── Page transition ─── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-transition-enter {
+  animation: pageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Count-up section ─── */
+@keyframes countPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal-fade-up, .reveal-fade, .reveal-slide-left,
+  .reveal-slide-right, .reveal-scale, [data-reveal-item] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

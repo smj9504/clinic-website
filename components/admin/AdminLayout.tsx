@@ -1,0 +1,174 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { isLoggedIn, logout, resetSiteData } from "@/lib/storage";
+import { AdminLocaleProvider, useAdminLocale } from "@/lib/adminLocale";
+import type { Locale } from "@/lib/i18n";
+
+const adminMenu = [
+  { href: "/admin", label: "대시보드", icon: "◎" },
+  { href: "/admin/menus", label: "메뉴 관리", icon: "≡" },
+  { href: "/admin/events", label: "이벤트", icon: "◆" },
+  { href: "/admin/director", label: "대표원장", icon: "◉" },
+  { href: "/admin/notices", label: "공지사항", icon: "▤" },
+  { href: "/admin/faqs", label: "FAQ", icon: "?" },
+  { href: "/admin/popups", label: "이벤트 팝업", icon: "◫" },
+  { href: "/admin/schedule", label: "진료일정 팝업", icon: "▦" },
+  { href: "/admin/settings", label: "사이트 설정", icon: "⚙" },
+];
+
+function LocaleToggle() {
+  const { editingLocale, setEditingLocale } = useAdminLocale();
+
+  return (
+    <div className="px-6 py-3 border-b border-white/10">
+      <div className="text-[0.65rem] uppercase text-white/40 mb-2" style={{ letterSpacing: "0.15em" }}>
+        편집 언어
+      </div>
+      <div className="flex gap-1">
+        {(["ko", "en"] as Locale[]).map((l) => (
+          <button
+            key={l}
+            onClick={() => setEditingLocale(l)}
+            className={`flex-1 py-1.5 text-xs font-bold rounded transition-colors ${
+              editingLocale === l
+                ? "bg-accent text-ink-inverse"
+                : "bg-white/10 text-white/60 hover:bg-white/15"
+            }`}
+          >
+            {l === "ko" ? "한국어" : "English"}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname() || "";
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (pathname === "/admin/login") {
+      setReady(true);
+      return;
+    }
+    if (!isLoggedIn()) {
+      router.replace("/admin/login");
+      return;
+    }
+    setReady(true);
+  }, [pathname, router]);
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg">
+        <div className="text-ink-muted">불러오는 중...</div>
+      </div>
+    );
+  }
+
+  if (pathname === "/admin/login") return <>{children}</>;
+
+  const onLogout = () => {
+    logout();
+    router.replace("/admin/login");
+  };
+
+  const onReset = () => {
+    if (
+      confirm(
+        "모든 콘텐츠가 초기 상태로 되돌아갑니다.\n(데모용 기능 - 실 운영에서는 사용하지 마세요)\n\n계속하시겠습니까?"
+      )
+    ) {
+      resetSiteData();
+      alert("초기화 완료. 페이지를 새로고침합니다.");
+      location.reload();
+    }
+  };
+
+  return (
+    <AdminLocaleProvider>
+      <div className="min-h-screen flex bg-[#FAFAFA]">
+        {/* Sidebar */}
+        <aside className="w-64 bg-surface-dark text-ink-inverse flex flex-col fixed h-screen">
+          <div className="p-6 border-b border-white/10">
+            <Link href="/admin" className="block">
+              <div
+                className="font-display font-bold mb-1"
+                style={{ fontSize: "1.25rem", letterSpacing: "-0.03em" }}
+              >
+                고운빛한의원
+              </div>
+              <div className="text-xs opacity-60" style={{ letterSpacing: "0.1em" }}>
+                ADMIN PANEL
+              </div>
+            </Link>
+          </div>
+
+          <LocaleToggle />
+
+          <nav className="flex-1 px-3 py-4 overflow-y-auto">
+            {adminMenu.map((item) => {
+              const active =
+                item.href === "/admin"
+                  ? pathname === "/admin"
+                  : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm mb-1 transition-colors ${
+                    active
+                      ? "bg-white/15 text-ink-inverse"
+                      : "text-white/70 hover:bg-white/5 hover:text-ink-inverse"
+                  }`}
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  <span className="w-5 text-center opacity-70">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="p-3 border-t border-white/10 space-y-1">
+            <Link
+              href="/"
+              target="_blank"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-white/70 hover:bg-white/5 hover:text-ink-inverse transition-colors"
+              style={{ letterSpacing: "-0.02em" }}
+            >
+              <span className="w-5 text-center opacity-70">↗</span>
+              <span>사이트 미리보기</span>
+            </Link>
+            <button
+              onClick={onReset}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-white/70 hover:bg-white/5 hover:text-ink-inverse transition-colors text-left"
+              style={{ letterSpacing: "-0.02em" }}
+            >
+              <span className="w-5 text-center opacity-70">↺</span>
+              <span>데모 초기화</span>
+            </button>
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-white/70 hover:bg-white/5 hover:text-ink-inverse transition-colors text-left"
+              style={{ letterSpacing: "-0.02em" }}
+            >
+              <span className="w-5 text-center opacity-70">⏻</span>
+              <span>로그아웃</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Content */}
+        <div className="flex-1 ml-64">
+          <div className="p-10 max-w-6xl">{children}</div>
+        </div>
+      </div>
+    </AdminLocaleProvider>
+  );
+}
