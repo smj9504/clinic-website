@@ -180,6 +180,14 @@ export const defaultFaqsEn: FaqItem[] = [
 ];
 
 // ─── Popup ───
+export type PopupItem = {
+  eventId: number;
+  title: string;
+  body: string;
+  image: string;
+  linkUrl: string;
+};
+
 export type Popup = {
   id: string;
   title: string;
@@ -187,6 +195,7 @@ export type Popup = {
   image: string;
   linkUrl: string;
   isActive: boolean;
+  items?: PopupItem[];
 };
 
 export const defaultPopup: Popup = {

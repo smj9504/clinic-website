@@ -34,16 +34,14 @@ export async function GET(request: NextRequest) {
   const solMonth = month.padStart(2, "0");
 
   try {
-    const url = new URL(
-      "https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo"
-    );
-    url.searchParams.set("serviceKey", apiKey);
-    url.searchParams.set("solYear", year);
-    url.searchParams.set("solMonth", solMonth);
-    url.searchParams.set("_type", "json");
-    url.searchParams.set("numOfRows", "30");
+    // serviceKey는 이미 인코딩된 값일 수 있으므로 직접 문자열로 조합 (이중 인코딩 방지)
+    const baseUrl =
+      "https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo";
+    const queryString =
+      `serviceKey=${apiKey}&solYear=${year}&solMonth=${solMonth}&_type=json&numOfRows=30`;
+    const fullUrl = `${baseUrl}?${queryString}`;
 
-    const res = await fetch(url.toString(), { next: { revalidate: 86400 } });
+    const res = await fetch(fullUrl, { next: { revalidate: 86400 } });
 
     if (!res.ok) {
       return NextResponse.json(

@@ -6,10 +6,10 @@
 // 샘플 이미지 (Unsplash) — 한의원/wellness 분위기
 // 실제 운영 시 클라이언트가 제공한 이미지로 교체
 export const sampleImages = {
-  // 히어로용 — 한의원/한약/전통의학 분위기
+  // 히어로용 — 한의원 진료 분위기
   hero1: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=1920&q=80",  // 한약재/허브 따뜻한 톤
-  hero2: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=1920&q=80",  // 차/약초 따뜻한 분위기
-  hero3: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1920&q=80",  // 웰니스/힐링 스파 분위기
+  hero2: "https://images.unsplash.com/photo-4n_ECdymmXs?w=1920&q=80",  // 침술 치료
+  hero3: "https://images.unsplash.com/photo-sQaqN1EwWgU?w=1920&q=80",  // 추나/마사지 치료
 
   // 이벤트 카드 — 건강/한의학 관련
   event1: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80",  // 건강식/다이어트
