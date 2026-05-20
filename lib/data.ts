@@ -8,8 +8,8 @@
 export const sampleImages = {
   // 히어로용 — 한의원 진료 분위기
   hero1: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=1920&q=80",  // 한약재/허브 따뜻한 톤
-  hero2: "https://images.unsplash.com/photo-4n_ECdymmXs?w=1920&q=80",  // 침술 치료
-  hero3: "https://images.unsplash.com/photo-sQaqN1EwWgU?w=1920&q=80",  // 추나/마사지 치료
+  hero2: "https://plus.unsplash.com/premium_photo-1719615566924-5648f8bdd206?w=1920&q=80",  // 침술 치료
+  hero3: "https://plus.unsplash.com/premium_photo-1661864014725-9d77f571f00a?w=1920&q=80",  // 추나/마사지 치료
 
   // 이벤트 카드 — 건강/한의학 관련
   event1: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80",  // 건강식/다이어트
@@ -20,9 +20,9 @@ export const sampleImages = {
   director: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80",
 
   // 시설 사진 — 깔끔한 한의원/클리닉 인테리어
-  facility: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&q=80",  // 깔끔한 병원 복도
-  facility2: "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1200&q=80", // 진료실
-  facility3: "https://images.unsplash.com/photo-1629909615184-74f495363b67?w=1200&q=80", // 대기실/로비
+  facility: "https://images.unsplash.com/photo-1631247869033-a8b88c0be391?w=1200&q=80",  // 화분/깔끔한 인테리어
+  facility2: "https://images.unsplash.com/photo-1598242930255-c25f98ff11e5?w=1200&q=80", // 대기실 소파
+  facility3: "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1200&q=80", // 진료실
 };
 
 export type Event = {

@@ -9,7 +9,7 @@ import { useT } from "@/lib/i18n";
 const INTERVAL = 7000;
 
 export default function Hero() {
-  const { heroSlides, clinicInfo } = useSiteData();
+  const { heroSlides, clinicInfo, hydrated } = useSiteData();
   const t = useT();
   const [activeIndex, setActiveIndex] = useState(0);
   const [animKey, setAnimKey] = useState(0);
@@ -38,7 +38,10 @@ export default function Hero() {
   const slide = heroSlides[Math.min(activeIndex, heroSlides.length - 1)];
 
   return (
-    <section className="relative h-screen min-h-[600px] overflow-hidden flex items-center">
+    <section
+      className="relative h-screen min-h-[600px] overflow-hidden flex items-center transition-opacity duration-500"
+      style={{ opacity: hydrated ? 1 : 0 }}
+    >
       {/* Background images with Ken Burns */}
       <div className="absolute inset-0">
         {heroSlides.map((s, i) => (
