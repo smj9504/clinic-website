@@ -6,6 +6,7 @@ import Nav from "./Nav";
 import Footer from "./Footer";
 import FloatingActions from "./FloatingActions";
 import PopupModal from "./PopupModal";
+import PageTransition from "./PageTransition";
 
 export default function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
@@ -18,7 +19,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
       ) : (
         <>
           <Nav />
-          <main>{children}</main>
+          <main>
+            <PageTransition>{children}</PageTransition>
+          </main>
           <Footer />
           <FloatingActions />
           <PopupModal />

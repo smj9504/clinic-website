@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
@@ -9,6 +10,7 @@ export default function Nav() {
   const { menus, clinicInfo } = useSiteData();
   const { locale, setLocale } = useLocale();
   const t = useT();
+  const pathname = usePathname() || "/";
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -39,18 +41,30 @@ export default function Nav() {
         </Link>
 
         <ul className="hidden lg:flex gap-10 list-none">
-          {visibleMenus.map((item) => (
-            <li key={item.id}>
-              <Link
-                href={item.href}
-                className="text-sm font-medium hover:text-accent transition-colors relative group"
-                style={{ letterSpacing: "-0.02em" }}
-              >
-                {item.label}
-                <span className="absolute -bottom-2 left-0 w-0 h-px bg-accent transition-all duration-300 ease-out group-hover:w-full" />
-              </Link>
-            </li>
-          ))}
+          {visibleMenus.map((item) => {
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
+            return (
+              <li key={item.id}>
+                <Link
+                  href={item.href}
+                  className={`text-sm font-medium transition-colors relative group ${
+                    isActive ? "text-accent" : "hover:text-accent"
+                  }`}
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  {item.label}
+                  <span
+                    className={`absolute -bottom-2 left-0 h-px bg-accent transition-all duration-300 ease-out ${
+                      isActive ? "w-full" : "w-0 group-hover:w-full"
+                    }`}
+                  />
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="flex items-center gap-3">

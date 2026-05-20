@@ -3,21 +3,25 @@
 import Link from "next/link";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 
 export default function TreatmentsSection() {
   const { treatments } = useSiteData();
   const t = useT();
+  const headerRef = useScrollReveal<HTMLDivElement>();
+  const gridRef = useScrollRevealGroup<HTMLDivElement>();
 
   return (
     <section className="py-20 md:py-36 bg-bg-alt">
       <div className="container-default">
-        <div className="mb-16">
+        <div ref={headerRef} className="reveal-fade-up mb-16">
           <span className="section-label block mb-4">Treatments</span>
           <h2 className="section-title">{t("section.treatments")}</h2>
           <div className="section-divider" />
         </div>
 
         <div
+          ref={gridRef}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-px border"
           style={{ background: "var(--color-line)", borderColor: "var(--color-line)" }}
         >
@@ -25,11 +29,12 @@ export default function TreatmentsSection() {
             <Link
               key={item.id}
               href={`/treatments#${item.slug}`}
-              className="group bg-bg p-10 min-h-[280px] flex flex-col justify-between transition-colors hover:bg-[#F7F2EA]"
+              className="group treatment-cell bg-bg p-10 min-h-[280px] flex flex-col justify-between"
+              data-reveal-item
             >
               <div>
                 <div
-                  className="font-display mb-6"
+                  className="font-display mb-6 transition-colors duration-300 group-hover:text-accent"
                   style={{
                     fontSize: "2.25rem",
                     fontWeight: 300,
@@ -59,7 +64,7 @@ export default function TreatmentsSection() {
                 </p>
               </div>
               <span
-                className="self-end text-xl text-ink-muted group-hover:text-accent group-hover:translate-x-1 transition-all duration-300"
+                className="self-end text-xl text-ink-muted group-hover:text-accent group-hover:translate-x-2 transition-all duration-300"
                 aria-hidden
               >
                 →

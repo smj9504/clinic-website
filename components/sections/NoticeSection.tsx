@@ -3,16 +3,19 @@
 import Link from "next/link";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 
 export default function NoticeSection() {
   const { notices } = useSiteData();
   const t = useT();
   const featured = notices.slice(0, 4);
+  const headerRef = useScrollReveal<HTMLDivElement>();
+  const listRef = useScrollRevealGroup<HTMLDivElement>();
 
   return (
     <section className="py-20 md:py-36 bg-bg-alt">
       <div className="container-default">
-        <div className="flex flex-wrap items-end justify-between gap-6 mb-16">
+        <div ref={headerRef} className="reveal-fade-up flex flex-wrap items-end justify-between gap-6 mb-16">
           <div>
             <span className="section-label block mb-4">Community</span>
             <h2 className="section-title">{t("section.notices")}</h2>
@@ -23,12 +26,13 @@ export default function NoticeSection() {
           </Link>
         </div>
 
-        <div className="border-t border-line">
+        <div ref={listRef} className="border-t border-line">
           {featured.map((notice) => (
             <Link
               key={notice.id}
               href={`/community/notice#${notice.id}`}
-              className="flex items-center justify-between py-7 border-b border-line cursor-pointer hover:pl-2 transition-all duration-200"
+              className="flex items-center justify-between py-7 border-b border-line cursor-pointer hover:pl-4 transition-all duration-300"
+              data-reveal-item
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <span

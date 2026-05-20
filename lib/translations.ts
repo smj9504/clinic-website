@@ -77,6 +77,15 @@ const ko = {
 
   // Slide
   "slide.label": "슬라이드",
+
+  // Stats
+  "stats.years": "진료 경력",
+  "stats.yearSuffix": "년",
+  "stats.patients": "누적 환자",
+  "stats.patientSuffix": "명+",
+  "stats.satisfaction": "환자 만족도",
+  "stats.treatments": "진료 분야",
+  "stats.treatmentSuffix": "개",
 } as const;
 
 const en: Record<keyof typeof ko, string> = {
@@ -158,6 +167,15 @@ const en: Record<keyof typeof ko, string> = {
 
   // Slide
   "slide.label": "Slide",
+
+  // Stats
+  "stats.years": "Years of Practice",
+  "stats.yearSuffix": "yr",
+  "stats.patients": "Patients Served",
+  "stats.patientSuffix": "+",
+  "stats.satisfaction": "Satisfaction Rate",
+  "stats.treatments": "Specialties",
+  "stats.treatmentSuffix": "",
 };
 
 export const translations = { ko, en } as const;

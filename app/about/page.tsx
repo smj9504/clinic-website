@@ -5,10 +5,15 @@ import DirectorFeature from "@/components/sections/DirectorFeature";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { sampleImages } from "@/lib/data";
+import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 
 export default function AboutPage() {
   const { about, clinicInfo } = useSiteData();
   const t = useT();
+  const philRef = useScrollReveal<HTMLDivElement>();
+  const facilityHeaderRef = useScrollReveal<HTMLDivElement>();
+  const facilityGridRef = useScrollRevealGroup<HTMLDivElement>();
+  const hoursRef = useScrollReveal<HTMLDivElement>();
 
   return (
     <>
@@ -48,7 +53,7 @@ export default function AboutPage() {
 
       {/* Philosophy */}
       <section className="py-20 md:py-32">
-        <div className="container-default max-w-3xl text-center">
+        <div ref={philRef} className="reveal-fade-up container-default max-w-3xl text-center">
           <span
             className="text-xs font-semibold uppercase text-accent mb-4 block"
             style={{ letterSpacing: "0.2em" }}
@@ -82,12 +87,13 @@ export default function AboutPage() {
       {about.facilityImages.length > 0 && (
         <section className="py-20 md:py-32 bg-bg-alt">
           <div className="container-default">
-            <div className="mb-16">
+            <div ref={facilityHeaderRef} className="reveal-fade-up mb-16">
               <span className="section-label block mb-4">Facility</span>
               <h2 className="section-title">{t("about.facility")}</h2>
               <div className="section-divider" />
             </div>
             <div
+              ref={facilityGridRef}
               className={`grid grid-cols-1 ${
                 about.facilityImages.length >= 3
                   ? "md:grid-cols-3"
@@ -100,6 +106,7 @@ export default function AboutPage() {
                 <div
                   key={i}
                   className="aspect-[4/3] relative rounded overflow-hidden bg-bg"
+                  data-reveal-item
                 >
                   {src && (
                     <Image
@@ -120,7 +127,7 @@ export default function AboutPage() {
       {/* Hours */}
       <section className="py-20 md:py-32">
         <div className="container-default max-w-3xl">
-          <div className="mb-12 text-center">
+          <div ref={hoursRef} className="reveal-fade-up mb-12 text-center">
             <span className="section-label block mb-4">Hours</span>
             <h2 className="section-title">{t("about.hoursTitle")}</h2>
           </div>
