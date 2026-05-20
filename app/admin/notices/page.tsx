@@ -9,11 +9,11 @@ import {
   PageHeader,
   Field,
   TextInput,
-  TextArea,
   Button,
   Card,
   Toast,
 } from "@/components/admin/ui";
+import RichEditor from "@/components/admin/RichEditor";
 
 const today = () => new Date().toISOString().slice(0, 10).replace(/-/g, ".");
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -161,12 +161,10 @@ export default function NoticesAdminPage() {
               </Field>
             </div>
             <div className="md:col-span-4">
-              <Field label="내용" hint="줄바꿈은 그대로 표시됩니다">
-                <TextArea
+              <Field label="내용">
+                <RichEditor
                   value={draft.content || ""}
-                  onChange={(e) => setDraft((p) => ({ ...p, content: e.target.value }))}
-                  rows={6}
-                  placeholder="공지 상세 내용을 입력하세요"
+                  onChange={(html) => setDraft((p) => ({ ...p, content: html }))}
                 />
               </Field>
             </div>

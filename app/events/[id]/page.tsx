@@ -126,17 +126,25 @@ export default function EventDetailPage() {
 
                 <div className="w-12 h-0.5 bg-accent mb-10" />
 
-                <p
-                  className="text-ink-soft"
-                  style={{
-                    fontSize: "1.05rem",
-                    lineHeight: 2,
-                    letterSpacing: "-0.01em",
-                    whiteSpace: "pre-line",
-                  }}
-                >
-                  {event.description}
-                </p>
+                {event.description.startsWith("<") ? (
+                  <div
+                    className="prose prose-neutral max-w-none text-ink-soft"
+                    style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em" }}
+                    dangerouslySetInnerHTML={{ __html: event.description }}
+                  />
+                ) : (
+                  <p
+                    className="text-ink-soft"
+                    style={{
+                      fontSize: "1.05rem",
+                      lineHeight: 2,
+                      letterSpacing: "-0.01em",
+                      whiteSpace: "pre-line",
+                    }}
+                  >
+                    {event.description}
+                  </p>
+                )}
               </div>
             </div>
 

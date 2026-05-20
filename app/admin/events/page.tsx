@@ -9,12 +9,12 @@ import {
   PageHeader,
   Field,
   TextInput,
-  TextArea,
   Button,
   Card,
   ImageInput,
   Toast,
 } from "@/components/admin/ui";
+import RichEditor from "@/components/admin/RichEditor";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -184,11 +184,9 @@ export default function EventsAdminPage() {
                 </Field>
               </div>
               <Field label="설명">
-                <TextArea
+                <RichEditor
                   value={draft.description}
-                  onChange={(e) =>
-                    setDraft((p) => ({ ...p, description: e.target.value }))
-                  }
+                  onChange={(html) => setDraft((p) => ({ ...p, description: html }))}
                 />
               </Field>
             </div>

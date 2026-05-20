@@ -75,17 +75,25 @@ export default function NoticeDetailPage() {
       <section className="py-16 md:py-24">
         <div className="container-default max-w-3xl">
           {notice.content ? (
-            <div
-              className="text-ink-soft"
-              style={{
-                fontSize: "1.05rem",
-                lineHeight: 2,
-                letterSpacing: "-0.01em",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {notice.content}
-            </div>
+            notice.content.startsWith("<") ? (
+              <div
+                className="prose prose-neutral max-w-none text-ink-soft"
+                style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em" }}
+                dangerouslySetInnerHTML={{ __html: notice.content }}
+              />
+            ) : (
+              <div
+                className="text-ink-soft"
+                style={{
+                  fontSize: "1.05rem",
+                  lineHeight: 2,
+                  letterSpacing: "-0.01em",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {notice.content}
+              </div>
+            )
           ) : (
             <p className="text-ink-muted text-center py-12">
               등록된 상세 내용이 없습니다.
