@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { isLoggedIn, logout, resetSiteData } from "@/lib/storage";
 import { AdminLocaleProvider, useAdminLocale } from "@/lib/adminLocale";
+import { Toast } from "@/components/admin/ui";
 import type { Locale } from "@/lib/i18n";
 
 const adminMenu = [
@@ -50,6 +51,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname() || "";
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onError = (e: Event) => {
+      setSaveError((e as CustomEvent).detail ?? "저장에 실패했습니다.");
+    };
+    window.addEventListener("siteDataSaveError", onError);
+    return () => window.removeEventListener("siteDataSaveError", onError);
+  }, []);
 
   useEffect(() => {
     if (pathname === "/admin/login") {
@@ -92,6 +102,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <AdminLocaleProvider>
+      {saveError && <Toast message={saveError} onClose={() => setSaveError(null)} variant="error" />}
       <div className="min-h-screen flex bg-[#FAFAFA]">
         {/* Sidebar */}
         <aside className="w-64 bg-surface-dark text-ink-inverse flex flex-col fixed h-screen">

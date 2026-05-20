@@ -231,16 +231,25 @@ export function Card({
   );
 }
 
-export function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+export function Toast({
+  message,
+  onClose,
+  variant = "default",
+}: {
+  message: string;
+  onClose: () => void;
+  variant?: "default" | "error";
+}) {
+  const bg = variant === "error" ? "bg-red-600" : "bg-ink";
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 bg-ink text-ink-inverse px-5 py-3 rounded shadow-lg flex items-center gap-3"
+      className={`fixed bottom-6 right-6 z-50 ${bg} text-ink-inverse px-5 py-3 rounded shadow-lg flex items-center gap-3 max-w-sm`}
       style={{ animation: "fadeUp 300ms ease" }}
     >
       <span className="text-sm" style={{ letterSpacing: "-0.02em" }}>
         {message}
       </span>
-      <button onClick={onClose} className="opacity-60 hover:opacity-100 text-lg leading-none">
+      <button onClick={onClose} className="opacity-60 hover:opacity-100 text-lg leading-none shrink-0">
         ✕
       </button>
     </div>

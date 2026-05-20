@@ -405,7 +405,21 @@ export function setSiteData(data: SiteData, locale: Locale = "ko") {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ locale, data, password }),
-  }).catch(() => {});
+  })
+    .then((res) => {
+      if (!res.ok) {
+        res.text().then((msg) => {
+          window.dispatchEvent(
+            new CustomEvent("siteDataSaveError", { detail: `저장 실패 (${res.status}): ${msg}` })
+          );
+        });
+      }
+    })
+    .catch((err) => {
+      window.dispatchEvent(
+        new CustomEvent("siteDataSaveError", { detail: `네트워크 오류로 저장에 실패했습니다. (${err?.message ?? err})` })
+      );
+    });
 }
 
 export function updateSiteData(
