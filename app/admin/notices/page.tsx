@@ -20,6 +20,8 @@ const emptyNotice: Omit<Notice, "id"> = {
   type: "notice",
   title: "",
   date: today(),
+  startDate: today().replace(/\./g, "-"),
+  endDate: "",
 };
 
 export default function NoticesAdminPage() {
@@ -32,12 +34,12 @@ export default function NoticesAdminPage() {
 
   const startEdit = (n: Notice) => {
     setEditing(n.id);
-    setDraft({ type: n.type, title: n.title, date: n.date });
+    setDraft({ type: n.type, title: n.title, date: n.date, startDate: n.startDate || "", endDate: n.endDate || "" });
   };
 
   const startNew = () => {
     setEditing("new");
-    setDraft({ ...emptyNotice, date: today() });
+    setDraft({ ...emptyNotice, date: today(), startDate: today().replace(/\./g, "-"), endDate: "" });
   };
 
   const save = () => {
@@ -82,7 +84,7 @@ export default function NoticesAdminPage() {
           <h3 className="font-semibold mb-4" style={{ letterSpacing: "-0.02em" }}>
             {editing === "new" ? "새 공지 추가" : "공지 수정"}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Field label="분류">
               <select
                 value={draft.type}
@@ -96,14 +98,23 @@ export default function NoticesAdminPage() {
                 <option value="event">이벤트</option>
               </select>
             </Field>
-            <Field label="날짜" hint="예: 2026.05.14">
-              <TextInput
-                value={draft.date}
-                onChange={(e) => setDraft((p) => ({ ...p, date: e.target.value }))}
-                placeholder="2026.05.14"
+            <Field label="시작일">
+              <input
+                type="date"
+                value={draft.startDate || ""}
+                onChange={(e) => setDraft((p) => ({ ...p, startDate: e.target.value, date: e.target.value.replace(/-/g, ".") }))}
+                className="w-full px-4 py-2.5 border border-line bg-surface rounded text-sm outline-none focus:border-accent"
               />
             </Field>
-            <div className="md:col-span-3">
+            <Field label="종료일" hint="비워두면 상시 게시">
+              <input
+                type="date"
+                value={draft.endDate || ""}
+                onChange={(e) => setDraft((p) => ({ ...p, endDate: e.target.value }))}
+                className="w-full px-4 py-2.5 border border-line bg-surface rounded text-sm outline-none focus:border-accent"
+              />
+            </Field>
+            <div className="md:col-span-4">
               <Field label="제목">
                 <TextInput
                   value={draft.title}
@@ -131,7 +142,7 @@ export default function NoticesAdminPage() {
             >
               <th className="text-center px-3 py-3 w-20">분류</th>
               <th className="text-left px-3 py-3">제목</th>
-              <th className="text-left px-3 py-3 w-32">날짜</th>
+              <th className="text-left px-3 py-3 w-48">기간</th>
               <th className="text-right px-3 py-3 w-40">관리</th>
             </tr>
           </thead>
@@ -153,7 +164,10 @@ export default function NoticesAdminPage() {
                 <td className="px-3 py-3 font-medium" style={{ letterSpacing: "-0.02em" }}>
                   {n.title}
                 </td>
-                <td className="px-3 py-3 text-sm text-ink-muted">{n.date}</td>
+                <td className="px-3 py-3 text-sm text-ink-muted">
+                  {n.startDate || n.date}
+                  {n.endDate && <span> ~ {n.endDate}</span>}
+                </td>
                 <td className="px-3 py-3 text-right">
                   <div className="flex gap-1 justify-end">
                     <Button size="sm" variant="secondary" onClick={() => startEdit(n)}>

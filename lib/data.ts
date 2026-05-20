@@ -32,6 +32,8 @@ export type Event = {
   description: string;
   image: string;
   date: string;
+  startDate?: string; // "2026-05-01"
+  endDate?: string;   // "2026-05-31"
 };
 
 export const events: Event[] = [
@@ -43,6 +45,8 @@ export const events: Event[] = [
       "한의학적 체질 분석을 바탕으로 한 개인 맞춤 다이어트 프로그램. 5월 한 달 특별 할인.",
     image: sampleImages.event1,
     date: "EVENT · 2026.05",
+    startDate: "2026-05-01",
+    endDate: "2026-05-31",
   },
   {
     id: 2,
@@ -52,6 +56,8 @@ export const events: Event[] = [
       "환절기에 약해지는 면역력. 체질에 맞는 보약으로 건강을 미리 챙기세요.",
     image: sampleImages.event2,
     date: "EVENT · 2026.05",
+    startDate: "2026-05-01",
+    endDate: "2026-06-30",
   },
   {
     id: 3,
@@ -61,6 +67,8 @@ export const events: Event[] = [
       "집중력과 체력이 동시에 필요한 수험생을 위한 맞춤 처방. 5월 신학기 특별가.",
     image: sampleImages.event3,
     date: "EVENT · 2026.05",
+    startDate: "2026-05-01",
+    endDate: "2026-05-31",
   },
 ];
 
@@ -141,6 +149,8 @@ export type Notice = {
   type: "notice" | "event";
   title: string;
   date: string;
+  startDate?: string; // "2026-05-01"
+  endDate?: string;   // "2026-05-31"
 };
 
 export const notices: Notice[] = [
@@ -223,6 +233,8 @@ export const eventsEn: Event[] = [
       "A personalized diet program based on constitutional analysis. Special 30% discount for May.",
     image: sampleImages.event1,
     date: "EVENT · 2026.05",
+    startDate: "2026-05-01",
+    endDate: "2026-05-31",
   },
   {
     id: 2,
@@ -232,6 +244,8 @@ export const eventsEn: Event[] = [
       "Strengthen your immunity during seasonal transitions with personalized herbal medicine.",
     image: sampleImages.event2,
     date: "EVENT · 2026.05",
+    startDate: "2026-05-01",
+    endDate: "2026-06-30",
   },
   {
     id: 3,
@@ -241,6 +255,8 @@ export const eventsEn: Event[] = [
       "Custom herbal prescriptions for students who need both focus and stamina. Special spring pricing.",
     image: sampleImages.event3,
     date: "EVENT · 2026.05",
+    startDate: "2026-05-01",
+    endDate: "2026-05-31",
   },
 ];
 

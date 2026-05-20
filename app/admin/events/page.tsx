@@ -16,12 +16,16 @@ import {
   Toast,
 } from "@/components/admin/ui";
 
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
 const emptyEvent: Omit<Event, "id"> = {
   title: "",
   subtitle: "",
   description: "",
   image: "",
   date: "EVENT · 2026.05",
+  startDate: todayStr(),
+  endDate: "",
 };
 
 export default function EventsAdminPage() {
@@ -43,6 +47,8 @@ export default function EventsAdminPage() {
       description: e.description,
       image: e.image,
       date: e.date,
+      startDate: e.startDate || "",
+      endDate: e.endDate || "",
     });
   };
 
@@ -125,12 +131,24 @@ export default function EventsAdminPage() {
                   }
                 />
               </Field>
-              <Field label="라벨 / 날짜" hint="예: EVENT · 2026.05">
-                <TextInput
-                  value={draft.date}
-                  onChange={(e) => setDraft((p) => ({ ...p, date: e.target.value }))}
-                />
-              </Field>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="시작일">
+                  <input
+                    type="date"
+                    value={draft.startDate || ""}
+                    onChange={(e) => setDraft((p) => ({ ...p, startDate: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-line bg-surface rounded text-sm outline-none focus:border-accent"
+                  />
+                </Field>
+                <Field label="종료일">
+                  <input
+                    type="date"
+                    value={draft.endDate || ""}
+                    onChange={(e) => setDraft((p) => ({ ...p, endDate: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-line bg-surface rounded text-sm outline-none focus:border-accent"
+                  />
+                </Field>
+              </div>
               <Field label="설명">
                 <TextArea
                   value={draft.description}
@@ -173,10 +191,13 @@ export default function EventsAdminPage() {
             </div>
             <div className="flex-1 min-w-0">
               <div
-                className="text-xs text-ink-muted uppercase mb-1"
-                style={{ letterSpacing: "0.1em" }}
+                className="text-xs text-ink-muted mb-1 flex items-center gap-2"
+                style={{ letterSpacing: "0.05em" }}
               >
-                {ev.date}
+                {ev.startDate && <span>{ev.startDate}</span>}
+                {ev.startDate && ev.endDate && <span>~</span>}
+                {ev.endDate && <span>{ev.endDate}</span>}
+                {!ev.startDate && !ev.endDate && <span>{ev.date}</span>}
               </div>
               <h3
                 className="font-semibold mb-1 truncate"
