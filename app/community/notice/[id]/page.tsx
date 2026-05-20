@@ -1,14 +1,19 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useSiteData } from "@/lib/useSiteData";
+import { useSiteData, getBannerImage } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+
+const BLUR_PLACEHOLDER =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
 
 export default function NoticeDetailPage() {
   const { id } = useParams();
-  const { notices } = useSiteData();
+  const { notices, menus } = useSiteData();
   const t = useT();
+  const banner = getBannerImage(menus, "/community/notice");
 
   const notice = notices.find((n) => String(n.id) === id);
 
@@ -34,10 +39,24 @@ export default function NoticeDetailPage() {
     <>
       {/* Header */}
       <section
-        className="pt-32 pb-16 md:pt-44 md:pb-20"
+        className="relative pt-32 pb-16 md:pt-44 md:pb-20 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
-        <div className="container-default text-ink-inverse">
+        {banner && (
+          <div className="absolute inset-0 opacity-30">
+            <Image
+              src={banner}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="100vw"
+              quality={75}
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
+            />
+          </div>
+        )}
+        <div className="container-default relative text-ink-inverse">
           <Link
             href="/community/notice"
             className="inline-flex items-center gap-2 text-sm font-medium opacity-70 hover:opacity-100 transition-opacity mb-8"
