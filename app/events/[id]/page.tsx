@@ -6,6 +6,9 @@ import { useParams } from "next/navigation";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 
+const BLUR_PLACEHOLDER =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
+
 export default function EventDetailPage() {
   const { id } = useParams();
   const { events, clinicInfo } = useSiteData();
@@ -41,6 +44,9 @@ export default function EventDetailPage() {
             className="object-cover"
             sizes="100vw"
             priority
+            quality={75}
+            placeholder="blur"
+            blurDataURL={BLUR_PLACEHOLDER}
           />
           <div
             className="absolute inset-0"
@@ -99,6 +105,9 @@ export default function EventDetailPage() {
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 60vw"
+                  quality={75}
+                  placeholder="blur"
+                  blurDataURL={BLUR_PLACEHOLDER}
                 />
               </div>
 
@@ -209,6 +218,9 @@ export default function EventDetailPage() {
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 50vw"
+                        quality={75}
+                        placeholder="blur"
+                        blurDataURL={BLUR_PLACEHOLDER}
                       />
                     </div>
                   </div>

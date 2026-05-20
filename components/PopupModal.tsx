@@ -164,6 +164,7 @@ export default function PopupModal() {
                 className="object-cover"
                 sizes="480px"
                 priority
+                quality={75}
               />
               <div
                 className="absolute inset-0"
