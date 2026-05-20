@@ -521,7 +521,7 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
   pushText(koData.about.philosophyTitle);
   pushText(koData.about.philosophyBody);
   // Notices
-  koData.notices.forEach((n) => { pushText(n.title); pushText(n.content); });
+  koData.notices.forEach((n) => { pushText(n.title); pushText(n.content ?? ""); });
   // FAQs
   koData.faqs.forEach((f) => { pushText(f.question); pushText(f.answer); pushText(f.category); });
   // Popup
