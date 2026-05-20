@@ -330,50 +330,40 @@ export function getDefaultSiteData(locale: Locale = "ko"): SiteData {
 // Keep backward compat for imports that use defaultSiteData
 export const defaultSiteData: SiteData = defaultSiteDataByLocale.ko;
 
-// ─── 스토리지 API (Supabase + localStorage 캐시) ───
+// ─── 스토리지 API (Supabase DB + 메모리 캐시) ───
 
 /**
- * localStorage는 캐시 역할만. 실제 데이터는 Supabase DB에 저장.
- * - getSiteData: 캐시 우선 반환 (동기), fetchSiteData로 DB에서 최신 로드
- * - setSiteData: 캐시 + DB 동시 저장
+ * 메모리 캐시 (base64 이미지가 포함될 수 있어 localStorage 대신 사용)
+ * 실제 데이터는 Supabase DB에 저장.
  */
+const _memCache: Partial<Record<Locale, SiteData>> = {};
 
-/** 캐시에서 동기적으로 읽기 (초기 렌더용) */
+/** 메모리 캐시에서 동기적으로 읽기 (초기 렌더용) */
 export function getSiteData(locale: Locale = "ko"): SiteData {
-  if (typeof window === "undefined") return getDefaultSiteData(locale);
-  try {
-    const raw = localStorage.getItem(storageKey(locale));
-    if (!raw) return getDefaultSiteData(locale);
-    const parsed = JSON.parse(raw);
-    return { ...getDefaultSiteData(locale), ...parsed };
-  } catch {
-    return getDefaultSiteData(locale);
-  }
+  return _memCache[locale] ?? getDefaultSiteData(locale);
 }
 
-/** DB에서 비동기로 최신 데이터 로드 → 캐시 갱신 */
+/** DB에서 비동기로 최신 데이터 로드 → 메모리 캐시 갱신 */
 export async function fetchSiteData(locale: Locale = "ko"): Promise<SiteData> {
   try {
     const res = await fetch(`/api/site-data?locale=${locale}`, { cache: "no-store" });
     const json = await res.json();
     if (json.data) {
       const merged = { ...getDefaultSiteData(locale), ...json.data };
-      if (typeof window !== "undefined") {
-        localStorage.setItem(storageKey(locale), JSON.stringify(merged));
-      }
+      _memCache[locale] = merged;
       return merged;
     }
   } catch {
-    // API 실패 시 캐시/기본값 반환
+    // API 실패 시 기본값 반환
   }
   return getSiteData(locale);
 }
 
-/** 캐시 + DB에 저장 */
+/** 메모리 캐시 업데이트 + DB에 저장 */
 export function setSiteData(data: SiteData, locale: Locale = "ko") {
   if (typeof window === "undefined") return;
-  // 캐시 즉시 업데이트
-  localStorage.setItem(storageKey(locale), JSON.stringify(data));
+  // 메모리 캐시 즉시 업데이트
+  _memCache[locale] = data;
   window.dispatchEvent(new CustomEvent("siteDataUpdated"));
 
   // DB에 비동기 저장
@@ -382,9 +372,7 @@ export function setSiteData(data: SiteData, locale: Locale = "ko") {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ locale, data, password }),
-  }).catch(() => {
-    // 오프라인이어도 캐시에는 저장됨
-  });
+  }).catch(() => {});
 }
 
 export function updateSiteData(
@@ -422,9 +410,15 @@ export function syncImages(locale: Locale) {
 
 export function resetSiteData() {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(storageKey("ko"));
-  localStorage.removeItem(storageKey("en"));
-  localStorage.removeItem("clinic_site_data_v1");
+  // 메모리 캐시 초기화
+  delete _memCache["ko"];
+  delete _memCache["en"];
+  // localStorage 잔여 데이터 정리
+  try {
+    localStorage.removeItem(storageKey("ko"));
+    localStorage.removeItem(storageKey("en"));
+    localStorage.removeItem("clinic_site_data_v1");
+  } catch {}
   // DB도 기본값으로 리셋
   const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
   fetch("/api/site-data", {
