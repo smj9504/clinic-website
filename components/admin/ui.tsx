@@ -138,10 +138,8 @@ export function ImageInput({
   const [uploading, setUploading] = useState(false);
 
   const onFile = async (file: File) => {
-    if (file.size > 2 * 1024 * 1024) {
-      alert(
-        "데모 환경에서는 2MB 이하 이미지만 업로드 가능합니다.\n실 운영에서는 R2/S3로 업로드되어 제한이 없습니다."
-      );
+    if (file.size > 10 * 1024 * 1024) {
+      alert("10MB 이하 이미지만 업로드 가능합니다.");
       return;
     }
     setUploading(true);
