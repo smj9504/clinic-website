@@ -79,6 +79,7 @@ export type Treatment = {
   description: string;
   longDescription?: string;
   slug: string;
+  image?: string;
 };
 
 export const treatments: Treatment[] = [
@@ -148,6 +149,7 @@ export type Notice = {
   id: number;
   type: "notice" | "event";
   title: string;
+  content?: string;
   date: string;
   startDate?: string; // "2026-05-01"
   endDate?: string;   // "2026-05-31"
@@ -219,6 +221,12 @@ export const clinicInfo = {
     blog: "#",
     instagram: "#",
     kakao: "#",
+  },
+  bannerImages: {
+    events: sampleImages.facility,
+    treatments: sampleImages.facility,
+    about: sampleImages.facility,
+    community: sampleImages.facility,
   },
 };
 
@@ -372,5 +380,11 @@ export const clinicInfoEn = {
     blog: "#",
     instagram: "#",
     kakao: "#",
+  },
+  bannerImages: {
+    events: sampleImages.facility,
+    treatments: sampleImages.facility,
+    about: sampleImages.facility,
+    community: sampleImages.facility,
   },
 };

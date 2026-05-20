@@ -7,7 +7,7 @@ import { useT } from "@/lib/i18n";
 import { sampleImages } from "@/lib/data";
 
 export default function EventsPage() {
-  const { events } = useSiteData();
+  const { events, clinicInfo } = useSiteData();
   const t = useT();
 
   return (
@@ -17,7 +17,7 @@ export default function EventsPage() {
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
         <div className="absolute inset-0 opacity-30">
-          <Image src={sampleImages.facility} alt="" fill className="object-cover" sizes="100vw" />
+          <Image src={clinicInfo.bannerImages?.events || sampleImages.facility} alt="" fill className="object-cover" sizes="100vw" />
         </div>
         <div className="container-default relative text-ink-inverse">
           <span

@@ -23,7 +23,7 @@ export default function AboutPage() {
       >
         <div className="absolute inset-0 opacity-30">
           <Image
-            src={about.facilityImages[0] || sampleImages.facility}
+            src={clinicInfo.bannerImages?.about || about.facilityImages[0] || sampleImages.facility}
             alt=""
             fill
             className="object-cover"

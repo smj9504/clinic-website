@@ -216,6 +216,63 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
         </Card>
       </div>
 
+      <Card className="mt-6 lg:col-span-2">
+        <h3 className="font-semibold mb-4" style={{ letterSpacing: "-0.02em" }}>
+          페이지 상단 배너 이미지
+        </h3>
+        <p className="text-xs text-ink-muted mb-4">각 메뉴 페이지 상단에 표시되는 배경 이미지입니다.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="이벤트 페이지" hint="권장 1920×600">
+            <ImageInput
+              value={draft.bannerImages?.events || ""}
+              onChange={(v) =>
+                setDraft((p) => ({
+                  ...p,
+                  bannerImages: { ...p.bannerImages, events: v },
+                }))
+              }
+              aspectRatio="16 / 5"
+            />
+          </Field>
+          <Field label="진료 내용 페이지" hint="권장 1920×600">
+            <ImageInput
+              value={draft.bannerImages?.treatments || ""}
+              onChange={(v) =>
+                setDraft((p) => ({
+                  ...p,
+                  bannerImages: { ...p.bannerImages, treatments: v },
+                }))
+              }
+              aspectRatio="16 / 5"
+            />
+          </Field>
+          <Field label="한의원 소개 페이지" hint="권장 1920×600">
+            <ImageInput
+              value={draft.bannerImages?.about || ""}
+              onChange={(v) =>
+                setDraft((p) => ({
+                  ...p,
+                  bannerImages: { ...p.bannerImages, about: v },
+                }))
+              }
+              aspectRatio="16 / 5"
+            />
+          </Field>
+          <Field label="커뮤니티 (공지/FAQ)" hint="권장 1920×600">
+            <ImageInput
+              value={draft.bannerImages?.community || ""}
+              onChange={(v) =>
+                setDraft((p) => ({
+                  ...p,
+                  bannerImages: { ...p.bannerImages, community: v },
+                }))
+              }
+              aspectRatio="16 / 5"
+            />
+          </Field>
+        </div>
+      </Card>
+
       <div className="mt-6 flex justify-end">
         <Button onClick={save}>저장</Button>
       </div>
@@ -405,6 +462,7 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
             title: "새 진료 항목",
             description: "설명을 입력하세요",
             slug: `treatment-${nextId}`,
+            image: "",
           },
         ],
       };
@@ -436,10 +494,10 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
         </Button>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {treatments.map((t, i) => (
           <Card key={t.id} className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-[80px_1fr_1fr_auto] gap-4 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-[80px_1fr_1fr_auto] gap-4 items-start mb-3">
               <div>
                 <label className="block text-xs text-ink-muted mb-1">번호</label>
                 <TextInput
@@ -482,6 +540,14 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
                   삭제
                 </Button>
               </div>
+            </div>
+            <div>
+              <label className="block text-xs text-ink-muted mb-1">진료 이미지</label>
+              <ImageInput
+                value={t.image || ""}
+                onChange={(v) => update(t.id, { image: v })}
+                aspectRatio="4 / 3"
+              />
             </div>
           </Card>
         ))}

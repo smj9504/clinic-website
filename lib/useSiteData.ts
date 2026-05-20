@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { getSiteData, getDefaultSiteData, type SiteData } from "./storage";
+import { useEffect, useState } from "react";
+import { getSiteData, fetchSiteData, getDefaultSiteData, type SiteData } from "./storage";
 import { useLocale, type Locale } from "./i18n";
 
 /**
- * 사이트 데이터 구독 Hook (다국어 지원)
- * - 현재 locale에 맞는 데이터 반환
- * - Admin에서 변경 시 자동으로 모든 페이지에 반영
- * - hydration 전에는 null 반환 → 컴포넌트에서 로딩 처리 가능
+ * 사이트 데이터 구독 Hook (Supabase DB 연동)
+ * 1. 초기: 캐시(localStorage)에서 동기 로드
+ * 2. 마운트 후: DB에서 최신 데이터 비동기 fetch → 캐시 갱신
+ * 3. Admin 수정 시: siteDataUpdated 이벤트로 즉시 반영
  */
 export function useSiteData(): SiteData & { hydrated: boolean } {
   const { locale } = useLocale();
@@ -16,10 +16,19 @@ export function useSiteData(): SiteData & { hydrated: boolean } {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    // 1) 캐시에서 즉시 로드
     setData(getSiteData(locale));
     setHydrated(true);
 
-    const onUpdate = () => setData(getSiteData(locale));
+    // 2) DB에서 최신 데이터 fetch
+    fetchSiteData(locale).then((fresh) => {
+      setData(fresh);
+    });
+
+    // 3) Admin 수정 이벤트 구독
+    const onUpdate = () => {
+      setData(getSiteData(locale));
+    };
     window.addEventListener("siteDataUpdated", onUpdate);
     window.addEventListener("storage", onUpdate);
     return () => {
@@ -43,7 +52,13 @@ export function useSiteDataForLocale(locale: Locale): SiteData {
     setData(getSiteData(locale));
     setHydrated(true);
 
-    const onUpdate = () => setData(getSiteData(locale));
+    fetchSiteData(locale).then((fresh) => {
+      setData(fresh);
+    });
+
+    const onUpdate = () => {
+      setData(getSiteData(locale));
+    };
     window.addEventListener("siteDataUpdated", onUpdate);
     window.addEventListener("storage", onUpdate);
     return () => {

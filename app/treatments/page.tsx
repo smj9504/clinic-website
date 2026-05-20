@@ -6,7 +6,7 @@ import { useT } from "@/lib/i18n";
 import { sampleImages } from "@/lib/data";
 
 export default function TreatmentsPage() {
-  const { treatments } = useSiteData();
+  const { treatments, clinicInfo } = useSiteData();
   const t = useT();
 
   return (
@@ -16,7 +16,7 @@ export default function TreatmentsPage() {
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
         <div className="absolute inset-0 opacity-30">
-          <Image src={sampleImages.facility} alt="" fill className="object-cover" sizes="100vw" />
+          <Image src={clinicInfo.bannerImages?.treatments || sampleImages.facility} alt="" fill className="object-cover" sizes="100vw" />
         </div>
         <div className="container-default relative text-ink-inverse">
           <span
@@ -85,11 +85,10 @@ export default function TreatmentsPage() {
               </div>
               <div className="aspect-[4/3] relative rounded overflow-hidden bg-bg-alt">
                 <Image
-                  src={sampleImages.facility}
+                  src={item.image || sampleImages.facility}
                   alt={item.title}
                   fill
                   className="object-cover"
-                  style={{ filter: `hue-rotate(${i * 15}deg) saturate(0.85)` }}
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
               </div>
