@@ -208,6 +208,7 @@ export function ImageInput({
           </Button>
         )}
       </div>
+      <p className="text-xs text-ink-muted">최대 업로드 용량: 10MB</p>
 
       <div>
         <label className="block text-xs text-ink-muted mb-1.5">또는 이미지 URL 직접 입력</label>

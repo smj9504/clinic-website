@@ -178,7 +178,7 @@ export default function RichEditor({
 
         <span className="w-px h-5 bg-line mx-1 self-center" />
 
-        <ToolbarButton onClick={insertImage} title="이미지 삽입">
+        <ToolbarButton onClick={insertImage} title="이미지 삽입 (최대 10MB)">
           🖼 이미지
         </ToolbarButton>
       </div>
