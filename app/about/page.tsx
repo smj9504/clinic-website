@@ -10,8 +10,8 @@ const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
 
 export default function AboutPage() {
-  const { about, clinicInfo, menus } = useSiteData();
-  const banner = getBannerImage(menus, "/about");
+  const { about, clinicInfo, menus, heroSlides } = useSiteData();
+  const banner = getBannerImage(menus, "/about", heroSlides[0]?.image);
   const t = useT();
   const philRef = useScrollReveal<HTMLDivElement>();
   const facilityHeaderRef = useScrollReveal<HTMLDivElement>();

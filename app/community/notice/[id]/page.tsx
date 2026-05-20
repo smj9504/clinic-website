@@ -11,9 +11,9 @@ const BLUR_PLACEHOLDER =
 
 export default function NoticeDetailPage() {
   const { id } = useParams();
-  const { notices, menus } = useSiteData();
+  const { notices, menus, heroSlides } = useSiteData();
   const t = useT();
-  const banner = getBannerImage(menus, "/community/notice");
+  const banner = getBannerImage(menus, "/community/notice", heroSlides[0]?.image);
 
   const notice = notices.find((n) => String(n.id) === id);
 

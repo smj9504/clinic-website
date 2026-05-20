@@ -7,8 +7,8 @@ import { useSiteData, getBannerImage } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 
 export default function FaqPage() {
-  const { faqs, menus } = useSiteData();
-  const banner = getBannerImage(menus, "/community/notice");
+  const { faqs, menus, heroSlides } = useSiteData();
+  const banner = getBannerImage(menus, "/community/notice", heroSlides[0]?.image);
   const t = useT();
   const [openIdx, setOpenIdx] = useState<string | null>(faqs[0]?.id || null);
 

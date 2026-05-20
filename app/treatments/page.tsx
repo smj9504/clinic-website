@@ -8,9 +8,9 @@ const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
 
 export default function TreatmentsPage() {
-  const { treatments, menus } = useSiteData();
+  const { treatments, menus, heroSlides } = useSiteData();
   const t = useT();
-  const banner = getBannerImage(menus, "/treatments");
+  const banner = getBannerImage(menus, "/treatments", heroSlides[0]?.image);
 
   return (
     <>
