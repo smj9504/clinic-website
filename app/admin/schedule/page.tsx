@@ -278,26 +278,29 @@ export default function ScheduleAdminPage() {
         <div className="space-y-2">
           {draft.rows.map((row, i) => (
             <div key={i} className="flex flex-col sm:flex-row gap-2">
-              <div className="flex gap-2 items-center flex-1">
+              <div className="flex gap-2 items-center flex-1 min-w-0">
                 <span className="text-xs text-ink-muted w-6 text-center font-mono shrink-0">{i + 1}</span>
-                <TextInput
-                  value={row.day}
-                  onChange={(e) => updateRow(i, "day", e.target.value)}
-                  placeholder="요일/날짜"
-                  className="flex-1"
-                />
-                <TextInput
-                  value={row.hours}
-                  onChange={(e) => updateRow(i, "hours", e.target.value)}
-                  placeholder="시간"
-                  className="flex-1"
-                />
-                <TextInput
-                  value={row.note || ""}
-                  onChange={(e) => updateRow(i, "note", e.target.value)}
-                  placeholder="비고"
-                  className="w-20 shrink-0"
-                />
+                <div className="flex-1 min-w-0">
+                  <TextInput
+                    value={row.day}
+                    onChange={(e) => updateRow(i, "day", e.target.value)}
+                    placeholder="요일/날짜"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <TextInput
+                    value={row.hours}
+                    onChange={(e) => updateRow(i, "hours", e.target.value)}
+                    placeholder="시간"
+                  />
+                </div>
+                <div className="w-28 shrink-0">
+                  <TextInput
+                    value={row.note || ""}
+                    onChange={(e) => updateRow(i, "note", e.target.value)}
+                    placeholder="비고"
+                  />
+                </div>
               </div>
               <div className="flex gap-1 justify-end sm:justify-start shrink-0">
                 <Button size="sm" variant="ghost" onClick={() => moveRow(i, -1)} disabled={i === 0}>↑</Button>
