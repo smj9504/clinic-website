@@ -15,12 +15,28 @@ import {
 } from "@/components/admin/ui";
 
 const today = () => new Date().toISOString().slice(0, 10).replace(/-/g, ".");
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+type StatusFilter = "all" | "active" | "upcoming" | "ended";
+
+function getStatus(item: { startDate?: string; endDate?: string }): "active" | "upcoming" | "ended" {
+  const t = todayISO();
+  if (item.startDate && item.startDate > t) return "upcoming";
+  if (item.endDate && item.endDate < t) return "ended";
+  return "active";
+}
+
+const statusLabel: Record<string, { text: string; cls: string }> = {
+  active: { text: "진행중", cls: "bg-green-100 text-green-800" },
+  upcoming: { text: "예정", cls: "bg-blue-100 text-blue-800" },
+  ended: { text: "종료", cls: "bg-gray-100 text-gray-500" },
+};
 
 const emptyNotice: Omit<Notice, "id"> = {
   type: "notice",
   title: "",
   date: today(),
-  startDate: today().replace(/\./g, "-"),
+  startDate: todayISO(),
   endDate: "",
 };
 
@@ -31,6 +47,18 @@ export default function NoticesAdminPage() {
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [draft, setDraft] = useState<Omit<Notice, "id">>(emptyNotice);
   const [toast, setToast] = useState<string | null>(null);
+  const [filter, setFilter] = useState<StatusFilter>("all");
+
+  const filteredNotices = filter === "all"
+    ? notices
+    : notices.filter((n) => getStatus(n) === filter);
+
+  const counts = {
+    all: notices.length,
+    active: notices.filter((n) => getStatus(n) === "active").length,
+    upcoming: notices.filter((n) => getStatus(n) === "upcoming").length,
+    ended: notices.filter((n) => getStatus(n) === "ended").length,
+  };
 
   const startEdit = (n: Notice) => {
     setEditing(n.id);
@@ -39,7 +67,7 @@ export default function NoticesAdminPage() {
 
   const startNew = () => {
     setEditing("new");
-    setDraft({ ...emptyNotice, date: today(), startDate: today().replace(/\./g, "-"), endDate: "" });
+    setDraft({ ...emptyNotice, date: today(), startDate: todayISO(), endDate: "" });
   };
 
   const save = () => {
@@ -66,6 +94,13 @@ export default function NoticesAdminPage() {
     update((d) => ({ ...d, notices: d.notices.filter((n) => n.id !== id) }));
     setToast("공지가 삭제되었습니다");
   };
+
+  const filters: { key: StatusFilter; label: string }[] = [
+    { key: "all", label: `전체 (${counts.all})` },
+    { key: "active", label: `진행중 (${counts.active})` },
+    { key: "upcoming", label: `예정 (${counts.upcoming})` },
+    { key: "ended", label: `종료 (${counts.ended})` },
+  ];
 
   return (
     <>
@@ -133,6 +168,24 @@ export default function NoticesAdminPage() {
         </Card>
       )}
 
+      {/* Filter tabs */}
+      <div className="flex gap-1 mb-6">
+        {filters.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+              filter === f.key
+                ? "bg-accent text-white"
+                : "bg-bg-alt text-ink-muted hover:text-ink"
+            }`}
+            style={{ letterSpacing: "-0.02em" }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <Card className="p-0 overflow-hidden">
         <table className="w-full">
           <thead>
@@ -141,49 +194,63 @@ export default function NoticesAdminPage() {
               style={{ letterSpacing: "0.1em" }}
             >
               <th className="text-center px-3 py-3 w-20">분류</th>
+              <th className="text-center px-3 py-3 w-20">상태</th>
               <th className="text-left px-3 py-3">제목</th>
               <th className="text-left px-3 py-3 w-48">기간</th>
               <th className="text-right px-3 py-3 w-40">관리</th>
             </tr>
           </thead>
           <tbody>
-            {notices.map((n) => (
-              <tr key={n.id} className="border-b border-line/50 last:border-b-0">
-                <td className="text-center px-3 py-3">
-                  <span
-                    className={`text-xs px-2 py-1 rounded-sm font-semibold ${
-                      n.type === "event"
-                        ? "bg-accent text-ink-inverse"
-                        : "bg-bg-alt text-ink-soft"
-                    }`}
-                    style={{ letterSpacing: "0.1em" }}
-                  >
-                    {n.type === "event" ? "이벤트" : "공지"}
-                  </span>
-                </td>
-                <td className="px-3 py-3 font-medium" style={{ letterSpacing: "-0.02em" }}>
-                  {n.title}
-                </td>
-                <td className="px-3 py-3 text-sm text-ink-muted">
-                  {n.startDate || n.date}
-                  {n.endDate && <span> ~ {n.endDate}</span>}
-                </td>
-                <td className="px-3 py-3 text-right">
-                  <div className="flex gap-1 justify-end">
-                    <Button size="sm" variant="secondary" onClick={() => startEdit(n)}>
-                      수정
-                    </Button>
-                    <Button size="sm" variant="danger" onClick={() => remove(n.id)}>
-                      삭제
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {notices.length === 0 && (
+            {filteredNotices.map((n) => {
+              const status = getStatus(n);
+              return (
+                <tr
+                  key={n.id}
+                  className={`border-b border-line/50 last:border-b-0 ${status === "ended" ? "opacity-50" : ""}`}
+                >
+                  <td className="text-center px-3 py-3">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-sm font-semibold ${
+                        n.type === "event"
+                          ? "bg-accent text-ink-inverse"
+                          : "bg-bg-alt text-ink-soft"
+                      }`}
+                      style={{ letterSpacing: "0.1em" }}
+                    >
+                      {n.type === "event" ? "이벤트" : "공지"}
+                    </span>
+                  </td>
+                  <td className="text-center px-3 py-3">
+                    <span
+                      className={`text-[0.65rem] font-semibold px-2 py-0.5 rounded-full ${statusLabel[status].cls}`}
+                    >
+                      {statusLabel[status].text}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 font-medium" style={{ letterSpacing: "-0.02em" }}>
+                    {n.title}
+                  </td>
+                  <td className="px-3 py-3 text-sm text-ink-muted">
+                    {n.startDate || n.date}
+                    {n.endDate && <span> ~ {n.endDate}</span>}
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    <div className="flex gap-1 justify-end">
+                      <Button size="sm" variant="secondary" onClick={() => startEdit(n)}>
+                        수정
+                      </Button>
+                      <Button size="sm" variant="danger" onClick={() => remove(n.id)}>
+                        삭제
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {filteredNotices.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center py-12 text-ink-muted">
-                  등록된 공지가 없습니다.
+                <td colSpan={5} className="text-center py-12 text-ink-muted">
+                  {filter === "all" ? "등록된 공지가 없습니다." : "해당 상태의 공지가 없습니다."}
                 </td>
               </tr>
             )}

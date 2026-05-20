@@ -18,6 +18,21 @@ import {
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
+type StatusFilter = "all" | "active" | "upcoming" | "ended";
+
+function getStatus(item: { startDate?: string; endDate?: string }): "active" | "upcoming" | "ended" {
+  const today = todayStr();
+  if (item.startDate && item.startDate > today) return "upcoming";
+  if (item.endDate && item.endDate < today) return "ended";
+  return "active";
+}
+
+const statusLabel: Record<string, { text: string; cls: string }> = {
+  active: { text: "진행중", cls: "bg-green-100 text-green-800" },
+  upcoming: { text: "예정", cls: "bg-blue-100 text-blue-800" },
+  ended: { text: "종료", cls: "bg-gray-100 text-gray-500" },
+};
+
 const emptyEvent: Omit<Event, "id"> = {
   title: "",
   subtitle: "",
@@ -38,6 +53,18 @@ export default function EventsAdminPage() {
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [draft, setDraft] = useState<Omit<Event, "id">>(emptyEvent);
   const [toast, setToast] = useState<string | null>(null);
+  const [filter, setFilter] = useState<StatusFilter>("all");
+
+  const filteredEvents = filter === "all"
+    ? events
+    : events.filter((e) => getStatus(e) === filter);
+
+  const counts = {
+    all: events.length,
+    active: events.filter((e) => getStatus(e) === "active").length,
+    upcoming: events.filter((e) => getStatus(e) === "upcoming").length,
+    ended: events.filter((e) => getStatus(e) === "ended").length,
+  };
 
   const startEdit = (e: Event) => {
     setEditing(e.id);
@@ -94,6 +121,13 @@ export default function EventsAdminPage() {
       return { ...d, events: list };
     });
   };
+
+  const filters: { key: StatusFilter; label: string }[] = [
+    { key: "all", label: `전체 (${counts.all})` },
+    { key: "active", label: `진행중 (${counts.active})` },
+    { key: "upcoming", label: `예정 (${counts.upcoming})` },
+    { key: "ended", label: `종료 (${counts.ended})` },
+  ];
 
   return (
     <>
@@ -181,65 +215,91 @@ export default function EventsAdminPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {events.map((ev, i) => (
-          <Card key={ev.id} className="p-4 flex gap-4">
-            <div className="w-32 h-24 bg-bg-alt rounded overflow-hidden flex-shrink-0">
-              {ev.image && (
-                <img src={ev.image} alt={ev.title} className="w-full h-full object-cover" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div
-                className="text-xs text-ink-muted mb-1 flex items-center gap-2"
-                style={{ letterSpacing: "0.05em" }}
-              >
-                {ev.startDate && <span>{ev.startDate}</span>}
-                {ev.startDate && ev.endDate && <span>~</span>}
-                {ev.endDate && <span>{ev.endDate}</span>}
-                {!ev.startDate && !ev.endDate && <span>{ev.date}</span>}
-              </div>
-              <h3
-                className="font-semibold mb-1 truncate"
-                style={{ letterSpacing: "-0.02em" }}
-              >
-                {ev.title}
-              </h3>
-              <p className="text-xs text-ink-muted line-clamp-2 mb-2">
-                {ev.description}
-              </p>
-              <div className="flex gap-1 flex-wrap">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => move(ev.id, -1)}
-                  disabled={i === 0}
-                >
-                  ↑
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => move(ev.id, 1)}
-                  disabled={i === events.length - 1}
-                >
-                  ↓
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => startEdit(ev)}>
-                  수정
-                </Button>
-                <Button size="sm" variant="danger" onClick={() => remove(ev.id)}>
-                  삭제
-                </Button>
-              </div>
-            </div>
-          </Card>
+      {/* Filter tabs */}
+      <div className="flex gap-1 mb-6">
+        {filters.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+              filter === f.key
+                ? "bg-accent text-white"
+                : "bg-bg-alt text-ink-muted hover:text-ink"
+            }`}
+            style={{ letterSpacing: "-0.02em" }}
+          >
+            {f.label}
+          </button>
         ))}
       </div>
 
-      {events.length === 0 && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filteredEvents.map((ev, i) => {
+          const status = getStatus(ev);
+          return (
+            <Card key={ev.id} className={`p-4 flex gap-4 ${status === "ended" ? "opacity-60" : ""}`}>
+              <div className="w-32 h-24 bg-bg-alt rounded overflow-hidden flex-shrink-0">
+                {ev.image && (
+                  <img src={ev.image} alt={ev.title} className="w-full h-full object-cover" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className={`text-[0.65rem] font-semibold px-2 py-0.5 rounded-full ${statusLabel[status].cls}`}
+                  >
+                    {statusLabel[status].text}
+                  </span>
+                  <span className="text-xs text-ink-muted" style={{ letterSpacing: "0.03em" }}>
+                    {ev.startDate || ""}
+                    {ev.startDate && ev.endDate ? " ~ " : ""}
+                    {ev.endDate || ""}
+                  </span>
+                </div>
+                <h3
+                  className="font-semibold mb-1 truncate"
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  {ev.title}
+                </h3>
+                <p className="text-xs text-ink-muted line-clamp-2 mb-2">
+                  {ev.description}
+                </p>
+                <div className="flex gap-1 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => move(ev.id, -1)}
+                    disabled={i === 0}
+                  >
+                    ↑
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => move(ev.id, 1)}
+                    disabled={i === filteredEvents.length - 1}
+                  >
+                    ↓
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => startEdit(ev)}>
+                    수정
+                  </Button>
+                  <Button size="sm" variant="danger" onClick={() => remove(ev.id)}>
+                    삭제
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {filteredEvents.length === 0 && (
         <Card className="text-center py-16 text-ink-muted">
-          등록된 이벤트가 없습니다. 우측 상단 &ldquo;+ 이벤트 추가&rdquo;로 추가하세요.
+          {filter === "all"
+            ? '등록된 이벤트가 없습니다. 우측 상단 "+ 이벤트 추가"로 추가하세요.'
+            : "해당 상태의 이벤트가 없습니다."}
         </Card>
       )}
 

@@ -78,17 +78,6 @@ export default function AdminDashboard() {
           </li>
         </ul>
       </Card>
-
-      <Card className="mt-6 border-yellow-200 bg-yellow-50">
-        <h3 className="font-semibold text-yellow-900 mb-2" style={{ letterSpacing: "-0.02em" }}>
-          📌 데모 환경 안내
-        </h3>
-        <p className="text-sm text-yellow-800" style={{ lineHeight: 1.7 }}>
-          현재 모든 데이터는 브라우저(LocalStorage)에 저장됩니다. 다른 브라우저나 기기에서는 변경사항이 보이지 않습니다.
-          <br />
-          실 운영 시에는 백엔드 DB로 교체되어 어디서든 동일한 콘텐츠가 표시됩니다.
-        </p>
-      </Card>
     </>
   );
 }
