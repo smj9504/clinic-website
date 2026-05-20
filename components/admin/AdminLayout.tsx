@@ -51,7 +51,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname() || "";
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const onError = (e: Event) => {
@@ -104,8 +109,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <AdminLocaleProvider>
       {saveError && <Toast message={saveError} onClose={() => setSaveError(null)} variant="error" />}
       <div className="min-h-screen flex bg-[#FAFAFA]">
+        {/* Mobile backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-20 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
-        <aside className="w-64 bg-surface-dark text-ink-inverse flex flex-col fixed h-screen">
+        <aside
+          className={`w-64 bg-surface-dark text-ink-inverse flex flex-col fixed h-screen z-30 transition-transform duration-200 ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          }`}
+        >
           <div className="p-6 border-b border-white/10">
             <Link href="/admin" className="block">
               <div
@@ -176,8 +193,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </aside>
 
         {/* Content */}
-        <div className="flex-1 ml-64">
-          <div className="p-10 max-w-6xl">{children}</div>
+        <div className="flex-1 md:ml-64 min-w-0">
+          {/* Mobile top bar */}
+          <div className="md:hidden sticky top-0 z-10 bg-surface border-b border-line flex items-center gap-3 px-4 py-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-1.5 rounded hover:bg-bg-alt transition-colors text-xl leading-none"
+              aria-label="메뉴 열기"
+            >
+              ☰
+            </button>
+            <span className="font-semibold text-sm" style={{ letterSpacing: "-0.02em" }}>
+              고운빛한의원 관리자
+            </span>
+          </div>
+          <div className="p-4 md:p-10 max-w-6xl">{children}</div>
         </div>
       </div>
     </AdminLocaleProvider>

@@ -12,12 +12,12 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-end justify-between mb-8 pb-6 border-b border-line">
+    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8 pb-6 border-b border-line">
       <div>
         <h1
           className="font-display"
           style={{
-            fontSize: "1.875rem",
+            fontSize: "1.75rem",
             fontWeight: 700,
             letterSpacing: "-0.04em",
           }}
@@ -25,12 +25,12 @@ export function PageHeader({
           {title}
         </h1>
         {description && (
-          <p className="text-ink-muted mt-2" style={{ fontSize: "0.9rem" }}>
+          <p className="text-ink-muted mt-2" style={{ fontSize: "0.875rem" }}>
             {description}
           </p>
         )}
       </div>
-      {actions && <div className="flex gap-2">{actions}</div>}
+      {actions && <div className="flex gap-2 shrink-0">{actions}</div>}
     </div>
   );
 }
@@ -144,17 +144,22 @@ export function ImageInput({
     }
     setUploading(true);
     try {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") onChange(reader.result);
-        setUploading(false);
-      };
-      reader.onerror = () => {
-        setUploading(false);
-        alert("파일을 읽지 못했습니다.");
-      };
-      reader.readAsDataURL(file);
-    } catch {
+      const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("password", password);
+
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const json = await res.json();
+
+      if (!res.ok) {
+        alert(`업로드 실패: ${json.error || res.statusText}`);
+        return;
+      }
+      onChange(json.url);
+    } catch (err) {
+      alert("이미지 업로드에 실패했습니다.");
+    } finally {
       setUploading(false);
     }
   };

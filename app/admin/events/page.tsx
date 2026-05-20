@@ -216,7 +216,7 @@ export default function EventsAdminPage() {
       )}
 
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex gap-1 mb-6 flex-wrap">
         {filters.map((f) => (
           <button
             key={f.key}

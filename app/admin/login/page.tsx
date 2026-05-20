@@ -88,9 +88,7 @@ export default function LoginPage() {
           className="text-xs text-ink-muted mt-6 text-center"
           style={{ letterSpacing: "-0.01em", lineHeight: 1.6 }}
         >
-          ※ 데모 환경에서는 브라우저(LocalStorage)에 콘텐츠가 저장됩니다.
-          <br />
-          실 운영에서는 백엔드 인증 및 DB 저장으로 교체됩니다.
+          ※ 모든 콘텐츠는 Supabase DB에 저장됩니다.
         </p>
       </div>
     </div>

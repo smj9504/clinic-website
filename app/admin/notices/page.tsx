@@ -181,7 +181,7 @@ export default function NoticesAdminPage() {
       )}
 
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex gap-1 mb-6 flex-wrap">
         {filters.map((f) => (
           <button
             key={f.key}
@@ -199,75 +199,44 @@ export default function NoticesAdminPage() {
       </div>
 
       <Card className="p-0 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr
-              className="border-b border-line text-xs uppercase text-ink-muted"
-              style={{ letterSpacing: "0.1em" }}
-            >
-              <th className="text-center px-3 py-3 w-20">분류</th>
-              <th className="text-center px-3 py-3 w-20">상태</th>
-              <th className="text-left px-3 py-3">제목</th>
-              <th className="text-left px-3 py-3 w-48">기간</th>
-              <th className="text-right px-3 py-3 w-40">관리</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredNotices.map((n) => {
-              const status = getStatus(n);
-              return (
-                <tr
-                  key={n.id}
-                  className={`border-b border-line/50 last:border-b-0 ${status === "ended" ? "opacity-50" : ""}`}
-                >
-                  <td className="text-center px-3 py-3">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-sm font-semibold ${
-                        n.type === "event"
-                          ? "bg-accent text-ink-inverse"
-                          : "bg-bg-alt text-ink-soft"
-                      }`}
-                      style={{ letterSpacing: "0.1em" }}
-                    >
-                      {n.type === "event" ? "이벤트" : "공지"}
-                    </span>
-                  </td>
-                  <td className="text-center px-3 py-3">
-                    <span
-                      className={`text-[0.65rem] font-semibold px-2 py-0.5 rounded-full ${statusLabel[status].cls}`}
-                    >
-                      {statusLabel[status].text}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 font-medium" style={{ letterSpacing: "-0.02em" }}>
-                    {n.title}
-                  </td>
-                  <td className="px-3 py-3 text-sm text-ink-muted">
-                    {n.startDate || n.date}
-                    {n.endDate && <span> ~ {n.endDate}</span>}
-                  </td>
-                  <td className="px-3 py-3 text-right">
-                    <div className="flex gap-1 justify-end">
-                      <Button size="sm" variant="secondary" onClick={() => startEdit(n)}>
-                        수정
-                      </Button>
-                      <Button size="sm" variant="danger" onClick={() => remove(n.id)}>
-                        삭제
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {filteredNotices.length === 0 && (
-              <tr>
-                <td colSpan={5} className="text-center py-12 text-ink-muted">
-                  {filter === "all" ? "등록된 공지가 없습니다." : "해당 상태의 공지가 없습니다."}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        {filteredNotices.length === 0 ? (
+          <div className="text-center py-12 text-ink-muted">
+            {filter === "all" ? "등록된 공지가 없습니다." : "해당 상태의 공지가 없습니다."}
+          </div>
+        ) : (
+          filteredNotices.map((n) => {
+            const status = getStatus(n);
+            return (
+              <div
+                key={n.id}
+                className={`flex items-center gap-3 px-4 py-3 border-b border-line/50 last:border-b-0 ${status === "ended" ? "opacity-50" : ""}`}
+              >
+                <div className="flex flex-col gap-1 shrink-0">
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-sm font-semibold text-center ${
+                      n.type === "event" ? "bg-accent text-ink-inverse" : "bg-bg-alt text-ink-soft"
+                    }`}
+                  >
+                    {n.type === "event" ? "이벤트" : "공지"}
+                  </span>
+                  <span className={`text-[0.65rem] font-semibold px-2 py-0.5 rounded-full text-center ${statusLabel[status].cls}`}>
+                    {statusLabel[status].text}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate" style={{ letterSpacing: "-0.02em" }}>{n.title}</div>
+                  <div className="text-xs text-ink-muted mt-0.5">
+                    {n.startDate || n.date}{n.endDate && ` ~ ${n.endDate}`}
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button size="sm" variant="secondary" onClick={() => startEdit(n)}>수정</Button>
+                  <Button size="sm" variant="danger" onClick={() => remove(n.id)}>삭제</Button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </Card>
 
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}

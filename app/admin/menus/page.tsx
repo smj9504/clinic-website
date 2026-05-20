@@ -99,149 +99,66 @@ export default function MenusAdminPage() {
       />
 
       <Card className="p-0 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr
-              className="border-b border-line text-xs uppercase text-ink-muted"
-              style={{ letterSpacing: "0.1em" }}
-            >
-              <th className="text-center px-3 py-3 w-12">#</th>
-              <th className="text-left px-3 py-3">메뉴명</th>
-              <th className="text-left px-3 py-3">링크</th>
-              <th className="text-center px-3 py-3 w-24">상태</th>
-              <th className="text-right px-3 py-3 w-72">관리</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((m, i) => (
-              <tr key={m.id} className="border-b border-line/50 last:border-b-0">
-                <td className="text-center text-sm text-ink-muted px-3 py-3 font-mono">
-                  {i + 1}
-                </td>
-                {editing === m.id ? (
-                  <>
-                    <td colSpan={4} className="px-3 py-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <Field label="메뉴명">
-                          <TextInput
-                            value={draft.label ?? m.label}
-                            onChange={(e) =>
-                              setDraft((p) => ({ ...p, label: e.target.value }))
-                            }
-                          />
-                        </Field>
-                        <Field label="링크 경로">
-                          <TextInput
-                            value={draft.href ?? m.href}
-                            onChange={(e) =>
-                              setDraft((p) => ({ ...p, href: e.target.value }))
-                            }
-                          />
-                        </Field>
-                      </div>
-                      <Field label="배너 이미지" hint="해당 페이지 상단에 표시되는 배경 이미지 (권장 1920×600)">
-                        <ImageInput
-                          value={draft.bannerImage ?? m.bannerImage ?? ""}
-                          onChange={(v) => setDraft((p) => ({ ...p, bannerImage: v }))}
-                          aspectRatio="16 / 5"
-                        />
-                      </Field>
-                      <div className="flex gap-1 mt-4">
-                        <Button size="sm" onClick={() => save(m.id)}>
-                          저장
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => {
-                            setEditing(null);
-                            setDraft({});
-                          }}
-                        >
-                          취소
-                        </Button>
-                      </div>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`font-semibold ${
-                          m.isHidden ? "text-ink-muted line-through" : ""
-                        }`}
-                        style={{ letterSpacing: "-0.02em" }}
-                      >
-                        {m.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-xs text-ink-muted font-mono">
-                      {m.href}
-                    </td>
-                    <td className="text-center px-3 py-3">
-                      {m.isHidden ? (
-                        <span className="text-xs px-2 py-1 bg-bg-alt rounded text-ink-muted">
-                          숨김
-                        </span>
-                      ) : (
-                        <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded">
-                          표시
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <div className="flex gap-1 justify-end flex-wrap">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => move(m.id, -1)}
-                          disabled={i === 0}
-                          title="위로"
-                        >
-                          ↑
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => move(m.id, 1)}
-                          disabled={i === sorted.length - 1}
-                          title="아래로"
-                        >
-                          ↓
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => toggleHide(m.id)}
-                        >
-                          {m.isHidden ? "표시" : "숨김"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => {
-                            setEditing(m.id);
-                            setDraft({});
-                          }}
-                        >
-                          수정
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => remove(m.id)}
-                          disabled
-                        >
-                          삭제
-                        </Button>
-                      </div>
-                    </td>
-                  </>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {sorted.map((m, i) => (
+          <div key={m.id} className="border-b border-line/50 last:border-b-0">
+            {editing === m.id ? (
+              <div className="px-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <Field label="메뉴명">
+                    <TextInput
+                      value={draft.label ?? m.label}
+                      onChange={(e) => setDraft((p) => ({ ...p, label: e.target.value }))}
+                    />
+                  </Field>
+                  <Field label="링크 경로">
+                    <TextInput
+                      value={draft.href ?? m.href}
+                      onChange={(e) => setDraft((p) => ({ ...p, href: e.target.value }))}
+                    />
+                  </Field>
+                </div>
+                <Field label="배너 이미지" hint="해당 페이지 상단에 표시되는 배경 이미지 (권장 1920×600)">
+                  <ImageInput
+                    value={draft.bannerImage ?? m.bannerImage ?? ""}
+                    onChange={(v) => setDraft((p) => ({ ...p, bannerImage: v }))}
+                    aspectRatio="16 / 5"
+                  />
+                </Field>
+                <div className="flex gap-2 mt-4">
+                  <Button size="sm" onClick={() => save(m.id)}>저장</Button>
+                  <Button size="sm" variant="secondary" onClick={() => { setEditing(null); setDraft({}); }}>취소</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-3">
+                <span className="text-xs text-ink-muted font-mono w-5 text-center shrink-0">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`font-semibold text-sm ${m.isHidden ? "text-ink-muted line-through" : ""}`}
+                      style={{ letterSpacing: "-0.02em" }}
+                    >
+                      {m.label}
+                    </span>
+                    {m.isHidden ? (
+                      <span className="text-xs px-1.5 py-0.5 bg-bg-alt rounded text-ink-muted">숨김</span>
+                    ) : (
+                      <span className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 rounded">표시</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-ink-muted font-mono mt-0.5 truncate">{m.href}</div>
+                </div>
+                <div className="flex gap-1 flex-wrap justify-end shrink-0">
+                  <Button size="sm" variant="ghost" onClick={() => move(m.id, -1)} disabled={i === 0} title="위로">↑</Button>
+                  <Button size="sm" variant="ghost" onClick={() => move(m.id, 1)} disabled={i === sorted.length - 1} title="아래로">↓</Button>
+                  <Button size="sm" variant="ghost" onClick={() => toggleHide(m.id)}>{m.isHidden ? "표시" : "숨김"}</Button>
+                  <Button size="sm" variant="secondary" onClick={() => { setEditing(m.id); setDraft({}); }}>수정</Button>
+                  <Button size="sm" variant="danger" onClick={() => remove(m.id)}>삭제</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </Card>
 
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
