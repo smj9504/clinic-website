@@ -9,6 +9,7 @@ import {
   PageHeader,
   Field,
   TextInput,
+  TextArea,
   Button,
   Card,
   Toast,
@@ -35,6 +36,7 @@ const statusLabel: Record<string, { text: string; cls: string }> = {
 const emptyNotice: Omit<Notice, "id"> = {
   type: "notice",
   title: "",
+  content: "",
   date: today(),
   startDate: todayISO(),
   endDate: "",
@@ -62,12 +64,12 @@ export default function NoticesAdminPage() {
 
   const startEdit = (n: Notice) => {
     setEditing(n.id);
-    setDraft({ type: n.type, title: n.title, date: n.date, startDate: n.startDate || "", endDate: n.endDate || "" });
+    setDraft({ type: n.type, title: n.title, content: n.content || "", date: n.date, startDate: n.startDate || "", endDate: n.endDate || "" });
   };
 
   const startNew = () => {
     setEditing("new");
-    setDraft({ ...emptyNotice, date: today(), startDate: todayISO(), endDate: "" });
+    setDraft({ ...emptyNotice, content: "", date: today(), startDate: todayISO(), endDate: "" });
   };
 
   const save = () => {
@@ -155,6 +157,16 @@ export default function NoticesAdminPage() {
                   value={draft.title}
                   onChange={(e) => setDraft((p) => ({ ...p, title: e.target.value }))}
                   placeholder="예: 석가탄신일 휴진 안내"
+                />
+              </Field>
+            </div>
+            <div className="md:col-span-4">
+              <Field label="내용" hint="줄바꿈은 그대로 표시됩니다">
+                <TextArea
+                  value={draft.content || ""}
+                  onChange={(e) => setDraft((p) => ({ ...p, content: e.target.value }))}
+                  rows={6}
+                  placeholder="공지 상세 내용을 입력하세요"
                 />
               </Field>
             </div>

@@ -66,10 +66,10 @@ export default function NoticePage() {
               </div>
             ) : (
               notices.map((notice) => (
-                <div
+                <Link
                   key={notice.id}
-                  id={String(notice.id)}
-                  className="flex items-center justify-between py-7 border-b border-line hover:pl-2 transition-all"
+                  href={`/community/notice/${notice.id}`}
+                  className="flex items-center justify-between py-7 border-b border-line hover:pl-2 transition-all group"
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <span
@@ -83,7 +83,7 @@ export default function NoticePage() {
                       {notice.type === "event" ? t("badge.event") : t("badge.notice")}
                     </span>
                     <span
-                      className="font-medium truncate"
+                      className="font-medium truncate group-hover:text-accent transition-colors"
                       style={{ fontSize: "1.05rem", letterSpacing: "-0.025em" }}
                     >
                       {notice.title}
@@ -92,7 +92,7 @@ export default function NoticePage() {
                   <span className="text-ink-muted text-sm whitespace-nowrap ml-8">
                     {notice.date}
                   </span>
-                </div>
+                </Link>
               ))
             )}
           </div>
