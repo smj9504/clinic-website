@@ -167,13 +167,15 @@ export default function EventDetailPage() {
 
                 <div className="space-y-5 text-sm">
                   <div className="flex justify-between border-b border-line pb-4">
-                    <span className="text-ink-muted">{event.date.includes("EVENT") ? "Period" : ""}</span>
+                    <span className="text-ink-muted">{t("events.period")}</span>
                     <span className="font-medium">
-                      {event.date.replace("EVENT · ", "")}
+                      {event.startDate && event.endDate
+                        ? `${event.startDate.replace(/-/g, ".")} – ${event.endDate.replace(/-/g, ".")}`
+                        : event.date.replace("EVENT · ", "")}
                     </span>
                   </div>
                   <div className="flex justify-between pb-2">
-                    <span className="text-ink-muted">{t("footer.contact")}</span>
+                    <span className="text-ink-muted">{t("events.contact")}</span>
                     <span className="font-medium">{clinicInfo.phone}</span>
                   </div>
                 </div>

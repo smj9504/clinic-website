@@ -22,9 +22,9 @@ const ko = {
   // Footer
   "footer.description":
     "전통 한의학의 지혜와 현대 의학의 정밀함을 함께 담아, 당신의 건강한 일상을 처방합니다.",
-  "footer.contact": "Contact",
-  "footer.hours": "Hours",
-  "footer.follow": "Follow",
+  "footer.contact": "연락처",
+  "footer.hours": "진료 시간",
+  "footer.follow": "팔로우",
   "footer.blog": "네이버 블로그",
   "footer.instagram": "인스타그램",
   "footer.kakao": "카카오 채널",
@@ -43,6 +43,8 @@ const ko = {
   // Events page
   "events.title": "진행중인 이벤트",
   "events.empty": "진행중인 이벤트가 없습니다.",
+  "events.period": "이벤트 기간",
+  "events.contact": "문의",
 
   // Treatments page
   "treatments.title": "진료 내용",
@@ -133,6 +135,8 @@ const en: Record<keyof typeof ko, string> = {
   // Events page
   "events.title": "Current Events",
   "events.empty": "No current events.",
+  "events.period": "Period",
+  "events.contact": "Contact",
 
   // Treatments page
   "treatments.title": "Treatments",
