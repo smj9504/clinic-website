@@ -10,6 +10,7 @@ import {
   TextInput,
   Button,
   Card,
+  ImageInput,
   Toast,
 } from "@/components/admin/ui";
 
@@ -167,25 +168,33 @@ export default function MenusAdminPage() {
                 </td>
                 {editing === m.id ? (
                   <>
-                    <td className="px-3 py-2">
-                      <TextInput
-                        value={draft.label ?? m.label}
-                        onChange={(e) =>
-                          setDraft((p) => ({ ...p, label: e.target.value }))
-                        }
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <TextInput
-                        value={draft.href ?? m.href}
-                        onChange={(e) =>
-                          setDraft((p) => ({ ...p, href: e.target.value }))
-                        }
-                      />
-                    </td>
-                    <td className="text-center text-xs text-ink-muted">편집 중</td>
-                    <td className="px-3 py-2 text-right">
-                      <div className="flex gap-1 justify-end">
+                    <td colSpan={4} className="px-3 py-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <Field label="메뉴명">
+                          <TextInput
+                            value={draft.label ?? m.label}
+                            onChange={(e) =>
+                              setDraft((p) => ({ ...p, label: e.target.value }))
+                            }
+                          />
+                        </Field>
+                        <Field label="링크 경로">
+                          <TextInput
+                            value={draft.href ?? m.href}
+                            onChange={(e) =>
+                              setDraft((p) => ({ ...p, href: e.target.value }))
+                            }
+                          />
+                        </Field>
+                      </div>
+                      <Field label="배너 이미지" hint="해당 페이지 상단에 표시되는 배경 이미지 (권장 1920×600)">
+                        <ImageInput
+                          value={draft.bannerImage ?? m.bannerImage ?? ""}
+                          onChange={(v) => setDraft((p) => ({ ...p, bannerImage: v }))}
+                          aspectRatio="16 / 5"
+                        />
+                      </Field>
+                      <div className="flex gap-1 mt-4">
                         <Button size="sm" onClick={() => save(m.id)}>
                           저장
                         </Button>

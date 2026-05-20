@@ -1,13 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useSiteData } from "@/lib/useSiteData";
+import { useSiteData, getBannerImage } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
-import { sampleImages } from "@/lib/data";
 
 export default function TreatmentsPage() {
-  const { treatments, clinicInfo } = useSiteData();
+  const { treatments, menus } = useSiteData();
   const t = useT();
+  const banner = getBannerImage(menus, "/treatments");
 
   return (
     <>
@@ -15,9 +15,11 @@ export default function TreatmentsPage() {
         className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
-        <div className="absolute inset-0 opacity-30">
-          <Image src={clinicInfo.bannerImages?.treatments || sampleImages.facility} alt="" fill className="object-cover" sizes="100vw" />
-        </div>
+        {banner && (
+          <div className="absolute inset-0 opacity-30">
+            <Image src={banner} alt="" fill className="object-cover" sizes="100vw" />
+          </div>
+        )}
         <div className="container-default relative text-ink-inverse">
           <span
             className="text-xs font-semibold uppercase opacity-70 mb-4 block"
@@ -84,13 +86,19 @@ export default function TreatmentsPage() {
                 </p>
               </div>
               <div className="aspect-[4/3] relative rounded overflow-hidden bg-bg-alt">
-                <Image
-                  src={item.image || sampleImages.facility}
-                  alt={item.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
+                {item.image ? (
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-ink-muted text-sm">
+                    {item.number}
+                  </div>
+                )}
               </div>
             </article>
           ))}

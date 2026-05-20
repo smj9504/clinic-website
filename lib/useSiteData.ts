@@ -69,3 +69,14 @@ export function useSiteDataForLocale(locale: Locale): SiteData {
 
   return hydrated ? data : getDefaultSiteData(locale);
 }
+
+/**
+ * 메뉴의 bannerImage를 경로(href)로 조회
+ */
+export function getBannerImage(menus: SiteData["menus"], pathname: string): string {
+  // 정확한 매칭 우선, 없으면 prefix 매칭
+  const exact = menus.find((m) => m.href === pathname);
+  if (exact?.bannerImage) return exact.bannerImage;
+  const prefix = menus.find((m) => m.href !== "/" && pathname.startsWith(m.href));
+  return prefix?.bannerImage || "";
+}

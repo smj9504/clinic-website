@@ -3,12 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useSiteData } from "@/lib/useSiteData";
+import { useSiteData, getBannerImage } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
-import { sampleImages } from "@/lib/data";
 
 export default function FaqPage() {
-  const { faqs, clinicInfo } = useSiteData();
+  const { faqs, menus } = useSiteData();
+  const banner = getBannerImage(menus, "/community/notice");
   const t = useT();
   const [openIdx, setOpenIdx] = useState<string | null>(faqs[0]?.id || null);
 
@@ -20,9 +20,11 @@ export default function FaqPage() {
         className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
-        <div className="absolute inset-0 opacity-30">
-          <Image src={clinicInfo.bannerImages?.community || sampleImages.facility} alt="" fill className="object-cover" sizes="100vw" />
-        </div>
+        {banner && (
+          <div className="absolute inset-0 opacity-30">
+            <Image src={banner} alt="" fill className="object-cover" sizes="100vw" />
+          </div>
+        )}
         <div className="container-default relative text-ink-inverse">
           <span
             className="text-xs font-semibold uppercase opacity-70 mb-4 block"

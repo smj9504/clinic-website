@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import DirectorFeature from "@/components/sections/DirectorFeature";
-import { useSiteData } from "@/lib/useSiteData";
+import { useSiteData, getBannerImage } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
-import { sampleImages } from "@/lib/data";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 
 export default function AboutPage() {
-  const { about, clinicInfo } = useSiteData();
+  const { about, clinicInfo, menus } = useSiteData();
+  const banner = getBannerImage(menus, "/about");
   const t = useT();
   const philRef = useScrollReveal<HTMLDivElement>();
   const facilityHeaderRef = useScrollReveal<HTMLDivElement>();
@@ -23,7 +23,7 @@ export default function AboutPage() {
       >
         <div className="absolute inset-0 opacity-30">
           <Image
-            src={clinicInfo.bannerImages?.about || about.facilityImages[0] || sampleImages.facility}
+            src={banner || about.facilityImages[0] || "/placeholder.svg"}
             alt=""
             fill
             className="object-cover"

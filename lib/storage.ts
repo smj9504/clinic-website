@@ -45,6 +45,7 @@ export type MenuItem = {
   href: string;
   isHidden: boolean;
   sortOrder: number;
+  bannerImage?: string;
   children?: MenuItem[];
 };
 

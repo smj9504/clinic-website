@@ -3,26 +3,18 @@
  * Admin 페이지에서 수정한 콘텐츠가 이 데이터 구조 그대로 DB에 저장됩니다.
  */
 
-// 샘플 이미지 (Unsplash) — 한의원/wellness 분위기
-// 실제 운영 시 클라이언트가 제공한 이미지로 교체
+// 폴백용 빈 이미지 객체 — 실제 데이터는 Supabase DB에서 로드
 export const sampleImages = {
-  // 히어로용 — 한의원 진료 분위기
-  hero1: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=1920&q=80",  // 한약재/허브 따뜻한 톤
-  hero2: "https://plus.unsplash.com/premium_photo-1719615566924-5648f8bdd206?w=1920&q=80",  // 침술 치료
-  hero3: "https://plus.unsplash.com/premium_photo-1661864014725-9d77f571f00a?w=1920&q=80",  // 추나/마사지 치료
-
-  // 이벤트 카드 — 건강/한의학 관련
-  event1: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80",  // 건강식/다이어트
-  event2: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=800&q=80",  // 의료/건강 상담
-  event3: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=80",  // 의약품/처방
-
-  // 대표원장 — 여성 의사
-  director: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80",
-
-  // 시설 사진 — 깔끔한 한의원/클리닉 인테리어
-  facility: "https://images.unsplash.com/photo-1631247869033-a8b88c0be391?w=1200&q=80",  // 화분/깔끔한 인테리어
-  facility2: "https://images.unsplash.com/photo-1598242930255-c25f98ff11e5?w=1200&q=80", // 대기실 소파
-  facility3: "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1200&q=80", // 진료실
+  hero1: "",
+  hero2: "",
+  hero3: "",
+  event1: "",
+  event2: "",
+  event3: "",
+  director: "",
+  facility: "",
+  facility2: "",
+  facility3: "",
 };
 
 export type Event = {
