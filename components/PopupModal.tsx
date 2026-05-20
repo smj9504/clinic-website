@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import type { PopupItem } from "@/lib/storage";
@@ -50,7 +50,11 @@ export default function PopupModal() {
   const imageUrls = useMemo(() => popupItems.map((item) => item.image).filter(Boolean), [popupItems]);
   usePreloadImages(imageUrls);
 
+  // 이미 한 번 열렸으면 재트리거 방지 (DB fetch 후 데이터 갱신 시 다시 열리는 버그 수정)
+  const hasOpenedRef = useRef(false);
+
   useEffect(() => {
+    if (hasOpenedRef.current) return;
     if (!eventActive && !scheduleActive) return;
 
     const today = new Date().toISOString().split("T")[0];
@@ -71,6 +75,7 @@ export default function PopupModal() {
     if (showEvent) setTab("event");
     else if (showSchedule) setTab("schedule");
 
+    hasOpenedRef.current = true;
     const timer = setTimeout(() => setOpen(true), 2000);
     return () => clearTimeout(timer);
   }, [eventActive, scheduleActive, popupItems.length]);
