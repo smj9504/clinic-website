@@ -330,20 +330,48 @@ export function getDefaultSiteData(locale: Locale = "ko"): SiteData {
 // Keep backward compat for imports that use defaultSiteData
 export const defaultSiteData: SiteData = defaultSiteDataByLocale.ko;
 
-// ─── 스토리지 API (Supabase DB + 메모리 캐시) ───
+// ─── 스토리지 API (Supabase DB + 메모리 캐시 + localStorage 텍스트 캐시) ───
 
 /**
- * 메모리 캐시 (base64 이미지가 포함될 수 있어 localStorage 대신 사용)
- * 실제 데이터는 Supabase DB에 저장.
+ * 메모리 캐시: 이미지 포함 전체 데이터 (세션 내 즉시 반영용)
+ * localStorage: base64 이미지를 제외한 텍스트 데이터만 저장 (새로고침 시 빠른 초기 렌더용)
+ * DB: 실제 데이터 저장소
  */
 const _memCache: Partial<Record<Locale, SiteData>> = {};
 
-/** 메모리 캐시에서 동기적으로 읽기 (초기 렌더용) */
-export function getSiteData(locale: Locale = "ko"): SiteData {
-  return _memCache[locale] ?? getDefaultSiteData(locale);
+/** base64 이미지를 제거한 버전으로 변환 (localStorage 저장용) */
+function stripBase64Images(data: SiteData): SiteData {
+  const strip = (s: string) => (s?.startsWith("data:") ? "" : s);
+  return {
+    ...data,
+    heroSlides: data.heroSlides.map((s) => ({ ...s, image: strip(s.image) })),
+    events: data.events.map((e) => ({ ...e, image: strip(e.image) })),
+    treatments: data.treatments.map((t) => ({ ...t, image: strip(t.image ?? "") })),
+    director: { ...data.director, image: strip(data.director.image) },
+    about: {
+      ...data.about,
+      facilityImages: data.about.facilityImages.map(strip),
+    },
+    popup: { ...data.popup, image: strip(data.popup.image) },
+    menus: data.menus.map((m) => ({ ...m, bannerImage: strip(m.bannerImage ?? "") })),
+  };
 }
 
-/** DB에서 비동기로 최신 데이터 로드 → 메모리 캐시 갱신 */
+/** 동기적으로 읽기 (초기 렌더용): 메모리 캐시 → localStorage → 기본값 */
+export function getSiteData(locale: Locale = "ko"): SiteData {
+  if (_memCache[locale]) return _memCache[locale]!;
+  if (typeof window === "undefined") return getDefaultSiteData(locale);
+  try {
+    const raw = localStorage.getItem(storageKey(locale));
+    if (!raw) return getDefaultSiteData(locale);
+    const parsed = JSON.parse(raw);
+    return { ...getDefaultSiteData(locale), ...parsed };
+  } catch {
+    return getDefaultSiteData(locale);
+  }
+}
+
+/** DB에서 비동기로 최신 데이터 로드 → 캐시 갱신 */
 export async function fetchSiteData(locale: Locale = "ko"): Promise<SiteData> {
   try {
     const res = await fetch(`/api/site-data?locale=${locale}`, { cache: "no-store" });
@@ -351,19 +379,24 @@ export async function fetchSiteData(locale: Locale = "ko"): Promise<SiteData> {
     if (json.data) {
       const merged = { ...getDefaultSiteData(locale), ...json.data };
       _memCache[locale] = merged;
+      try {
+        localStorage.setItem(storageKey(locale), JSON.stringify(stripBase64Images(merged)));
+      } catch {}
       return merged;
     }
   } catch {
-    // API 실패 시 기본값 반환
+    // API 실패 시 캐시/기본값 반환
   }
   return getSiteData(locale);
 }
 
-/** 메모리 캐시 업데이트 + DB에 저장 */
+/** 메모리 캐시 + localStorage(텍스트만) + DB에 저장 */
 export function setSiteData(data: SiteData, locale: Locale = "ko") {
   if (typeof window === "undefined") return;
-  // 메모리 캐시 즉시 업데이트
   _memCache[locale] = data;
+  try {
+    localStorage.setItem(storageKey(locale), JSON.stringify(stripBase64Images(data)));
+  } catch {}
   window.dispatchEvent(new CustomEvent("siteDataUpdated"));
 
   // DB에 비동기 저장
