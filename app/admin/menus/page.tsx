@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
-import { updateSiteData, generateId, type MenuItem } from "@/lib/storage";
+import { updateSiteData, syncImages, generateId, type MenuItem } from "@/lib/storage";
 import {
   PageHeader,
   Field,
@@ -31,6 +31,7 @@ export default function MenusAdminPage() {
       ...d,
       menus: d.menus.map((m) => (m.id === id ? { ...m, ...draft } as MenuItem : m)),
     }));
+    syncImages(editingLocale);
     setEditing(null);
     setDraft({});
     setToast("메뉴가 저장되었습니다");

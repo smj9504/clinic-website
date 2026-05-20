@@ -79,6 +79,7 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
 
   const save = () => {
     updateSiteData((d) => ({ ...d, clinicInfo: draft, showStats: statsVisible }), editingLocale);
+    syncImages(editingLocale);
     onSave();
   };
 
@@ -379,6 +380,7 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
         t.id === id ? { ...t, ...patch } : t
       ),
     }));
+    syncImages(editingLocale);
     onSave();
   };
 

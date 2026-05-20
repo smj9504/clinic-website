@@ -447,9 +447,21 @@ export function syncImages(locale: Locale) {
       ...e,
       image: current.events[i]?.image ?? e.image,
     })),
+    treatments: other.treatments.map((t, i) => ({
+      ...t,
+      image: current.treatments[i]?.image ?? t.image,
+    })),
     director: { ...other.director, image: current.director.image },
     about: { ...other.about, facilityImages: current.about.facilityImages },
     popup: { ...other.popup, image: current.popup.image },
+    menus: other.menus.map((m, i) => ({
+      ...m,
+      bannerImage: current.menus[i]?.bannerImage ?? m.bannerImage,
+    })),
+    clinicInfo: {
+      ...other.clinicInfo,
+      bannerImages: current.clinicInfo.bannerImages,
+    },
   };
 
   setSiteData(synced, otherLocale);
@@ -479,6 +491,168 @@ export function resetSiteData() {
     body: JSON.stringify({ locale: "en", data: getDefaultSiteData("en"), password }),
   });
   window.dispatchEvent(new CustomEvent("siteDataUpdated"));
+}
+
+// ─── 자동 번역 (한국어 → 영어 동기화) ───
+
+/** 한국어 데이터를 번역하여 영어 데이터에 반영 (이미지·구조는 유지, 텍스트만 번역) */
+export async function translateAndSyncToEnglish(): Promise<{ success: boolean; error?: string }> {
+  const koData = getSiteData("ko");
+  const enData = getSiteData("en");
+  const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
+
+  // 번역할 텍스트 수집 (key로 위치 추적)
+  const textsToTranslate: string[] = [];
+  const pushText = (t: string) => { textsToTranslate.push(t || ""); };
+
+  // Hero slides
+  koData.heroSlides.forEach((s) => { pushText(s.label); pushText(s.title); pushText(s.subtitle); });
+  // Events
+  koData.events.forEach((e) => { pushText(e.title); pushText(e.subtitle); pushText(e.description); pushText(e.date); });
+  // Treatments
+  koData.treatments.forEach((t) => { pushText(t.title); pushText(t.description); });
+  // Director
+  pushText(koData.director.title);
+  pushText(koData.director.name);
+  pushText(koData.director.nameEn);
+  pushText(koData.director.quote);
+  koData.director.bio.forEach((b) => pushText(b));
+  // About
+  pushText(koData.about.philosophyTitle);
+  pushText(koData.about.philosophyBody);
+  // Notices
+  koData.notices.forEach((n) => { pushText(n.title); pushText(n.content); });
+  // FAQs
+  koData.faqs.forEach((f) => { pushText(f.question); pushText(f.answer); pushText(f.category); });
+  // Popup
+  pushText(koData.popup.title);
+  pushText(koData.popup.body);
+  // Schedule popup
+  pushText(koData.schedulePopup.title);
+  pushText(koData.schedulePopup.notice);
+  koData.schedulePopup.rows.forEach((r) => { pushText(r.day); pushText(r.hours); pushText(r.note || ""); });
+  // Menus
+  koData.menus.forEach((m) => pushText(m.label));
+
+  try {
+    // 배치 번역 (50개씩 분할)
+    const BATCH = 50;
+    const allTranslated: string[] = [];
+    for (let i = 0; i < textsToTranslate.length; i += BATCH) {
+      const batch = textsToTranslate.slice(i, i + BATCH);
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texts: batch, source: "ko", target: "en", password }),
+      });
+      if (!res.ok) throw new Error(`Translation API error: ${res.status}`);
+      const { translations } = await res.json();
+      allTranslated.push(...translations);
+    }
+
+    // 번역 결과를 영어 데이터에 매핑
+    let idx = 0;
+    const next = () => allTranslated[idx++] || "";
+
+    const translatedEn: SiteData = {
+      ...enData,
+      heroSlides: koData.heroSlides.map((s, i) => ({
+        ...enData.heroSlides[i] || s,
+        id: s.id,
+        label: next(),
+        title: next(),
+        subtitle: next(),
+        image: s.image,
+      })),
+      events: koData.events.map((e, i) => ({
+        ...enData.events[i] || e,
+        id: e.id,
+        title: next(),
+        subtitle: next(),
+        description: next(),
+        date: next(),
+        image: e.image,
+        startDate: e.startDate,
+        endDate: e.endDate,
+      })),
+      treatments: koData.treatments.map((t, i) => ({
+        ...enData.treatments[i] || t,
+        id: t.id,
+        slug: t.slug,
+        number: t.number,
+        title: next(),
+        description: next(),
+        image: t.image,
+      })),
+      director: {
+        ...enData.director,
+        title: next(),
+        name: next(),
+        nameEn: next(),
+        quote: next(),
+        bio: koData.director.bio.map(() => next()),
+        image: koData.director.image,
+      },
+      about: {
+        ...enData.about,
+        philosophyTitle: next(),
+        philosophyBody: next(),
+        facilityImages: koData.about.facilityImages,
+      },
+      notices: koData.notices.map((n, i) => ({
+        ...enData.notices[i] || n,
+        id: n.id,
+        title: next(),
+        content: next(),
+        date: n.date,
+      })),
+      faqs: koData.faqs.map((f, i) => ({
+        ...enData.faqs[i] || f,
+        id: f.id,
+        question: next(),
+        answer: next(),
+        category: next(),
+        sortOrder: f.sortOrder,
+      })),
+      popup: {
+        ...enData.popup,
+        title: next(),
+        body: next(),
+        image: koData.popup.image,
+        linkUrl: koData.popup.linkUrl,
+        isActive: koData.popup.isActive,
+        items: koData.popup.items,
+      },
+      schedulePopup: {
+        ...enData.schedulePopup,
+        title: next(),
+        notice: next(),
+        rows: koData.schedulePopup.rows.map((r) => ({
+          day: next(),
+          hours: next(),
+          note: next() || undefined,
+        })),
+        isActive: koData.schedulePopup.isActive,
+        month: koData.schedulePopup.month,
+      },
+      menus: koData.menus.map((m, i) => ({
+        ...enData.menus[i] || m,
+        id: m.id,
+        href: m.href,
+        isHidden: m.isHidden,
+        sortOrder: m.sortOrder,
+        label: next(),
+        bannerImage: m.bannerImage,
+      })),
+      showStats: koData.showStats,
+      clinicInfo: enData.clinicInfo,
+    };
+
+    setSiteData(translatedEn, "en");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
 }
 
 // ─── ID 생성 ───
