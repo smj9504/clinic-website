@@ -278,6 +278,7 @@ export type SiteData = {
   faqs: FaqItem[];
   popup: Popup;
   schedulePopup: SchedulePopup;
+  showStats: boolean;
   clinicInfo: typeof defaultClinicInfo;
 };
 
@@ -293,6 +294,7 @@ const defaultSiteDataByLocale: Record<Locale, SiteData> = {
     faqs: defaultFaqs,
     popup: defaultPopup,
     schedulePopup: defaultSchedulePopup,
+    showStats: false,
     clinicInfo: defaultClinicInfo,
   },
   en: {
@@ -306,6 +308,7 @@ const defaultSiteDataByLocale: Record<Locale, SiteData> = {
     faqs: defaultFaqsEn,
     popup: defaultPopupEn,
     schedulePopup: defaultSchedulePopupEn,
+    showStats: false,
     clinicInfo: defaultClinicInfoEn,
   },
 };

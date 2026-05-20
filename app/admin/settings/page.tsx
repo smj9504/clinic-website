@@ -69,15 +69,16 @@ export default function SettingsAdminPage() {
 // ─── Clinic Info Tab ───
 function ClinicInfoTab({ onSave }: { onSave: () => void }) {
   const { editingLocale } = useAdminLocale();
-  const { clinicInfo } = useSiteDataForLocale(editingLocale);
+  const { clinicInfo, showStats } = useSiteDataForLocale(editingLocale);
   const [draft, setDraft] = useState(clinicInfo);
+  const [statsVisible, setStatsVisible] = useState(showStats);
 
   // hydration 후 또는 편집 언어 변경 시 draft 동기화
   const clinicStr = JSON.stringify(clinicInfo);
-  useEffect(() => { setDraft(clinicInfo); }, [clinicStr]);
+  useEffect(() => { setDraft(clinicInfo); setStatsVisible(showStats); }, [clinicStr, showStats]);
 
   const save = () => {
-    updateSiteData((d) => ({ ...d, clinicInfo: draft }), editingLocale);
+    updateSiteData((d) => ({ ...d, clinicInfo: draft, showStats: statsVisible }), editingLocale);
     onSave();
   };
 
@@ -153,6 +154,24 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
               }
             />
           </Field>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={statsVisible}
+              onChange={(e) => setStatsVisible(e.target.checked)}
+              style={{ accentColor: "var(--color-accent)" }}
+              className="w-5 h-5"
+            />
+            <span className="font-semibold" style={{ letterSpacing: "-0.02em" }}>
+              통계 섹션 표시
+            </span>
+            <span className="text-xs text-ink-muted">
+              (진료 경력, 누적 환자, 만족도 등 숫자 카운트업 섹션)
+            </span>
+          </label>
         </Card>
 
         <Card className="lg:col-span-2">

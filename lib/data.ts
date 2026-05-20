@@ -6,23 +6,23 @@
 // 샘플 이미지 (Unsplash) — 한의원/wellness 분위기
 // 실제 운영 시 클라이언트가 제공한 이미지로 교체
 export const sampleImages = {
-  // 히어로용 따뜻한 톤 풍경 이미지
-  hero1: "https://images.unsplash.com/photo-1545048702-79362596cdc9?w=1920&q=80",
-  hero2: "https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=1920&q=80",
-  hero3: "https://images.unsplash.com/photo-1471943311424-646960669fbc?w=1920&q=80",
+  // 히어로용 — 한의원/한약/전통의학 분위기
+  hero1: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=1920&q=80",  // 한약재/허브 따뜻한 톤
+  hero2: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=1920&q=80",  // 차/약초 따뜻한 분위기
+  hero3: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1920&q=80",  // 웰니스/힐링 스파 분위기
 
-  // 이벤트 카드 이미지
-  event1: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=800&q=80",
-  event2: "https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?w=800&q=80",
-  event3: "https://images.unsplash.com/photo-1602523498090-99cf45e8fbf2?w=800&q=80",
+  // 이벤트 카드 — 건강/한의학 관련
+  event1: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80",  // 건강식/다이어트
+  event2: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=800&q=80",  // 의료/건강 상담
+  event3: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=80",  // 의약품/처방
 
-  // 대표원장 인물 사진
+  // 대표원장 — 여성 의사
   director: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80",
 
-  // 시설 사진 (깔끔한 병원/클리닉 인테리어)
-  facility: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=1200&q=80",
-  facility2: "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1200&q=80",
-  facility3: "https://images.unsplash.com/photo-1666214280557-091e3fba4e82?w=1200&q=80",
+  // 시설 사진 — 깔끔한 한의원/클리닉 인테리어
+  facility: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&q=80",  // 깔끔한 병원 복도
+  facility2: "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1200&q=80", // 진료실
+  facility3: "https://images.unsplash.com/photo-1629909615184-74f495363b67?w=1200&q=80", // 대기실/로비
 };
 
 export type Event = {

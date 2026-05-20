@@ -12,6 +12,26 @@ import {
   Card,
   Toast,
 } from "@/components/admin/ui";
+import type { HolidayItem } from "@/app/api/holidays/route";
+
+function getYearMonth(monthStr: string): { year: string; month: string } | null {
+  // "2026.06" or "2026-06" format
+  const match = monthStr.match(/(\d{4})[.\-/](\d{1,2})/);
+  if (!match) return null;
+  return { year: match[1], month: match[2] };
+}
+
+function formatHolidayDay(dateStr: string): string {
+  // "2026-06-06" -> "6/6"
+  const parts = dateStr.split("-");
+  return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+}
+
+function getDayName(dateStr: string): string {
+  const days = ["일", "월", "화", "수", "목", "금", "토"];
+  const d = new Date(dateStr);
+  return days[d.getDay()];
+}
 
 export default function ScheduleAdminPage() {
   const { editingLocale } = useAdminLocale();
@@ -20,6 +40,7 @@ export default function ScheduleAdminPage() {
     updateSiteData(fn, editingLocale);
   const [draft, setDraft] = useState<SchedulePopup>(schedulePopup);
   const [toast, setToast] = useState<string | null>(null);
+  const [holidayLoading, setHolidayLoading] = useState(false);
 
   const draftStr = JSON.stringify(schedulePopup);
   useEffect(() => {
@@ -64,6 +85,64 @@ export default function ScheduleAdminPage() {
     const newRows = [...draft.rows];
     [newRows[i], newRows[target]] = [newRows[target], newRows[i]];
     setDraft((p) => ({ ...p, rows: newRows }));
+  };
+
+  // ─── 공휴일 자동 불러오기 ───
+  const fetchHolidays = async () => {
+    const ym = getYearMonth(draft.month);
+    if (!ym) {
+      setToast("월 표시 형식이 올바르지 않습니다. (예: 2026.06)");
+      return;
+    }
+
+    setHolidayLoading(true);
+    try {
+      const res = await fetch(`/api/holidays?year=${ym.year}&month=${ym.month}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setToast(data.error || "공휴일 정보를 불러오지 못했습니다.");
+        return;
+      }
+
+      const holidays: HolidayItem[] = data.holidays;
+
+      if (holidays.length === 0) {
+        setToast("해당 월에 공휴일이 없습니다.");
+        return;
+      }
+
+      // 이미 등록된 공휴일과 중복 확인
+      const existingDays = new Set(draft.rows.map((r) => r.day));
+      const newRows = holidays
+        .filter((h) => h.isHoliday)
+        .filter((h) => {
+          const dayLabel = `${formatHolidayDay(h.date)} (${getDayName(h.date)})`;
+          const dayLabelWithName = `${formatHolidayDay(h.date)} (${h.name})`;
+          return !existingDays.has(dayLabel) && !existingDays.has(dayLabelWithName);
+        })
+        .map((h) => ({
+          day: `${formatHolidayDay(h.date)} (${h.name})`,
+          hours: "휴진",
+          note: "공휴일",
+        }));
+
+      if (newRows.length === 0) {
+        setToast("모든 공휴일이 이미 등록되어 있습니다.");
+        return;
+      }
+
+      setDraft((p) => ({
+        ...p,
+        rows: [...p.rows, ...newRows],
+      }));
+
+      setToast(`${newRows.length}개의 공휴일이 추가되었습니다.`);
+    } catch {
+      setToast("공휴일 정보를 불러오는 중 오류가 발생했습니다.");
+    } finally {
+      setHolidayLoading(false);
+    }
   };
 
   return (
@@ -182,9 +261,19 @@ export default function ScheduleAdminPage() {
           >
             일정 항목
           </h3>
-          <Button size="sm" variant="primary" onClick={addRow}>
-            + 항목 추가
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={fetchHolidays}
+              disabled={holidayLoading}
+            >
+              {holidayLoading ? "불러오는 중..." : "공휴일 자동 추가"}
+            </Button>
+            <Button size="sm" variant="primary" onClick={addRow}>
+              + 항목 추가
+            </Button>
+          </div>
         </div>
         <div className="space-y-2">
           {draft.rows.map((row, i) => (
@@ -241,9 +330,9 @@ export default function ScheduleAdminPage() {
 
       <Card className="mt-6 bg-yellow-50 border-yellow-200">
         <p className="text-sm text-yellow-900" style={{ lineHeight: 1.6 }}>
-          💡 매월 초에 제목과 월 표시를 변경하고, 해당 월의 휴진일이나 특별
-          일정을 항목에 추가하면 됩니다. 이벤트 팝업이 함께 활성화되어 있으면
-          탭으로 전환할 수 있습니다.
+          💡 매월 초에 제목과 월 표시를 변경하고, &ldquo;공휴일 자동 추가&rdquo; 버튼을 클릭하면
+          해당 월의 공휴일(설날, 추석, 대체공휴일 포함)이 자동으로 휴진 항목에 추가됩니다.
+          공공데이터포털 API 키가 필요합니다.
         </p>
       </Card>
 

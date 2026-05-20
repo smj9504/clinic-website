@@ -70,18 +70,9 @@ export default function PopupModal() {
         style={{ animation: "scaleIn 400ms cubic-bezier(0.16, 1, 0.3, 1)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={close}
-          className="absolute top-4 right-4 text-2xl p-2 z-10"
-          style={{ color: tab === "event" ? "white" : "var(--color-ink)" }}
-          aria-label={t("popup.close")}
-        >
-          ✕
-        </button>
-
         {/* Tabs */}
         {showTabs && (
-          <div className="flex border-b border-line">
+          <div className="flex border-b border-line relative">
             <button
               onClick={() => { setTab("event"); setDismissToday(false); }}
               className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${
@@ -104,7 +95,26 @@ export default function PopupModal() {
             >
               {t("popup.scheduleLabel")}
             </button>
+            <button
+              onClick={close}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-xl p-2 text-ink-muted hover:text-ink transition-colors"
+              aria-label={t("popup.close")}
+            >
+              ✕
+            </button>
           </div>
+        )}
+
+        {/* Close button when no tabs */}
+        {!showTabs && (
+          <button
+            onClick={close}
+            className="absolute top-4 right-4 text-2xl p-2 z-10"
+            style={{ color: tab === "event" ? "white" : "var(--color-ink)" }}
+            aria-label={t("popup.close")}
+          >
+            ✕
+          </button>
         )}
 
         {/* Event Tab Content */}

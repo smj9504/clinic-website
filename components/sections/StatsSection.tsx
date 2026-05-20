@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useT } from "@/lib/i18n";
+import { useSiteData } from "@/lib/useSiteData";
 
 type Stat = {
   label: string;
@@ -54,8 +55,8 @@ function StatItem({ stat, started }: { stat: Stat; started: boolean }) {
         <span style={{ fontSize: "0.6em", fontWeight: 400 }}>{stat.suffix}</span>
       </div>
       <div
-        className="text-ink-soft text-sm font-medium"
-        style={{ letterSpacing: "-0.01em" }}
+        className="text-sm font-medium"
+        style={{ letterSpacing: "-0.01em", color: "rgba(255,255,255,0.7)" }}
       >
         {stat.label}
       </div>
@@ -65,6 +66,8 @@ function StatItem({ stat, started }: { stat: Stat; started: boolean }) {
 
 export default function StatsSection() {
   const t = useT();
+  const { showStats } = useSiteData();
+
   const ref = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(false);
 
@@ -92,6 +95,8 @@ export default function StatsSection() {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  if (!showStats) return null;
 
   return (
     <section className="py-20 md:py-28" style={{ background: "var(--color-surface-dark)" }}>
