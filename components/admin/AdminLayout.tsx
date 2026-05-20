@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { isLoggedIn, logout, resetSiteData } from "@/lib/storage";
+import { isLoggedIn, logout, resetSiteData, translateAndSyncToEnglish } from "@/lib/storage";
 import { AdminLocaleProvider, useAdminLocale } from "@/lib/adminLocale";
 import { Toast } from "@/components/admin/ui";
 import type { Locale } from "@/lib/i18n";
@@ -22,6 +22,23 @@ const adminMenu = [
 
 function LocaleToggle() {
   const { editingLocale, setEditingLocale } = useAdminLocale();
+  const [translating, setTranslating] = useState(false);
+  const [translateMsg, setTranslateMsg] = useState<string | null>(null);
+
+  const handleAutoTranslate = async () => {
+    if (!confirm("한국어 콘텐츠를 영어로 자동 번역합니다.\n기존 영어 콘텐츠가 덮어씌워집니다.\n\n계속하시겠습니까?")) return;
+    setTranslating(true);
+    setTranslateMsg(null);
+    const result = await translateAndSyncToEnglish();
+    setTranslating(false);
+    if (result.success) {
+      setTranslateMsg("번역 완료!");
+      setTimeout(() => setTranslateMsg(null), 3000);
+    } else {
+      setTranslateMsg("번역 실패: " + (result.error || "알 수 없는 오류"));
+      setTimeout(() => setTranslateMsg(null), 5000);
+    }
+  };
 
   return (
     <div className="px-6 py-3 border-b border-white/10">
@@ -43,6 +60,18 @@ function LocaleToggle() {
           </button>
         ))}
       </div>
+      <button
+        onClick={handleAutoTranslate}
+        disabled={translating}
+        className="w-full mt-2 py-1.5 text-[0.7rem] font-semibold rounded bg-white/10 text-white/70 hover:bg-white/15 hover:text-white transition-colors disabled:opacity-50"
+      >
+        {translating ? "번역 중..." : "한국어 → 영어 자동 번역"}
+      </button>
+      {translateMsg && (
+        <div className={`mt-1.5 text-[0.65rem] ${translateMsg.includes("실패") ? "text-red-400" : "text-green-400"}`}>
+          {translateMsg}
+        </div>
+      )}
     </div>
   );
 }
