@@ -45,7 +45,8 @@ const emptyEvent: Omit<Event, "id"> = {
 
 export default function EventsAdminPage() {
   const { editingLocale } = useAdminLocale();
-  const { events, eventEndedHide } = useSiteDataForLocale(editingLocale);
+  const { events, eventEndedHide, clinicInfo } = useSiteDataForLocale(editingLocale);
+  const fallbackImage = clinicInfo.defaultImage || "/gowoonbit.jpg";
   const update = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
     await updateSiteData(fn, editingLocale);
     await syncImages(editingLocale);
@@ -244,9 +245,7 @@ export default function EventsAdminPage() {
           return (
             <Card key={ev.id} className={`p-4 flex gap-4 ${status === "ended" ? "opacity-60" : ""}`}>
               <div className="w-32 h-24 bg-bg-alt rounded overflow-hidden flex-shrink-0">
-                {ev.image && (
-                  <img src={ev.image} alt={ev.title} className="w-full h-full object-cover" />
-                )}
+                <img src={ev.image || fallbackImage} alt={ev.title} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">

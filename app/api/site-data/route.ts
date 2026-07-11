@@ -36,12 +36,17 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "locale and data required" }, { status: 400 });
   }
 
-  // Simple password check (same as admin login)
-  if (password !== "admin1234") {
+  // DB에서 비밀번호 조회 후 검증
+  const supabase = getServiceClient();
+  const { data: configRow } = await supabase
+    .from("site_data")
+    .select("data")
+    .eq("locale", "_config")
+    .single();
+  const storedPassword = configRow?.data?.admin_password || "admin1234";
+  if (password !== storedPassword) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-
-  const supabase = getServiceClient();
 
   const { error } = await supabase
     .from("site_data")

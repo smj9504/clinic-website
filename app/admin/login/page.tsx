@@ -10,9 +10,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const clinicName = typeof window !== "undefined" ? getSiteData("ko").clinicInfo.name : "";
 
-  const onSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(password)) {
+    setLoading(true);
+    const ok = await login(password);
+    setLoading(false);
+    if (ok) {
       router.replace("/admin");
     } else {
       setError("비밀번호가 일치하지 않습니다.");
@@ -68,10 +73,11 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="w-full mt-6 bg-ink text-ink-inverse py-3 rounded font-semibold text-sm hover:bg-ink-soft transition-colors"
+            disabled={loading}
+            className="w-full mt-6 bg-ink text-ink-inverse py-3 rounded font-semibold text-sm hover:bg-ink-soft transition-colors disabled:opacity-50"
             style={{ letterSpacing: "-0.02em" }}
           >
-            로그인
+            {loading ? "로그인 중..." : "로그인"}
           </button>
 
         </form>

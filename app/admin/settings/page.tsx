@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
-import { updateSiteData, syncImages } from "@/lib/storage";
+import { updateSiteData, syncImages, changePassword } from "@/lib/storage";
 import type { HeroSlide, Treatment } from "@/lib/data";
 import {
   PageHeader,
@@ -16,7 +16,7 @@ import {
   Toast,
 } from "@/components/admin/ui";
 
-type Tab = "clinic" | "hero" | "treatments" | "about";
+type Tab = "clinic" | "hero" | "treatments" | "about" | "password";
 
 export default function SettingsAdminPage() {
   const { editingLocale } = useAdminLocale();
@@ -30,6 +30,7 @@ export default function SettingsAdminPage() {
     { key: "hero", label: "히어로 슬라이드" },
     { key: "treatments", label: "진료 내용" },
     { key: "about", label: "한의원 소개" },
+    { key: "password", label: "비밀번호 변경" },
   ];
 
   return (
@@ -60,6 +61,7 @@ export default function SettingsAdminPage() {
       {tab === "hero" && <HeroSlidesTab onSave={() => showToast("저장되었습니다")} />}
       {tab === "treatments" && <TreatmentsTab onSave={() => showToast("저장되었습니다")} />}
       {tab === "about" && <AboutTab onSave={() => showToast("저장되었습니다")} />}
+      {tab === "password" && <PasswordTab onSave={() => showToast("비밀번호가 변경되었습니다")} />}
 
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </>
@@ -653,5 +655,81 @@ function AboutTab({ onSave }: { onSave: () => void }) {
         <Button onClick={save}>저장</Button>
       </div>
     </>
+  );
+}
+
+// ─── Password Tab ───
+function PasswordTab({ onSave }: { onSave: () => void }) {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const save = async () => {
+    setError("");
+    if (!current || !next) {
+      setError("모든 필드를 입력해 주세요.");
+      return;
+    }
+    if (next.length < 4) {
+      setError("새 비밀번호는 4자 이상이어야 합니다.");
+      return;
+    }
+    if (next !== confirm) {
+      setError("새 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+    setLoading(true);
+    const result = await changePassword(current, next);
+    setLoading(false);
+    if (result.success) {
+      setCurrent("");
+      setNext("");
+      setConfirm("");
+      onSave();
+    } else {
+      setError(result.error || "변경에 실패했습니다.");
+    }
+  };
+
+  return (
+    <Card className="max-w-md">
+      <h3 className="font-semibold mb-4" style={{ letterSpacing: "-0.02em" }}>
+        관리자 비밀번호 변경
+      </h3>
+      <Field label="현재 비밀번호">
+        <TextInput
+          type="password"
+          value={current}
+          onChange={(e) => { setCurrent(e.target.value); setError(""); }}
+          placeholder="현재 비밀번호"
+        />
+      </Field>
+      <Field label="새 비밀번호">
+        <TextInput
+          type="password"
+          value={next}
+          onChange={(e) => { setNext(e.target.value); setError(""); }}
+          placeholder="4자 이상"
+        />
+      </Field>
+      <Field label="새 비밀번호 확인">
+        <TextInput
+          type="password"
+          value={confirm}
+          onChange={(e) => { setConfirm(e.target.value); setError(""); }}
+          placeholder="새 비밀번호 재입력"
+        />
+      </Field>
+      {error && (
+        <p className="text-sm text-red-600 mb-4" style={{ letterSpacing: "-0.02em" }}>
+          {error}
+        </p>
+      )}
+      <Button onClick={save} disabled={loading}>
+        {loading ? "변경 중..." : "비밀번호 변경"}
+      </Button>
+    </Card>
   );
 }

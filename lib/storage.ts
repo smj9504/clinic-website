@@ -706,23 +706,49 @@ export function generateId(prefix = "id") {
     .slice(2, 7)}`;
 }
 
-// ─── 인증 (단독 계정, 데모용) ───
+// ─── 인증 ───
 const AUTH_KEY = "clinic_admin_auth";
-const DEFAULT_PASSWORD = "admin1234"; // 데모용. 실 운영 시 백엔드 인증으로 교체.
 
 export function isLoggedIn(): boolean {
   if (typeof window === "undefined") return false;
   return sessionStorage.getItem(AUTH_KEY) === "true";
 }
 
-export function login(password: string): boolean {
-  if (password === DEFAULT_PASSWORD) {
-    sessionStorage.setItem(AUTH_KEY, "true");
-    return true;
-  }
+export async function login(password: string): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (res.ok) {
+      sessionStorage.setItem(AUTH_KEY, "true");
+      sessionStorage.setItem("clinic_admin_pw", password);
+      return true;
+    }
+  } catch {}
   return false;
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch("/api/admin-password", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const json = await res.json();
+    if (res.ok) {
+      sessionStorage.setItem("clinic_admin_pw", newPassword);
+      return { success: true };
+    }
+    return { success: false, error: json.error };
+  } catch {
+    return { success: false, error: "네트워크 오류" };
+  }
 }
 
 export function logout() {
   sessionStorage.removeItem(AUTH_KEY);
+  sessionStorage.removeItem("clinic_admin_pw");
 }
