@@ -124,14 +124,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const onReset = () => {
     if (
-      confirm(
-        "모든 콘텐츠가 초기 상태로 되돌아갑니다.\n(데모용 기능 - 실 운영에서는 사용하지 마세요)\n\n계속하시겠습니까?"
+      !confirm(
+        "⚠️ 모든 콘텐츠가 초기 상태로 되돌아갑니다.\n수정한 모든 데이터가 삭제됩니다.\n\n정말 초기화하시겠습니까?"
       )
-    ) {
-      resetSiteData();
-      alert("초기화 완료. 페이지를 새로고침합니다.");
-      location.reload();
+    ) return;
+    const input = prompt('초기화를 진행하려면 "초기화"를 입력하세요.');
+    if (input !== "초기화") {
+      alert("입력이 일치하지 않아 초기화가 취소되었습니다.");
+      return;
     }
+    resetSiteData();
+    alert("초기화 완료. 페이지를 새로고침합니다.");
+    location.reload();
   };
 
   return (
