@@ -113,9 +113,11 @@ export default function MenusAdminPage() {
                   </Field>
                   <Field label="링크 경로">
                     <TextInput
-                      value={draft.href ?? m.href}
-                      onChange={(e) => setDraft((p) => ({ ...p, href: e.target.value }))}
+                      value={m.href}
+                      disabled
+                      style={{ opacity: 0.6, cursor: "not-allowed" }}
                     />
+                    <p className="text-xs text-ink-muted mt-1">링크 경로는 변경할 수 없습니다.</p>
                   </Field>
                 </div>
                 <Field label="배너 이미지" hint="해당 페이지 상단에 표시되는 배경 이미지 (권장 1920×600)">
