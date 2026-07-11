@@ -35,7 +35,7 @@ function eventToItem(ev: Event): PopupItem {
 
 export default function PopupAdminPage() {
   const { editingLocale } = useAdminLocale();
-  const { popup, events } = useSiteDataForLocale(editingLocale);
+  const { popup, events, loaded } = useSiteDataForLocale(editingLocale);
   const update = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
     await updateSiteData(fn, editingLocale);
     await syncImages(editingLocale);
@@ -151,7 +151,9 @@ export default function PopupAdminPage() {
           팝업에 표시할 이벤트를 체크하세요. 여러 개 선택 가능합니다.
         </p>
 
-        {sortedEvents.length === 0 ? (
+        {!loaded ? (
+          <p className="text-sm text-ink-muted py-4">불러오는 중...</p>
+        ) : sortedEvents.length === 0 ? (
           <p className="text-sm text-ink-muted py-4">
             등록된 이벤트가 없습니다. 이벤트 관리에서 먼저 추가해 주세요.
           </p>

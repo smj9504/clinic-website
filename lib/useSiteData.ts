@@ -10,10 +10,11 @@ import { useLocale, type Locale } from "./i18n";
  * 2. 마운트 후: DB에서 최신 데이터 비동기 fetch → 캐시 갱신
  * 3. Admin 수정 시: siteDataUpdated 이벤트로 즉시 반영
  */
-export function useSiteData(): SiteData & { hydrated: boolean } {
+export function useSiteData(): SiteData & { hydrated: boolean; loaded: boolean } {
   const { locale } = useLocale();
   const [data, setData] = useState<SiteData>(getDefaultSiteData("ko"));
   const [hydrated, setHydrated] = useState(false);
+  const [dbLoaded, setDbLoaded] = useState(false);
 
   useEffect(() => {
     let stale = false;
@@ -21,16 +22,21 @@ export function useSiteData(): SiteData & { hydrated: boolean } {
     // 1) 캐시에서 즉시 로드
     setData(getSiteData(locale));
     setHydrated(true);
+    setDbLoaded(false);
 
     // 2) DB에서 최신 데이터 fetch
     fetchSiteData(locale).then((fresh) => {
-      if (!stale) setData(fresh);
+      if (!stale) {
+        setData(fresh);
+        setDbLoaded(true);
+      }
     });
 
     // 3) Admin 수정 이벤트 구독
     const onUpdate = () => {
       stale = true; // DB fetch 결과보다 로컬 수정을 우선
       setData(getSiteData(locale));
+      setDbLoaded(true);
     };
     window.addEventListener("siteDataUpdated", onUpdate);
     window.addEventListener("storage", onUpdate);
@@ -42,28 +48,34 @@ export function useSiteData(): SiteData & { hydrated: boolean } {
   }, [locale]);
 
   const resolved = hydrated ? data : getDefaultSiteData("ko");
-  return { ...resolved, hydrated };
+  return { ...resolved, hydrated, loaded: dbLoaded };
 }
 
 /**
  * Admin용: 특정 locale의 데이터를 직접 조회하는 Hook
  */
-export function useSiteDataForLocale(locale: Locale): SiteData {
+export function useSiteDataForLocale(locale: Locale): SiteData & { loaded: boolean } {
   const [data, setData] = useState<SiteData>(getDefaultSiteData(locale));
   const [hydrated, setHydrated] = useState(false);
+  const [dbLoaded, setDbLoaded] = useState(false);
 
   useEffect(() => {
     let stale = false;
     setData(getSiteData(locale));
     setHydrated(true);
+    setDbLoaded(false);
 
     fetchSiteData(locale).then((fresh) => {
-      if (!stale) setData(fresh);
+      if (!stale) {
+        setData(fresh);
+        setDbLoaded(true);
+      }
     });
 
     const onUpdate = () => {
       stale = true; // DB fetch 결과보다 로컬 수정을 우선
       setData(getSiteData(locale));
+      setDbLoaded(true);
     };
     window.addEventListener("siteDataUpdated", onUpdate);
     window.addEventListener("storage", onUpdate);
@@ -74,7 +86,8 @@ export function useSiteDataForLocale(locale: Locale): SiteData {
     };
   }, [locale]);
 
-  return hydrated ? data : getDefaultSiteData(locale);
+  const resolved = hydrated ? data : getDefaultSiteData(locale);
+  return { ...resolved, loaded: dbLoaded };
 }
 
 /**

@@ -28,7 +28,7 @@ function isEventActive(ev: { startDate?: string; endDate?: string }) {
 }
 
 export default function PopupModal() {
-  const { popup, schedulePopup, events } = useSiteData();
+  const { popup, schedulePopup, events, loaded } = useSiteData();
   const t = useT();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"event" | "schedule">("event");
@@ -72,6 +72,7 @@ export default function PopupModal() {
   const hasOpenedRef = useRef(false);
 
   useEffect(() => {
+    if (!loaded) return; // DB 로드 완료 전에는 실행하지 않음
     if (hasOpenedRef.current) return;
     if (!eventActive && !scheduleActive) return;
 
@@ -96,7 +97,7 @@ export default function PopupModal() {
     hasOpenedRef.current = true;
     const timer = setTimeout(() => setOpen(true), 2000);
     return () => clearTimeout(timer);
-  }, [eventActive, scheduleActive, popupItems.length]);
+  }, [loaded, eventActive, scheduleActive, popupItems.length]);
 
   const close = () => {
     if (dismissToday) {
