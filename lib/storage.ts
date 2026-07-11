@@ -201,20 +201,22 @@ export type Popup = {
 
 export const defaultPopup: Popup = {
   id: "p1",
-  title: "5월 다이어트 패키지\n30% 할인",
-  body: "한의학적 체질 분석을 바탕으로 한 개인 맞춤 다이어트 프로그램. 5월 한 달 동안 30% 특별 할인.",
-  image: sampleImages.event1,
+  title: "",
+  body: "",
+  image: "",
   linkUrl: "/events",
-  isActive: true,
+  isActive: false,
+  items: [],
 };
 
 export const defaultPopupEn: Popup = {
   id: "p1",
-  title: "May Diet Package\n30% Off",
-  body: "A personalized diet program based on constitutional analysis. Special 30% discount throughout May.",
-  image: sampleImages.event1,
+  title: "",
+  body: "",
+  image: "",
   linkUrl: "/events",
-  isActive: true,
+  isActive: false,
+  items: [],
 };
 
 // ─── Schedule Popup (진료일정 팝업) ───

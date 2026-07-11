@@ -37,26 +37,10 @@ export default function PopupModal() {
 
   const scheduleActive = schedulePopup?.isActive;
 
-  // Resolve popup items: use items[] if available, fall back to single legacy fields
-  // 삭제된 이벤트와 종료된 이벤트는 제외
+  // 삭제된 이벤트와 종료/예정 이벤트는 제외
   const popupItems: PopupItem[] = useMemo(() => {
-    let items: PopupItem[];
-    if (popup?.items && popup.items.length > 0) {
-      items = popup.items;
-    } else if (popup?.title) {
-      items = [{
-        eventId: 0,
-        title: popup.title,
-        body: popup.body,
-        image: popup.image,
-        linkUrl: popup.linkUrl,
-      }];
-    } else {
-      items = [];
-    }
-    // eventId > 0인 항목만 필터 (존재하고 종료되지 않은 이벤트만)
+    const items = popup?.items ?? [];
     return items.filter((item) => {
-      if (item.eventId === 0) return true; // legacy 단일 팝업
       const ev = events.find((e) => e.id === item.eventId);
       return ev && isEventActive(ev);
     });
