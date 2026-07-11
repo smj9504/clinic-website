@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { isLoggedIn, logout, resetSiteData, translateAndSyncToEnglish } from "@/lib/storage";
+import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { AdminLocaleProvider, useAdminLocale } from "@/lib/adminLocale";
 import { Toast } from "@/components/admin/ui";
 import type { Locale } from "@/lib/i18n";
@@ -82,6 +83,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [ready, setReady] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const { clinicInfo } = useSiteDataForLocale("ko");
+  const clinicName = clinicInfo.name || "관리자";
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -162,7 +165,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 className="font-display font-bold mb-1"
                 style={{ fontSize: "1.25rem", letterSpacing: "-0.03em" }}
               >
-                고운빛한의원
+                {clinicName}
               </div>
               <div className="text-xs opacity-60" style={{ letterSpacing: "0.1em" }}>
                 ADMIN PANEL
@@ -237,7 +240,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               ☰
             </button>
             <span className="font-semibold text-sm" style={{ letterSpacing: "-0.02em" }}>
-              고운빛한의원 관리자
+              {clinicName} 관리자
             </span>
           </div>
           <div className="p-4 md:p-10 max-w-6xl">{children}</div>

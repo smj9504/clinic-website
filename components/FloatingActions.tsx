@@ -15,6 +15,7 @@ function findAnswer(
   query: string,
   faqs: { question: string; answer: string }[],
   clinicInfo: {
+    name: string;
     phone: string;
     address: string;
     hours: { weekday: string; saturday: string; closed: string };
@@ -36,7 +37,7 @@ function findAnswer(
     },
     {
       patterns: ["주소", "위치", "어디", "찾아", "address", "location", "where"],
-      answer: `주소: ${clinicInfo.address}\n\n네이버 지도에서 '고운빛한의원'을 검색하시면 쉽게 찾으실 수 있습니다.`,
+      answer: `주소: ${clinicInfo.address}\n\n네이버 지도에서 '${clinicInfo.name}'을 검색하시면 쉽게 찾으실 수 있습니다.`,
     },
     {
       patterns: ["예약", "접수", "신청", "book", "reservation", "appointment"],

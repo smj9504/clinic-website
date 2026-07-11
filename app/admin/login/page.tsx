@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/lib/storage";
+import { login, getSiteData } from "@/lib/storage";
 
 export default function LoginPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const clinicName = typeof window !== "undefined" ? getSiteData("ko").clinicInfo.name : "";
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +27,7 @@ export default function LoginPage() {
             className="font-display mb-2"
             style={{ fontSize: "2rem", fontWeight: 700, letterSpacing: "-0.04em" }}
           >
-            고운빛한의원
+            {clinicName || "관리자"}
           </div>
           <div
             className="text-xs text-ink-muted"
