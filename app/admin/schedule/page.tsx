@@ -36,7 +36,7 @@ function getDayName(dateStr: string): string {
 export default function ScheduleAdminPage() {
   const { editingLocale } = useAdminLocale();
   const { schedulePopup } = useSiteDataForLocale(editingLocale);
-  const update: typeof updateSiteData = (fn) =>
+  const update = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) =>
     updateSiteData(fn, editingLocale);
   const [draft, setDraft] = useState<SchedulePopup>(schedulePopup);
   const [toast, setToast] = useState<string | null>(null);

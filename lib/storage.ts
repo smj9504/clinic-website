@@ -391,48 +391,60 @@ export async function fetchSiteData(locale: Locale = "ko"): Promise<SiteData> {
 }
 
 /** 메모리 캐시 + localStorage(텍스트만) + DB에 저장 */
-export function setSiteData(data: SiteData, locale: Locale = "ko") {
+export async function setSiteData(data: SiteData, locale: Locale = "ko") {
   if (typeof window === "undefined") return;
+  const prev = _memCache[locale];
   _memCache[locale] = data;
   try {
     localStorage.setItem(storageKey(locale), JSON.stringify(stripBase64Images(data)));
   } catch {}
   window.dispatchEvent(new CustomEvent("siteDataUpdated"));
 
-  // DB에 비동기 저장
+  // DB에 저장 (완료 대기)
   const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
-  fetch("/api/site-data", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ locale, data, password }),
-  })
-    .then((res) => {
-      if (!res.ok) {
-        res.text().then((msg) => {
-          window.dispatchEvent(
-            new CustomEvent("siteDataSaveError", { detail: `저장 실패 (${res.status}): ${msg}` })
-          );
-        });
-      }
-    })
-    .catch((err) => {
-      window.dispatchEvent(
-        new CustomEvent("siteDataSaveError", { detail: `네트워크 오류로 저장에 실패했습니다. (${err?.message ?? err})` })
-      );
+  try {
+    const res = await fetch("/api/site-data", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ locale, data, password }),
     });
+    if (!res.ok) {
+      const msg = await res.text();
+      // DB 저장 실패 → 캐시 롤백
+      if (prev) {
+        _memCache[locale] = prev;
+        try { localStorage.setItem(storageKey(locale), JSON.stringify(stripBase64Images(prev))); } catch {}
+        window.dispatchEvent(new CustomEvent("siteDataUpdated"));
+      }
+      window.dispatchEvent(
+        new CustomEvent("siteDataSaveError", { detail: `저장 실패 (${res.status}): ${msg}` })
+      );
+    }
+  } catch (err: unknown) {
+    // 네트워크 오류 → 캐시 롤백
+    if (prev) {
+      _memCache[locale] = prev;
+      try { localStorage.setItem(storageKey(locale), JSON.stringify(stripBase64Images(prev))); } catch {}
+      window.dispatchEvent(new CustomEvent("siteDataUpdated"));
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    window.dispatchEvent(
+      new CustomEvent("siteDataSaveError", { detail: `네트워크 오류로 저장에 실패했습니다. (${message})` })
+    );
+  }
 }
 
-export function updateSiteData(
+export async function updateSiteData(
   updater: (data: SiteData) => SiteData,
   locale: Locale = "ko"
 ) {
   const current = getSiteData(locale);
   const next = updater(current);
-  setSiteData(next, locale);
+  await setSiteData(next, locale);
 }
 
 // ─── 이미지 동기화 (언어 무관하게 동일한 이미지 유지) ───
-export function syncImages(locale: Locale) {
+export async function syncImages(locale: Locale) {
   const otherLocale = locale === "ko" ? "en" : "ko";
   const current = getSiteData(locale);
   const other = getSiteData(otherLocale);
@@ -443,10 +455,10 @@ export function syncImages(locale: Locale) {
       ...s,
       image: current.heroSlides[i]?.image ?? s.image,
     })),
-    events: other.events.map((e, i) => ({
-      ...e,
-      image: current.events[i]?.image ?? e.image,
-    })),
+    events: current.events.map((ce) => {
+      const oe = other.events.find((o) => o.id === ce.id);
+      return oe ? { ...oe, image: ce.image } : { ...ce };
+    }),
     treatments: other.treatments.map((t, i) => ({
       ...t,
       image: current.treatments[i]?.image ?? t.image,
@@ -464,7 +476,7 @@ export function syncImages(locale: Locale) {
     },
   };
 
-  setSiteData(synced, otherLocale);
+  await setSiteData(synced, otherLocale);
 }
 
 export function resetSiteData() {

@@ -23,7 +23,7 @@ const emptyFaq: Omit<FaqItem, "id" | "sortOrder"> = {
 export default function FaqsAdminPage() {
   const { editingLocale } = useAdminLocale();
   const { faqs } = useSiteDataForLocale(editingLocale);
-  const update: typeof updateSiteData = (fn) => updateSiteData(fn, editingLocale);
+  const update = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
   const [editing, setEditing] = useState<string | "new" | null>(null);
   const [draft, setDraft] = useState<Omit<FaqItem, "id" | "sortOrder">>(emptyFaq);
   const [toast, setToast] = useState<string | null>(null);

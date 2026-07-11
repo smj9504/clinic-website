@@ -13,7 +13,7 @@ const ko = {
   "section.director": "대표원장 소개",
   "section.notices": "공지사항",
   "section.more": "더 보기 →",
-  "section.detail": "자세히 →",
+  "section.detail": "자세히",
 
   // Badges
   "badge.event": "이벤트",
@@ -105,7 +105,7 @@ const en: Record<keyof typeof ko, string> = {
   "section.director": "Meet the Director",
   "section.notices": "Notices",
   "section.more": "See More →",
-  "section.detail": "Details →",
+  "section.detail": "Details",
 
   // Badges
   "badge.event": "Event",

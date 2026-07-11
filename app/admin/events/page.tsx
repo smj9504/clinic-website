@@ -46,9 +46,9 @@ const emptyEvent: Omit<Event, "id"> = {
 export default function EventsAdminPage() {
   const { editingLocale } = useAdminLocale();
   const { events } = useSiteDataForLocale(editingLocale);
-  const update: typeof updateSiteData = (fn) => {
-    updateSiteData(fn, editingLocale);
-    syncImages(editingLocale);
+  const update = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
+    await updateSiteData(fn, editingLocale);
+    await syncImages(editingLocale);
   };
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [draft, setDraft] = useState<Omit<Event, "id">>(emptyEvent);
@@ -261,7 +261,7 @@ export default function EventsAdminPage() {
                   {ev.title}
                 </h3>
                 <p className="text-xs text-ink-muted line-clamp-2 mb-2">
-                  {ev.description}
+                  {ev.description.replace(/<[^>]*>/g, "")}
                 </p>
                 <div className="flex gap-1 flex-wrap">
                   <Button

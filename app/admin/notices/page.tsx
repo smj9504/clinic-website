@@ -45,7 +45,7 @@ const emptyNotice: Omit<Notice, "id"> = {
 export default function NoticesAdminPage() {
   const { editingLocale } = useAdminLocale();
   const { notices } = useSiteDataForLocale(editingLocale);
-  const update: typeof updateSiteData = (fn) => updateSiteData(fn, editingLocale);
+  const update = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [draft, setDraft] = useState<Omit<Notice, "id">>(emptyNotice);
   const [toast, setToast] = useState<string | null>(null);

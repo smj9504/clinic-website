@@ -96,13 +96,20 @@ export default function EventsPage() {
                     className="text-ink-soft mb-4"
                     style={{ fontSize: "1rem", lineHeight: 1.8 }}
                   >
-                    {event.description}
+                    {event.description.replace(/<[^>]*>/g, "")}
                   </p>
                   <span
                     className="inline-flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all"
                     style={{ letterSpacing: "-0.02em" }}
                   >
                     {t("section.detail")}
+                    <svg
+                      width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                      className="transition-transform duration-300 group-hover:translate-x-1"
+                    >
+                      <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+                    </svg>
                   </span>
                 </Link>
               ))}

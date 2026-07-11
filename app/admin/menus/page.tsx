@@ -24,7 +24,7 @@ export default function MenusAdminPage() {
   const [newItem, setNewItem] = useState({ label: "", href: "" });
 
   const sorted = [...menus].sort((a, b) => a.sortOrder - b.sortOrder);
-  const update: typeof updateSiteData = (fn) => updateSiteData(fn, editingLocale);
+  const update = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
 
   const save = (id: string) => {
     update((d) => ({

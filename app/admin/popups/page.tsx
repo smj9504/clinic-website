@@ -36,9 +36,9 @@ function eventToItem(ev: Event): PopupItem {
 export default function PopupAdminPage() {
   const { editingLocale } = useAdminLocale();
   const { popup, events } = useSiteDataForLocale(editingLocale);
-  const update: typeof updateSiteData = (fn) => {
-    updateSiteData(fn, editingLocale);
-    syncImages(editingLocale);
+  const update = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
+    await updateSiteData(fn, editingLocale);
+    await syncImages(editingLocale);
   };
   const [draft, setDraft] = useState<Popup>(popup);
   const [toast, setToast] = useState<string | null>(null);

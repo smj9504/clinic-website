@@ -73,15 +73,6 @@ export default function LoginPage() {
             로그인
           </button>
 
-          <p
-            className="text-xs text-ink-muted mt-6 text-center"
-            style={{ letterSpacing: "-0.01em" }}
-          >
-            데모 비밀번호:{" "}
-            <span className="font-mono bg-bg-alt px-1.5 py-0.5 rounded">
-              admin1234
-            </span>
-          </p>
         </form>
 
         <p

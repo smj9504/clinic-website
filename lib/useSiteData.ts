@@ -16,22 +16,26 @@ export function useSiteData(): SiteData & { hydrated: boolean } {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    let stale = false;
+
     // 1) 캐시에서 즉시 로드
     setData(getSiteData(locale));
     setHydrated(true);
 
     // 2) DB에서 최신 데이터 fetch
     fetchSiteData(locale).then((fresh) => {
-      setData(fresh);
+      if (!stale) setData(fresh);
     });
 
     // 3) Admin 수정 이벤트 구독
     const onUpdate = () => {
+      stale = true; // DB fetch 결과보다 로컬 수정을 우선
       setData(getSiteData(locale));
     };
     window.addEventListener("siteDataUpdated", onUpdate);
     window.addEventListener("storage", onUpdate);
     return () => {
+      stale = true;
       window.removeEventListener("siteDataUpdated", onUpdate);
       window.removeEventListener("storage", onUpdate);
     };
@@ -49,19 +53,22 @@ export function useSiteDataForLocale(locale: Locale): SiteData {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    let stale = false;
     setData(getSiteData(locale));
     setHydrated(true);
 
     fetchSiteData(locale).then((fresh) => {
-      setData(fresh);
+      if (!stale) setData(fresh);
     });
 
     const onUpdate = () => {
+      stale = true; // DB fetch 결과보다 로컬 수정을 우선
       setData(getSiteData(locale));
     };
     window.addEventListener("siteDataUpdated", onUpdate);
     window.addEventListener("storage", onUpdate);
     return () => {
+      stale = true;
       window.removeEventListener("siteDataUpdated", onUpdate);
       window.removeEventListener("storage", onUpdate);
     };

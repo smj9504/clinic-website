@@ -19,7 +19,7 @@ import {
 export default function DirectorAdminPage() {
   const { editingLocale } = useAdminLocale();
   const { director } = useSiteDataForLocale(editingLocale);
-  const update: typeof updateSiteData = (fn) => updateSiteData(fn, editingLocale);
+  const update = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
   const [draft, setDraft] = useState<Director>(director);
   const [toast, setToast] = useState<string | null>(null);
 

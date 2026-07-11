@@ -80,7 +80,7 @@ export default function EventsSection() {
                   className="text-ink-soft mb-5 line-clamp-2"
                   style={{ fontSize: "0.95rem", lineHeight: 1.7 }}
                 >
-                  {event.description}
+                  {event.description.replace(/<[^>]*>/g, "")}
                 </p>
                 <span
                   className="inline-flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all"

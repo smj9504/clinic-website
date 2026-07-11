@@ -228,7 +228,7 @@ export const clinicInfo = {
     saturday: "토요일 09:00 – 14:00",
     closed: "일·공휴일 휴진",
   },
-  reservationUrl: "https://map.naver.com",
+  reservationUrl: "https://m.place.naver.com/place/2015359820/booking?entry=plt",
   socialLinks: {
     blog: "#",
     instagram: "#",
@@ -407,7 +407,7 @@ export const clinicInfoEn = {
     saturday: "Saturday 09:00 – 14:00",
     closed: "Sun & Holidays Closed",
   },
-  reservationUrl: "https://map.naver.com",
+  reservationUrl: "https://m.place.naver.com/place/2015359820/booking?entry=plt",
   socialLinks: {
     blog: "#",
     instagram: "#",

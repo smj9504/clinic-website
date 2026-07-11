@@ -228,9 +228,9 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
 function HeroSlidesTab({ onSave }: { onSave: () => void }) {
   const { editingLocale } = useAdminLocale();
   const { heroSlides } = useSiteDataForLocale(editingLocale);
-  const updateData: typeof updateSiteData = (fn) => {
-    updateSiteData(fn, editingLocale);
-    syncImages(editingLocale);
+  const updateData = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
+    await updateSiteData(fn, editingLocale);
+    await syncImages(editingLocale);
   };
 
   const update = (id: number, patch: Partial<HeroSlide>) => {
@@ -371,7 +371,7 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
 function TreatmentsTab({ onSave }: { onSave: () => void }) {
   const { editingLocale } = useAdminLocale();
   const { treatments } = useSiteDataForLocale(editingLocale);
-  const updateData: typeof updateSiteData = (fn) => updateSiteData(fn, editingLocale);
+  const updateData = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
 
   const update = (id: number, patch: Partial<Treatment>) => {
     updateData((d) => ({
