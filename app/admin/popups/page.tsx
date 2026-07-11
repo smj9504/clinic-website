@@ -35,7 +35,8 @@ function eventToItem(ev: Event): PopupItem {
 
 export default function PopupAdminPage() {
   const { editingLocale } = useAdminLocale();
-  const { popup, events, loaded } = useSiteDataForLocale(editingLocale);
+  const { popup, events, loaded, clinicInfo } = useSiteDataForLocale(editingLocale);
+  const fallbackImage = clinicInfo.defaultImage || "/gowoonbit.jpg";
   const update = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
     await updateSiteData(fn, editingLocale);
     await syncImages(editingLocale);
@@ -178,11 +179,9 @@ export default function PopupAdminPage() {
                     style={{ accentColor: "var(--color-accent)" }}
                     className="w-4 h-4 flex-shrink-0"
                   />
-                  {ev.image && (
-                    <div className="w-14 h-10 rounded overflow-hidden flex-shrink-0 bg-bg-alt">
-                      <img src={ev.image} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  )}
+                  <div className="w-14 h-10 rounded overflow-hidden flex-shrink-0 bg-bg-alt">
+                    <img src={ev.image || fallbackImage} alt="" className="w-full h-full object-cover" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm truncate" style={{ letterSpacing: "-0.02em" }}>
                       {ev.title}
@@ -227,11 +226,9 @@ export default function PopupAdminPage() {
                 <span className="text-xs text-ink-muted font-mono w-6 text-center">
                   {i + 1}
                 </span>
-                {item.image && (
-                  <div className="w-12 h-9 rounded overflow-hidden flex-shrink-0">
-                    <img src={item.image} alt="" className="w-full h-full object-cover" />
-                  </div>
-                )}
+                <div className="w-12 h-9 rounded overflow-hidden flex-shrink-0 bg-bg-alt">
+                  <img src={item.image || fallbackImage} alt="" className="w-full h-full object-cover" />
+                </div>
                 <span
                   className="flex-1 text-sm font-medium truncate"
                   style={{ letterSpacing: "-0.02em" }}
