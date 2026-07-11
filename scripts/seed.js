@@ -96,7 +96,7 @@ const koData = {
   clinicInfo: {
     name: "고운빛한의원", phone: "02-XXX-XXXX", address: "서울특별시 ○○구 ○○대로 123",
     hours: { weekday: "평일 09:00 – 19:00", saturday: "토요일 09:00 – 14:00", closed: "일·공휴일 휴진" },
-    reservationUrl: "https://map.naver.com",
+    reservationUrl: "https://m.place.naver.com/place/2015359820/booking?entry=plt",
     socialLinks: { blog: "#", instagram: "#", kakao: "#" },
   },
 };
@@ -168,7 +168,7 @@ const enData = {
   clinicInfo: {
     name: "Gowoonbit Korean Medicine Clinic", phone: "02-XXX-XXXX", address: "123, OO-daero, OO-gu, Seoul",
     hours: { weekday: "Weekdays 09:00 – 19:00", saturday: "Saturday 09:00 – 14:00", closed: "Sun & Holidays Closed" },
-    reservationUrl: "https://map.naver.com",
+    reservationUrl: "https://m.place.naver.com/place/2015359820/booking?entry=plt",
     socialLinks: { blog: "#", instagram: "#", kakao: "#" },
   },
 };
