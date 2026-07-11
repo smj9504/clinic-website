@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
@@ -28,6 +29,8 @@ function isEventActive(ev: { startDate?: string; endDate?: string }) {
 }
 
 export default function PopupModal() {
+  const pathname = usePathname();
+  const isHome = pathname === "/" || pathname === "";
   const { popup, schedulePopup, events, loaded } = useSiteData();
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -57,6 +60,7 @@ export default function PopupModal() {
 
   useEffect(() => {
     if (!loaded) return; // DB 로드 완료 전에는 실행하지 않음
+    if (!isHome) return; // 메인 화면에서만 팝업 표시
     if (hasOpenedRef.current) return;
     if (!eventActive && !scheduleActive) return;
 
@@ -81,7 +85,7 @@ export default function PopupModal() {
     hasOpenedRef.current = true;
     const timer = setTimeout(() => setOpen(true), 2000);
     return () => clearTimeout(timer);
-  }, [loaded, eventActive, scheduleActive, popupItems.length]);
+  }, [loaded, isHome, eventActive, scheduleActive, popupItems.length]);
 
   const close = () => {
     if (dismissToday) {
