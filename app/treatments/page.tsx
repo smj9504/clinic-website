@@ -20,7 +20,7 @@ export default function TreatmentsPage() {
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
-            <Image src={banner} alt="" fill className="object-cover" sizes="100vw" quality={75} placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
+            <Image src={banner} alt="고운빛한의원 진료 안내" fill className="object-cover" sizes="100vw" quality={75} placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
           </div>
         )}
         <div className="container-default relative text-ink-inverse">

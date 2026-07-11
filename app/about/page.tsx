@@ -27,7 +27,7 @@ export default function AboutPage() {
         <div className="absolute inset-0 opacity-30">
           <Image
             src={banner || about.facilityImages[0] || "/placeholder.svg"}
-            alt=""
+            alt="고운빛한의원 소개"
             fill
             className="object-cover"
             sizes="100vw"

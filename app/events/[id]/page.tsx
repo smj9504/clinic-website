@@ -48,7 +48,7 @@ export default function EventDetailPage() {
         <div className="absolute inset-0">
           <Image
             src={event.image || fallbackImage}
-            alt=""
+            alt={event.title}
             fill
             className="object-cover"
             sizes="100vw"

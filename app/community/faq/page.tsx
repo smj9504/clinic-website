@@ -22,7 +22,7 @@ export default function FaqPage() {
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
-            <Image src={banner} alt="" fill className="object-cover" sizes="100vw" />
+            <Image src={banner} alt="고운빛한의원 자주 묻는 질문" fill className="object-cover" sizes="100vw" />
           </div>
         )}
         <div className="container-default relative text-ink-inverse">

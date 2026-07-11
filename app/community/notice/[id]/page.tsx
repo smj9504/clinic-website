@@ -47,7 +47,7 @@ export default function NoticeDetailPage() {
           <div className="absolute inset-0 opacity-30">
             <Image
               src={banner}
-              alt=""
+              alt={notice.title}
               fill
               className="object-cover"
               sizes="100vw"
