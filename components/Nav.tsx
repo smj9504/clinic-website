@@ -92,14 +92,15 @@ export default function Nav() {
             </button>
           </div>
 
-          <Link
+          <a
             href={clinicInfo.reservationUrl}
             target="_blank"
+            rel="noopener noreferrer"
             className="hidden sm:inline-flex px-5 py-2.5 border border-ink rounded-full text-sm font-medium hover:bg-ink hover:text-ink-inverse transition-all duration-200"
             style={{ letterSpacing: "-0.02em" }}
           >
             {t("nav.reservation")}
-          </Link>
+          </a>
 
           <button
             className="lg:hidden p-2"

@@ -161,9 +161,10 @@ export default function FloatingActions() {
   return (
     <>
       <div className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-3">
-        <Link
+        <a
           href={clinicInfo.reservationUrl}
           target="_blank"
+          rel="noopener noreferrer"
           className="bg-accent text-ink-inverse px-6 py-3.5 rounded-full text-sm font-semibold inline-flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:bg-accent-soft"
           style={{
             letterSpacing: "-0.02em",
@@ -171,7 +172,7 @@ export default function FloatingActions() {
           }}
         >
           {t("hero.reservation")}
-        </Link>
+        </a>
         <button
           onClick={() => (chatOpen ? setChatOpen(false) : handleOpen())}
           className="w-14 h-14 rounded-full bg-surface-dark text-ink-inverse flex items-center justify-center text-2xl transition-transform hover:scale-110"

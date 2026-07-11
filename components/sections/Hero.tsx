@@ -136,9 +136,9 @@ export default function Hero() {
           className="hero-text-up flex flex-wrap gap-4 mt-12"
           style={{ animationDelay: "800ms" }}
         >
-          <Link href={clinicInfo.reservationUrl} target="_blank" className="btn-primary">
+          <a href={clinicInfo.reservationUrl} target="_blank" rel="noopener noreferrer" className="btn-primary">
             {t("hero.reservation")}
-          </Link>
+          </a>
           <Link href="/treatments" className="btn-secondary">
             {t("hero.treatments")}
           </Link>
