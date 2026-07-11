@@ -372,6 +372,7 @@ function stripBase64Images(data: SiteData): SiteData {
     },
     popup: { ...data.popup, image: strip(data.popup.image) },
     menus: data.menus.map((m) => ({ ...m, bannerImage: strip(m.bannerImage ?? "") })),
+    clinicInfo: { ...data.clinicInfo, defaultImage: strip(data.clinicInfo.defaultImage ?? "") },
   };
 }
 
@@ -491,6 +492,7 @@ export async function syncImages(locale: Locale) {
     clinicInfo: {
       ...other.clinicInfo,
       bannerImages: current.clinicInfo.bannerImages,
+      defaultImage: current.clinicInfo.defaultImage,
     },
   };
 

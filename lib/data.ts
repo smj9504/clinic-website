@@ -206,6 +206,7 @@ export const clinicInfo = {
     about: sampleImages.facility,
     community: sampleImages.facility,
   },
+  defaultImage: "",
 };
 
 // ─── English Defaults ───
@@ -351,4 +352,5 @@ export const clinicInfoEn = {
     about: sampleImages.facility,
     community: sampleImages.facility,
   },
+  defaultImage: "",
 };

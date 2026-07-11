@@ -7,6 +7,7 @@ import { useT } from "@/lib/i18n";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
+const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 import type { EndedVisibility } from "@/lib/storage";
 
@@ -27,7 +28,8 @@ function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: Ended
 }
 
 export default function EventsPage() {
-  const { events: allEvents, menus, heroSlides, eventEndedHide } = useSiteData();
+  const { events: allEvents, menus, heroSlides, eventEndedHide, clinicInfo } = useSiteData();
+  const fallbackImage = clinicInfo.defaultImage || FALLBACK_IMAGE;
   const t = useT();
   const banner = getBannerImage(menus, "/events", heroSlides[0]?.image);
   const events = allEvents.filter((e) => !isHidden(e, eventEndedHide));
@@ -82,9 +84,8 @@ export default function EventsPage() {
                 >
                   <div className="aspect-[16/10] overflow-hidden rounded mb-6 bg-bg-alt relative">
                     <div className="relative w-full h-full transition-transform duration-700 ease-out group-hover:scale-[1.04]">
-                      {event.image && (
                         <Image
-                          src={event.image}
+                          src={event.image || fallbackImage}
                           alt={event.title}
                           fill
                           className="object-cover"
@@ -93,7 +94,6 @@ export default function EventsPage() {
                           placeholder="blur"
                           blurDataURL={BLUR_PLACEHOLDER}
                         />
-                      )}
                     </div>
                   </div>
                   <div

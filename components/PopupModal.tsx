@@ -36,7 +36,8 @@ function isEventActive(ev: { startDate?: string; endDate?: string }) {
 export default function PopupModal() {
   const pathname = usePathname();
   const isHome = pathname === "/" || pathname === "";
-  const { popup, schedulePopup, events, loaded } = useSiteData();
+  const { popup, schedulePopup, events, loaded, clinicInfo } = useSiteData();
+  const fallbackImage = clinicInfo.defaultImage || "/gowoonbit.jpg";
   const t = useT();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"event" | "schedule">("event");
@@ -194,7 +195,7 @@ export default function PopupModal() {
           <>
             <div className="relative aspect-[4/3] bg-accent">
               <Image
-                src={currentItem.image}
+                src={currentItem.image || fallbackImage}
                 alt={currentItem.title}
                 fill
                 className="object-cover"

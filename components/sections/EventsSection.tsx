@@ -8,6 +8,7 @@ import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNFOEU0REYiLz48L3N2Zz4=";
+const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 import type { EndedVisibility } from "@/lib/storage";
 
@@ -23,8 +24,9 @@ function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: Ended
 }
 
 export default function EventsSection() {
-  const { events, eventEndedHide } = useSiteData();
+  const { events, eventEndedHide, clinicInfo } = useSiteData();
   const t = useT();
+  const fallbackImage = clinicInfo.defaultImage || FALLBACK_IMAGE;
   const featured = events.filter((e) => !isHidden(e, eventEndedHide)).slice(0, 3);
   const headerRef = useScrollReveal<HTMLDivElement>();
   const gridRef = useScrollRevealGroup<HTMLDivElement>();
@@ -56,7 +58,7 @@ export default function EventsSection() {
               <div className="aspect-[4/3] overflow-hidden bg-bg-alt relative">
                 <div className="relative w-full h-full transition-transform duration-700 ease-out group-hover:scale-[1.06]">
                   <Image
-                    src={event.image}
+                    src={event.image || fallbackImage}
                     alt={event.title}
                     fill
                     className="object-cover"

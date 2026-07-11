@@ -169,6 +169,20 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
         </Card>
 
         <Card className="lg:col-span-2">
+          <h3 className="font-semibold mb-4" style={{ letterSpacing: "-0.02em" }}>
+            기본 이미지
+          </h3>
+          <p className="text-xs text-ink-muted mb-4">
+            이벤트·공지사항 등에서 이미지를 등록하지 않은 경우 표시되는 대체 이미지입니다.
+          </p>
+          <ImageInput
+            value={draft.defaultImage ?? ""}
+            onChange={(v) => setDraft((p) => ({ ...p, defaultImage: v }))}
+            aspectRatio="16 / 10"
+          />
+        </Card>
+
+        <Card className="lg:col-span-2">
           <label className="flex items-center gap-3 cursor-pointer mb-4">
             <input
               type="checkbox"
