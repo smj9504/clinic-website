@@ -37,15 +37,6 @@ export default function MenusAdminPage() {
     setToast("메뉴가 저장되었습니다");
   };
 
-  const remove = (id: string) => {
-    if (!confirm("이 메뉴를 삭제하시겠습니까?")) return;
-    update((d) => ({
-      ...d,
-      menus: d.menus.filter((m) => m.id !== id),
-    }));
-    setToast("메뉴가 삭제되었습니다");
-  };
-
   const toggleHide = (id: string) => {
     update((d) => ({
       ...d,
@@ -96,7 +87,7 @@ export default function MenusAdminPage() {
     <>
       <PageHeader
         title="메뉴 관리"
-        description="상단 네비게이션에 표시되는 메뉴를 관리합니다. 이름 변경, 순서 조정, 숨김 처리, 삭제가 가능합니다."
+        description="상단 네비게이션에 표시되는 메뉴를 관리합니다. 이름 변경, 순서 조정, 숨김 처리가 가능합니다."
       />
 
       <Card className="p-0 overflow-hidden">
@@ -156,7 +147,6 @@ export default function MenusAdminPage() {
                   <Button size="sm" variant="ghost" onClick={() => move(m.id, 1)} disabled={i === sorted.length - 1} title="아래로">↓</Button>
                   <Button size="sm" variant="ghost" onClick={() => toggleHide(m.id)}>{m.isHidden ? "표시" : "숨김"}</Button>
                   <Button size="sm" variant="secondary" onClick={() => { setEditing(m.id); setDraft({}); }}>수정</Button>
-                  <Button size="sm" variant="danger" onClick={() => remove(m.id)}>삭제</Button>
                 </div>
               </div>
             )}
