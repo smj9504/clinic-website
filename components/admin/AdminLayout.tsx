@@ -83,7 +83,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [ready, setReady] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const { clinicInfo } = useSiteDataForLocale("ko");
+  const { clinicInfo, loaded: dataLoaded } = useSiteDataForLocale("ko");
   const clinicName = clinicInfo.name || "관리자";
 
   useEffect(() => {
@@ -243,7 +243,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {clinicName} 관리자
             </span>
           </div>
-          <div className="p-4 md:p-10 max-w-6xl">{children}</div>
+          <div className="p-4 md:p-10 max-w-6xl">
+            {dataLoaded ? children : (
+              <div className="flex items-center justify-center py-20 text-ink-muted">
+                데이터를 불러오는 중...
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </AdminLocaleProvider>
