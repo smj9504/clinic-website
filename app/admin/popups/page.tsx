@@ -43,13 +43,17 @@ export default function PopupAdminPage() {
   const [draft, setDraft] = useState<Popup>(popup);
   const [toast, setToast] = useState<string | null>(null);
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  // 종료된 이벤트 제외 (팝업에 뜰 수 없으므로)
+  const activeEvents = events.filter((e) => !e.endDate || e.endDate >= todayStr);
+  const activeEventIds = new Set(activeEvents.map((e) => e.id));
+
   const popupStr = JSON.stringify(popup);
-  const eventIds = new Set(events.map((e) => e.id));
   useEffect(() => {
-    // 삭제된 이벤트를 items에서 제거
+    // 삭제되거나 종료된 이벤트를 items에서 제거
     const cleaned = {
       ...popup,
-      items: (popup.items ?? []).filter((it) => eventIds.has(it.eventId)),
+      items: (popup.items ?? []).filter((it) => activeEventIds.has(it.eventId)),
     };
     setDraft(cleaned);
   }, [popupStr, events.length]);
@@ -103,8 +107,8 @@ export default function PopupAdminPage() {
     setToast("팝업 설정이 저장되었습니다");
   };
 
-  // Sort: current month first
-  const sortedEvents = [...events].sort((a, b) => {
+  // Sort: current month first (종료된 이벤트는 이미 제외됨)
+  const sortedEvents = [...activeEvents].sort((a, b) => {
     const aCurrent = isCurrentMonth(a.date) ? 0 : 1;
     const bCurrent = isCurrentMonth(b.date) ? 0 : 1;
     return aCurrent - bCurrent;

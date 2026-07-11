@@ -9,12 +9,18 @@ import { useT } from "@/lib/i18n";
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
 
+function isEnded(ev: { endDate?: string }) {
+  if (!ev.endDate) return false;
+  return ev.endDate < new Date().toISOString().slice(0, 10);
+}
+
 export default function EventDetailPage() {
   const { id } = useParams();
   const { events, clinicInfo } = useSiteData();
   const t = useT();
 
   const event = events.find((e) => String(e.id) === id);
+  const ended = event ? isEnded(event) : false;
 
   if (!event) {
     return (
@@ -64,6 +70,14 @@ export default function EventDetailPage() {
           >
             &larr; {t("events.title")}
           </Link>
+
+          {ended && (
+            <div className="mb-5">
+              <span className="inline-block text-sm font-semibold px-4 py-1.5 rounded-full bg-white/20 text-white backdrop-blur-sm">
+                종료된 이벤트
+              </span>
+            </div>
+          )}
 
           <div
             className="text-xs font-semibold uppercase opacity-60 mb-5"

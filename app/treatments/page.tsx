@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useSiteData, getBannerImage } from "@/lib/useSiteData";
+import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 
 const BLUR_PLACEHOLDER =
@@ -39,7 +39,7 @@ export default function TreatmentsPage() {
               lineHeight: 1.15,
             }}
           >
-            {t("treatments.title")}
+            {getMenuLabel(menus, "/treatments", t("treatments.title"))}
           </h1>
         </div>
       </section>

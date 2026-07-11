@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import DirectorFeature from "@/components/sections/DirectorFeature";
-import { useSiteData, getBannerImage } from "@/lib/useSiteData";
+import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 
@@ -52,7 +52,7 @@ export default function AboutPage() {
               lineHeight: 1.15,
             }}
           >
-            {t("about.title")}
+            {getMenuLabel(menus, "/about", t("about.title"))}
           </h1>
         </div>
       </section>

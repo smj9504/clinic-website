@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSiteData, getBannerImage } from "@/lib/useSiteData";
+import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 
 const BLUR_PLACEHOLDER =
@@ -59,7 +59,7 @@ export default function EventsPage() {
               lineHeight: 1.15,
             }}
           >
-            {t("events.title")}
+            {getMenuLabel(menus, "/events", t("events.title"))}
           </h1>
         </div>
       </section>

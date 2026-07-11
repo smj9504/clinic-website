@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSiteData, getBannerImage } from "@/lib/useSiteData";
+import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import type { EndedVisibility } from "@/lib/storage";
 
@@ -50,7 +50,7 @@ export default function NoticePage() {
               lineHeight: 1.15,
             }}
           >
-            {t("notice.title")}
+            {getMenuLabel(menus, "/community/notice", t("notice.title"))}
           </h1>
         </div>
       </section>

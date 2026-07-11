@@ -87,3 +87,13 @@ export function getBannerImage(menus: SiteData["menus"], pathname: string, fallb
   const prefix = menus.find((m) => m.href !== "/" && pathname.startsWith(m.href));
   return prefix?.bannerImage || fallback || "";
 }
+
+/**
+ * 메뉴의 label을 경로(href)로 조회
+ */
+export function getMenuLabel(menus: SiteData["menus"], pathname: string, fallback: string): string {
+  const exact = menus.find((m) => m.href === pathname);
+  if (exact) return exact.label;
+  const prefix = menus.find((m) => m.href !== "/" && pathname.startsWith(m.href));
+  return prefix?.label || fallback;
+}
