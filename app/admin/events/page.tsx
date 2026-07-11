@@ -107,7 +107,14 @@ export default function EventsAdminPage() {
 
   const remove = (id: number) => {
     if (!confirm("이 이벤트를 삭제하시겠습니까?")) return;
-    update((d) => ({ ...d, events: d.events.filter((e) => e.id !== id) }));
+    update((d) => ({
+      ...d,
+      events: d.events.filter((e) => e.id !== id),
+      popup: {
+        ...d.popup,
+        items: (d.popup.items ?? []).filter((it) => it.eventId !== id),
+      },
+    }));
     setToast("이벤트가 삭제되었습니다");
   };
 

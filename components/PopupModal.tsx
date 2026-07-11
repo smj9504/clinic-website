@@ -11,6 +11,11 @@ import type { PopupItem } from "@/lib/storage";
 const DISMISS_EVENT = "popup_dismissed_event";
 const DISMISS_SCHEDULE = "popup_dismissed_schedule";
 
+/** HTML 태그를 제거하고 순수 텍스트만 반환 */
+function stripHtml(str: string): string {
+  return str.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').trim();
+}
+
 function usePreloadImages(urls: string[]) {
   useEffect(() => {
     urls.forEach((url) => {
@@ -40,13 +45,23 @@ export default function PopupModal() {
 
   const scheduleActive = schedulePopup?.isActive;
 
-  // 삭제된 이벤트와 종료/예정 이벤트는 제외
+  // 삭제된 이벤트와 종료/예정 이벤트는 제외, 이벤트 데이터와 동기화
   const popupItems: PopupItem[] = useMemo(() => {
     const items = popup?.items ?? [];
-    return items.filter((item) => {
-      const ev = events.find((e) => e.id === item.eventId);
-      return ev && isEventActive(ev);
-    });
+    return items
+      .filter((item) => {
+        const ev = events.find((e) => e.id === item.eventId);
+        return ev && isEventActive(ev);
+      })
+      .map((item) => {
+        const ev = events.find((e) => e.id === item.eventId)!;
+        return {
+          ...item,
+          title: stripHtml(`${ev.title}\n${ev.subtitle}`),
+          body: stripHtml(ev.description),
+          image: ev.image || item.image,
+        };
+      });
   }, [popup, events]);
 
   const eventActive = popup?.isActive && popupItems.length > 0;
@@ -264,6 +279,10 @@ export default function PopupModal() {
                   fontSize: "0.95rem",
                   lineHeight: 1.7,
                   whiteSpace: "pre-line",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
                 }}
               >
                 {currentItem.body}

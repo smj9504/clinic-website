@@ -28,41 +28,7 @@ export type Event = {
   endDate?: string;   // "2026-05-31"
 };
 
-export const events: Event[] = [
-  {
-    id: 1,
-    title: "5월 다이어트 패키지",
-    subtitle: "30% 할인 이벤트",
-    description:
-      "한의학적 체질 분석을 바탕으로 한 개인 맞춤 다이어트 프로그램. 5월 한 달 특별 할인.",
-    image: sampleImages.event1,
-    date: "EVENT · 2026.05",
-    startDate: "2026-05-01",
-    endDate: "2026-05-31",
-  },
-  {
-    id: 2,
-    title: "환절기 면역력 보강",
-    subtitle: "보약 처방 안내",
-    description:
-      "환절기에 약해지는 면역력. 체질에 맞는 보약으로 건강을 미리 챙기세요.",
-    image: sampleImages.event2,
-    date: "EVENT · 2026.05",
-    startDate: "2026-05-01",
-    endDate: "2026-06-30",
-  },
-  {
-    id: 3,
-    title: "총명탕 신학기 이벤트",
-    subtitle: "수험생 집중력 회복",
-    description:
-      "집중력과 체력이 동시에 필요한 수험생을 위한 맞춤 처방. 5월 신학기 특별가.",
-    image: sampleImages.event3,
-    date: "EVENT · 2026.05",
-    startDate: "2026-05-01",
-    endDate: "2026-05-31",
-  },
-];
+export const events: Event[] = [];
 
 export type Treatment = {
   id: number;
@@ -244,41 +210,7 @@ export const clinicInfo = {
 
 // ─── English Defaults ───
 
-export const eventsEn: Event[] = [
-  {
-    id: 1,
-    title: "May Diet Package",
-    subtitle: "30% Off",
-    description:
-      "A personalized diet program based on constitutional analysis. Special 30% discount for May.",
-    image: sampleImages.event1,
-    date: "EVENT · 2026.05",
-    startDate: "2026-05-01",
-    endDate: "2026-05-31",
-  },
-  {
-    id: 2,
-    title: "Seasonal Immunity Boost",
-    subtitle: "Herbal Tonic Prescription",
-    description:
-      "Strengthen your immunity during seasonal transitions with personalized herbal medicine.",
-    image: sampleImages.event2,
-    date: "EVENT · 2026.05",
-    startDate: "2026-05-01",
-    endDate: "2026-06-30",
-  },
-  {
-    id: 3,
-    title: "Student Focus Package",
-    subtitle: "Concentration & Energy",
-    description:
-      "Custom herbal prescriptions for students who need both focus and stamina. Special spring pricing.",
-    image: sampleImages.event3,
-    date: "EVENT · 2026.05",
-    startDate: "2026-05-01",
-    endDate: "2026-05-31",
-  },
-];
+export const eventsEn: Event[] = [];
 
 export const treatmentsEn: Treatment[] = [
   {

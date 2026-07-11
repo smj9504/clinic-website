@@ -231,30 +231,20 @@ export type SchedulePopup = {
 
 export const defaultSchedulePopup: SchedulePopup = {
   id: "sp1",
-  title: "6월 진료 일정",
-  month: "2026.06",
-  rows: [
-    { day: "평일", hours: "09:00 – 19:00" },
-    { day: "토요일", hours: "09:00 – 14:00" },
-    { day: "일·공휴일", hours: "휴진" },
-    { day: "6/6 (현충일)", hours: "휴진", note: "공휴일" },
-  ],
-  notice: "점심시간 13:00 – 14:00",
-  isActive: true,
+  title: "",
+  month: "",
+  rows: [],
+  notice: "",
+  isActive: false,
 };
 
 export const defaultSchedulePopupEn: SchedulePopup = {
   id: "sp1",
-  title: "June Schedule",
-  month: "2026.06",
-  rows: [
-    { day: "Weekdays", hours: "09:00 – 19:00" },
-    { day: "Saturday", hours: "09:00 – 14:00" },
-    { day: "Sun & Holidays", hours: "Closed" },
-    { day: "Jun 6 (Memorial Day)", hours: "Closed", note: "Holiday" },
-  ],
-  notice: "Lunch break 13:00 – 14:00",
-  isActive: true,
+  title: "",
+  month: "",
+  rows: [],
+  notice: "",
+  isActive: false,
 };
 
 // ─── About 페이지 콘텐츠 ───
