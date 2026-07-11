@@ -277,6 +277,15 @@ export const defaultAboutEn: AboutContent = {
 };
 
 // ─── 통합 사이트 데이터 ───
+/** 종료 항목 숨김 설정: "immediately" = 즉시, 숫자 = N일 후 */
+export type EndedVisibility = "immediately" | number;
+
+export type StatItem = {
+  label: string;
+  value: number;
+  suffix: string;
+};
+
 export type SiteData = {
   menus: MenuItem[];
   heroSlides: HeroSlide[];
@@ -289,7 +298,12 @@ export type SiteData = {
   popup: Popup;
   schedulePopup: SchedulePopup;
   showStats: boolean;
+  stats?: StatItem[];
   clinicInfo: typeof defaultClinicInfo;
+  /** 종료된 이벤트 숨김: "immediately" = 종료 즉시, 숫자 = 종료 후 N일 뒤 숨김 */
+  eventEndedHide?: EndedVisibility;
+  /** 종료된 공지사항 숨김: "immediately" = 종료 즉시, 숫자 = 종료 후 N일 뒤 숨김 */
+  noticeEndedHide?: EndedVisibility;
 };
 
 const defaultSiteDataByLocale: Record<Locale, SiteData> = {
@@ -305,6 +319,12 @@ const defaultSiteDataByLocale: Record<Locale, SiteData> = {
     popup: defaultPopup,
     schedulePopup: defaultSchedulePopup,
     showStats: false,
+    stats: [
+      { label: "진료 경력", value: 15, suffix: "년" },
+      { label: "누적 환자", value: 30000, suffix: "명+" },
+      { label: "환자 만족도", value: 98, suffix: "%" },
+      { label: "진료 분야", value: 5, suffix: "개" },
+    ],
     clinicInfo: defaultClinicInfo,
   },
   en: {
@@ -319,6 +339,12 @@ const defaultSiteDataByLocale: Record<Locale, SiteData> = {
     popup: defaultPopupEn,
     schedulePopup: defaultSchedulePopupEn,
     showStats: false,
+    stats: [
+      { label: "Years of Practice", value: 15, suffix: "yr" },
+      { label: "Patients Served", value: 30000, suffix: "+" },
+      { label: "Satisfaction Rate", value: 98, suffix: "%" },
+      { label: "Specialties", value: 5, suffix: "" },
+    ],
     clinicInfo: defaultClinicInfoEn,
   },
 };
@@ -545,6 +571,8 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
   koData.schedulePopup.rows.forEach((r) => { pushText(r.day); pushText(r.hours); pushText(r.note || ""); });
   // Menus
   koData.menus.forEach((m) => pushText(m.label));
+  // Stats
+  (koData.stats ?? []).forEach((s) => { pushText(s.label); pushText(s.suffix); });
 
   try {
     // 배치 번역 (50개씩 분할)
@@ -614,9 +642,12 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
       notices: koData.notices.map((n, i) => ({
         ...enData.notices[i] || n,
         id: n.id,
+        type: n.type,
         title: next(),
         content: next(),
         date: n.date,
+        startDate: n.startDate,
+        endDate: n.endDate,
       })),
       faqs: koData.faqs.map((f, i) => ({
         ...enData.faqs[i] || f,
@@ -656,11 +687,18 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
         label: next(),
         bannerImage: m.bannerImage,
       })),
+      stats: (koData.stats ?? []).map((s) => ({
+        ...s,
+        label: next(),
+        suffix: next(),
+      })),
       showStats: koData.showStats,
       clinicInfo: enData.clinicInfo,
+      eventEndedHide: koData.eventEndedHide,
+      noticeEndedHide: koData.noticeEndedHide,
     };
 
-    setSiteData(translatedEn, "en");
+    await setSiteData(translatedEn, "en");
     return { success: true };
   } catch (err) {
     return { success: false, error: String(err) };

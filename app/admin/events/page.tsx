@@ -45,7 +45,7 @@ const emptyEvent: Omit<Event, "id"> = {
 
 export default function EventsAdminPage() {
   const { editingLocale } = useAdminLocale();
-  const { events } = useSiteDataForLocale(editingLocale);
+  const { events, eventEndedHide } = useSiteDataForLocale(editingLocale);
   const update = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
     await updateSiteData(fn, editingLocale);
     await syncImages(editingLocale);
@@ -300,6 +300,35 @@ export default function EventsAdminPage() {
             : "해당 상태의 이벤트가 없습니다."}
         </Card>
       )}
+
+      {/* 종료 이벤트 숨김 설정 */}
+      <Card className="mt-6">
+        <h3 className="font-semibold mb-1" style={{ letterSpacing: "-0.02em" }}>
+          종료된 이벤트 표시 설정
+        </h3>
+        <p className="text-xs text-ink-muted mb-4">
+          종료된 이벤트를 홈페이지와 이벤트 목록에서 언제 숨길지 설정합니다.
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <select
+            value={eventEndedHide === undefined ? "" : eventEndedHide === "immediately" ? "immediately" : String(eventEndedHide)}
+            onChange={(e) => {
+              const v = e.target.value;
+              const val = v === "" ? undefined : v === "immediately" ? "immediately" as const : Number(v);
+              update((d) => ({ ...d, eventEndedHide: val }));
+              setToast("설정이 저장되었습니다");
+            }}
+            className="px-4 py-2.5 border border-line bg-surface rounded text-sm outline-none focus:border-accent"
+          >
+            <option value="">숨기지 않음 (항상 표시)</option>
+            <option value="immediately">종료 즉시 숨김</option>
+            <option value="3">종료 후 3일 뒤 숨김</option>
+            <option value="7">종료 후 7일 뒤 숨김</option>
+            <option value="14">종료 후 14일 뒤 숨김</option>
+            <option value="30">종료 후 30일 뒤 숨김</option>
+          </select>
+        </div>
+      </Card>
 
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </>

@@ -44,9 +44,15 @@ export default function PopupAdminPage() {
   const [toast, setToast] = useState<string | null>(null);
 
   const popupStr = JSON.stringify(popup);
+  const eventIds = new Set(events.map((e) => e.id));
   useEffect(() => {
-    setDraft(popup);
-  }, [popupStr]);
+    // 삭제된 이벤트를 items에서 제거
+    const cleaned = {
+      ...popup,
+      items: (popup.items ?? []).filter((it) => eventIds.has(it.eventId)),
+    };
+    setDraft(cleaned);
+  }, [popupStr, events.length]);
 
   const selectedIds = new Set((draft.items ?? []).map((it) => it.eventId));
 

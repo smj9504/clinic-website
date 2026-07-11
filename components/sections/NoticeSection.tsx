@@ -4,11 +4,23 @@ import Link from "next/link";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
+import type { EndedVisibility } from "@/lib/storage";
+
+function isHidden(item: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (item.startDate && item.startDate > today) return true;
+  if (!item.endDate || item.endDate >= today) return false;
+  if (hideRule === undefined) return false;
+  if (hideRule === "immediately") return true;
+  const endDate = new Date(item.endDate);
+  endDate.setDate(endDate.getDate() + hideRule);
+  return endDate.toISOString().slice(0, 10) <= today;
+}
 
 export default function NoticeSection() {
-  const { notices } = useSiteData();
+  const { notices, noticeEndedHide } = useSiteData();
   const t = useT();
-  const featured = notices.slice(0, 4);
+  const featured = notices.filter((n) => !isHidden(n, noticeEndedHide)).slice(0, 4);
   const headerRef = useScrollReveal<HTMLDivElement>();
   const listRef = useScrollRevealGroup<HTMLDivElement>();
 

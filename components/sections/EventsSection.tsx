@@ -9,10 +9,23 @@ import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNFOEU0REYiLz48L3N2Zz4=";
 
+import type { EndedVisibility } from "@/lib/storage";
+
+function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (ev.startDate && ev.startDate > today) return true;
+  if (!ev.endDate || ev.endDate >= today) return false;
+  if (hideRule === undefined) return false; // 숨기지 않음
+  if (hideRule === "immediately") return true;
+  const endDate = new Date(ev.endDate);
+  endDate.setDate(endDate.getDate() + hideRule);
+  return endDate.toISOString().slice(0, 10) <= today;
+}
+
 export default function EventsSection() {
-  const { events } = useSiteData();
+  const { events, eventEndedHide } = useSiteData();
   const t = useT();
-  const featured = events.slice(0, 3);
+  const featured = events.filter((e) => !isHidden(e, eventEndedHide)).slice(0, 3);
   const headerRef = useScrollReveal<HTMLDivElement>();
   const gridRef = useScrollRevealGroup<HTMLDivElement>();
 

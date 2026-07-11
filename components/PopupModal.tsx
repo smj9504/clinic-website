@@ -20,31 +20,49 @@ function usePreloadImages(urls: string[]) {
   }, [urls]);
 }
 
+function isEventActive(ev: { startDate?: string; endDate?: string }) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (ev.startDate && ev.startDate > today) return false;
+  if (ev.endDate && ev.endDate < today) return false;
+  return true;
+}
+
 export default function PopupModal() {
-  const { popup, schedulePopup } = useSiteData();
+  const { popup, schedulePopup, events } = useSiteData();
   const t = useT();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"event" | "schedule">("event");
   const [dismissToday, setDismissToday] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
 
-  const eventActive = popup?.isActive;
   const scheduleActive = schedulePopup?.isActive;
 
   // Resolve popup items: use items[] if available, fall back to single legacy fields
+  // 삭제된 이벤트와 종료된 이벤트는 제외
   const popupItems: PopupItem[] = useMemo(() => {
-    if (popup?.items && popup.items.length > 0) return popup.items;
-    if (popup?.title) {
-      return [{
+    let items: PopupItem[];
+    if (popup?.items && popup.items.length > 0) {
+      items = popup.items;
+    } else if (popup?.title) {
+      items = [{
         eventId: 0,
         title: popup.title,
         body: popup.body,
         image: popup.image,
         linkUrl: popup.linkUrl,
       }];
+    } else {
+      items = [];
     }
-    return [];
-  }, [popup]);
+    // eventId > 0인 항목만 필터 (존재하고 종료되지 않은 이벤트만)
+    return items.filter((item) => {
+      if (item.eventId === 0) return true; // legacy 단일 팝업
+      const ev = events.find((e) => e.id === item.eventId);
+      return ev && isEventActive(ev);
+    });
+  }, [popup, events]);
+
+  const eventActive = popup?.isActive && popupItems.length > 0;
 
   // Preload popup images before the modal opens
   const imageUrls = useMemo(() => popupItems.map((item) => item.image).filter(Boolean), [popupItems]);
@@ -67,7 +85,7 @@ export default function PopupModal() {
         ? localStorage.getItem(DISMISS_SCHEDULE) === today
         : true;
 
-    const showEvent = eventActive && !eventDismissed && popupItems.length > 0;
+    const showEvent = eventActive && !eventDismissed;
     const showSchedule = scheduleActive && !scheduleDismissed;
 
     if (!showEvent && !showSchedule) return;
@@ -91,9 +109,18 @@ export default function PopupModal() {
     setSlideIndex(0);
   };
 
+  // 열린 상태에서 표시할 내용이 없으면 자동 닫기
+  const canShowEvent = eventActive && tab === "event";
+  const canShowSchedule = scheduleActive && tab === "schedule";
+  useEffect(() => {
+    if (open && !canShowEvent && !canShowSchedule) {
+      setOpen(false);
+    }
+  }, [open, canShowEvent, canShowSchedule]);
+
   if (!open) return null;
 
-  const showTabs = eventActive && scheduleActive && popupItems.length > 0;
+  const showTabs = eventActive && scheduleActive;
   const currentItem = popupItems[slideIndex] ?? popupItems[0];
   const hasMultiple = popupItems.length > 1;
 

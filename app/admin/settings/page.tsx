@@ -69,16 +69,27 @@ export default function SettingsAdminPage() {
 // ─── Clinic Info Tab ───
 function ClinicInfoTab({ onSave }: { onSave: () => void }) {
   const { editingLocale } = useAdminLocale();
-  const { clinicInfo, showStats } = useSiteDataForLocale(editingLocale);
+  const { clinicInfo, showStats, stats } = useSiteDataForLocale(editingLocale);
+  const defaultStats = [
+    { label: "진료 경력", value: 15, suffix: "년" },
+    { label: "누적 환자", value: 30000, suffix: "명+" },
+    { label: "환자 만족도", value: 98, suffix: "%" },
+    { label: "진료 분야", value: 5, suffix: "개" },
+  ];
   const [draft, setDraft] = useState(clinicInfo);
   const [statsVisible, setStatsVisible] = useState(showStats);
+  const [statsDraft, setStatsDraft] = useState(stats ?? defaultStats);
 
   // hydration 후 또는 편집 언어 변경 시 draft 동기화
   const clinicStr = JSON.stringify(clinicInfo);
-  useEffect(() => { setDraft(clinicInfo); setStatsVisible(showStats); }, [clinicStr, showStats]);
+  useEffect(() => {
+    setDraft(clinicInfo);
+    setStatsVisible(showStats);
+    setStatsDraft(stats ?? defaultStats);
+  }, [clinicStr, showStats]);
 
   const save = () => {
-    updateSiteData((d) => ({ ...d, clinicInfo: draft, showStats: statsVisible }), editingLocale);
+    updateSiteData((d) => ({ ...d, clinicInfo: draft, showStats: statsVisible, stats: statsDraft }), editingLocale);
     syncImages(editingLocale);
     onSave();
   };
@@ -158,7 +169,7 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
         </Card>
 
         <Card className="lg:col-span-2">
-          <label className="flex items-center gap-3 cursor-pointer">
+          <label className="flex items-center gap-3 cursor-pointer mb-4">
             <input
               type="checkbox"
               checked={statsVisible}
@@ -173,6 +184,39 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
               (진료 경력, 누적 환자, 만족도 등 숫자 카운트업 섹션)
             </span>
           </label>
+
+          {statsVisible && (
+            <div className="border-t border-line pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {statsDraft.map((s, i) => (
+                  <div key={i} className="flex items-end gap-2 p-3 bg-bg-alt rounded-lg">
+                    <div className="flex-1">
+                      <label className="block text-xs text-ink-muted mb-1">라벨</label>
+                      <TextInput
+                        value={s.label}
+                        onChange={(e) => setStatsDraft((p) => p.map((item, idx) => idx === i ? { ...item, label: e.target.value } : item))}
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-ink-muted mb-1">숫자</label>
+                      <TextInput
+                        type="number"
+                        value={s.value}
+                        onChange={(e) => setStatsDraft((p) => p.map((item, idx) => idx === i ? { ...item, value: Number(e.target.value) || 0 } : item))}
+                      />
+                    </div>
+                    <div className="w-16">
+                      <label className="block text-xs text-ink-muted mb-1">단위</label>
+                      <TextInput
+                        value={s.suffix}
+                        onChange={(e) => setStatsDraft((p) => p.map((item, idx) => idx === i ? { ...item, suffix: e.target.value } : item))}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
 
         <Card className="lg:col-span-2">
@@ -434,8 +478,8 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={add} variant="primary">
-          + 진료 항목 추가
+        <Button onClick={add} variant="primary" disabled={treatments.length >= 5}>
+          + 진료 항목 추가 ({treatments.length}/5)
         </Button>
       </div>
 

@@ -22,7 +22,9 @@ export default function TreatmentsSection() {
 
         <div
           ref={gridRef}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-px border"
+          className={`grid grid-cols-1 md:grid-cols-2 gap-px border ${
+            treatments.length <= 4 ? "lg:grid-cols-4" : "lg:grid-cols-5"
+          }`}
           style={{ background: "var(--color-line)", borderColor: "var(--color-line)" }}
         >
           {treatments.map((item) => (

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useT } from "@/lib/i18n";
 import { useSiteData } from "@/lib/useSiteData";
 
 type Stat = {
@@ -64,19 +63,20 @@ function StatItem({ stat, started }: { stat: Stat; started: boolean }) {
   );
 }
 
+const defaultStats: Stat[] = [
+  { label: "진료 경력", value: 15, suffix: "년" },
+  { label: "누적 환자", value: 30000, suffix: "명+" },
+  { label: "환자 만족도", value: 98, suffix: "%" },
+  { label: "진료 분야", value: 5, suffix: "개" },
+];
+
 export default function StatsSection() {
-  const t = useT();
-  const { showStats } = useSiteData();
+  const { showStats, stats: savedStats } = useSiteData();
 
   const ref = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(false);
 
-  const stats: Stat[] = [
-    { label: t("stats.years"), value: 15, suffix: t("stats.yearSuffix") },
-    { label: t("stats.patients"), value: 30000, suffix: t("stats.patientSuffix") },
-    { label: t("stats.satisfaction"), value: 98, suffix: "%" },
-    { label: t("stats.treatments"), value: 5, suffix: t("stats.treatmentSuffix") },
-  ];
+  const stats: Stat[] = savedStats && savedStats.length > 0 ? savedStats : defaultStats;
 
   useEffect(() => {
     const el = ref.current;

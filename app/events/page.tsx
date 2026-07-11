@@ -8,10 +8,29 @@ import { useT } from "@/lib/i18n";
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
 
+import type { EndedVisibility } from "@/lib/storage";
+
+function isEnded(ev: { endDate?: string }) {
+  if (!ev.endDate) return false;
+  return ev.endDate < new Date().toISOString().slice(0, 10);
+}
+
+function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (ev.startDate && ev.startDate > today) return true;
+  if (!ev.endDate || ev.endDate >= today) return false;
+  if (hideRule === undefined) return false;
+  if (hideRule === "immediately") return true;
+  const endDate = new Date(ev.endDate);
+  endDate.setDate(endDate.getDate() + hideRule);
+  return endDate.toISOString().slice(0, 10) <= today;
+}
+
 export default function EventsPage() {
-  const { events, menus, heroSlides } = useSiteData();
+  const { events: allEvents, menus, heroSlides, eventEndedHide } = useSiteData();
   const t = useT();
   const banner = getBannerImage(menus, "/events", heroSlides[0]?.image);
+  const events = allEvents.filter((e) => !isHidden(e, eventEndedHide));
 
   return (
     <>
@@ -53,11 +72,13 @@ export default function EventsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
-              {events.map((event) => (
+              {events.map((event) => {
+                const ended = isEnded(event);
+                return (
                 <Link
                   key={event.id}
                   href={`/events/${event.id}`}
-                  className="group block"
+                  className={`group block ${ended ? "opacity-60" : ""}`}
                 >
                   <div className="aspect-[16/10] overflow-hidden rounded mb-6 bg-bg-alt relative">
                     <div className="relative w-full h-full transition-transform duration-700 ease-out group-hover:scale-[1.04]">
@@ -76,10 +97,15 @@ export default function EventsPage() {
                     </div>
                   </div>
                   <div
-                    className="text-xs font-semibold uppercase text-ink-muted mb-3"
+                    className="text-xs font-semibold uppercase text-ink-muted mb-3 flex items-center gap-2"
                     style={{ letterSpacing: "0.15em" }}
                   >
                     {event.date}
+                    {ended && (
+                      <span className="text-[0.65rem] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 normal-case" style={{ letterSpacing: 0 }}>
+                        종료
+                      </span>
+                    )}
                   </div>
                   <h2
                     className="font-display mb-4"
@@ -112,7 +138,8 @@ export default function EventsPage() {
                     </svg>
                   </span>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

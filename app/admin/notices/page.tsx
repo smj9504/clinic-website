@@ -44,7 +44,7 @@ const emptyNotice: Omit<Notice, "id"> = {
 
 export default function NoticesAdminPage() {
   const { editingLocale } = useAdminLocale();
-  const { notices } = useSiteDataForLocale(editingLocale);
+  const { notices, noticeEndedHide } = useSiteDataForLocale(editingLocale);
   const update = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [draft, setDraft] = useState<Omit<Notice, "id">>(emptyNotice);
@@ -235,6 +235,35 @@ export default function NoticesAdminPage() {
             );
           })
         )}
+      </Card>
+
+      {/* 종료 공지사항 숨김 설정 */}
+      <Card className="mt-6">
+        <h3 className="font-semibold mb-1" style={{ letterSpacing: "-0.02em" }}>
+          종료된 공지사항 표시 설정
+        </h3>
+        <p className="text-xs text-ink-muted mb-4">
+          종료된 공지사항을 홈페이지와 공지사항 목록에서 언제 숨길지 설정합니다.
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <select
+            value={noticeEndedHide === undefined ? "" : noticeEndedHide === "immediately" ? "immediately" : String(noticeEndedHide)}
+            onChange={(e) => {
+              const v = e.target.value;
+              const val = v === "" ? undefined : v === "immediately" ? "immediately" as const : Number(v);
+              update((d) => ({ ...d, noticeEndedHide: val }));
+              setToast("설정이 저장되었습니다");
+            }}
+            className="px-4 py-2.5 border border-line bg-surface rounded text-sm outline-none focus:border-accent"
+          >
+            <option value="">숨기지 않음 (항상 표시)</option>
+            <option value="immediately">종료 즉시 숨김</option>
+            <option value="3">종료 후 3일 뒤 숨김</option>
+            <option value="7">종료 후 7일 뒤 숨김</option>
+            <option value="14">종료 후 14일 뒤 숨김</option>
+            <option value="30">종료 후 30일 뒤 숨김</option>
+          </select>
+        </div>
       </Card>
 
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
