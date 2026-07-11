@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useSiteData } from "@/lib/useSiteData";
+import { useSiteData, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 
 const BLUR_PLACEHOLDER =
@@ -17,9 +17,10 @@ function isEnded(ev: { endDate?: string }) {
 
 export default function EventDetailPage() {
   const { id } = useParams();
-  const { events, clinicInfo } = useSiteData();
+  const { events, clinicInfo, menus } = useSiteData();
   const t = useT();
   const fallbackImage = clinicInfo.defaultImage || FALLBACK_IMAGE;
+  const eventsLabel = getMenuLabel(menus, "/events", t("events.title"));
 
   const event = events.find((e) => String(e.id) === id);
   const ended = event ? isEnded(event) : false;
@@ -32,7 +33,7 @@ export default function EventDetailPage() {
           href="/events"
           className="text-accent font-semibold text-sm hover:underline"
         >
-          &larr; {t("events.title")}
+          &larr; {eventsLabel}
         </Link>
       </div>
     );
@@ -70,7 +71,7 @@ export default function EventDetailPage() {
             href="/events"
             className="inline-flex items-center gap-2 text-sm font-medium opacity-70 hover:opacity-100 transition-opacity mb-10"
           >
-            &larr; {t("events.title")}
+            &larr; {eventsLabel}
           </Link>
 
           {ended && (

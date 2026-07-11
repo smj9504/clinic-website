@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useSiteData, getBannerImage } from "@/lib/useSiteData";
+import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 
 const BLUR_PLACEHOLDER =
@@ -13,6 +13,7 @@ export default function NoticeDetailPage() {
   const { id } = useParams();
   const { notices, menus, heroSlides } = useSiteData();
   const t = useT();
+  const noticeLabel = getMenuLabel(menus, "/community/notice", t("notice.title"));
   const banner = getBannerImage(menus, "/community/notice", heroSlides[0]?.image);
 
   const notice = notices.find((n) => String(n.id) === id);
@@ -25,7 +26,7 @@ export default function NoticeDetailPage() {
           href="/community/notice"
           className="text-accent font-semibold text-sm hover:underline"
         >
-          &larr; {t("notice.title")}
+          &larr; {noticeLabel}
         </Link>
       </div>
     );
@@ -61,7 +62,7 @@ export default function NoticeDetailPage() {
             href="/community/notice"
             className="inline-flex items-center gap-2 text-sm font-medium opacity-70 hover:opacity-100 transition-opacity mb-8"
           >
-            &larr; {t("notice.title")}
+            &larr; {noticeLabel}
           </Link>
           <div className="flex items-center gap-3 mb-5">
             <span
