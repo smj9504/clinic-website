@@ -3,7 +3,7 @@ import "./globals.css";
 import SiteShell from "@/components/SiteShell";
 import JsonLd from "@/components/JsonLd";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gowoonbit.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gowoonbit-kmc.com";
 const SITE_NAME = "고운빛한의원";
 const SITE_DESCRIPTION =
   "여의도 고운빛한의원 — 전통 한의학의 지혜와 현대 의학의 정밀함을 함께 담아, 당신의 건강한 일상을 처방합니다. 통증치료, 자동차보험, 다이어트, 추나요법, 점빼기, 리프팅, 레이저 시술 전문.";

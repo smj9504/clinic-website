@@ -23,7 +23,7 @@ export default async function Image() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`${process.env.NEXT_PUBLIC_SITE_URL || "https://www.gowoonbit.com"}/logo-color.jpg`}
+          src={`${process.env.NEXT_PUBLIC_SITE_URL || "https://www.gowoonbit-kmc.com"}/logo-color.jpg`}
           alt="고운빛한의원 로고"
           width={280}
           height={280}
