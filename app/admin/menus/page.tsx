@@ -25,6 +25,10 @@ export default function MenusAdminPage() {
 
   const sorted = [...menus].sort((a, b) => a.sortOrder - b.sortOrder);
   const update = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
+  const updateBoth = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
+    updateSiteData(fn, "ko");
+    updateSiteData(fn, "en");
+  };
 
   const save = (id: string) => {
     update((d) => ({
@@ -38,10 +42,13 @@ export default function MenusAdminPage() {
   };
 
   const toggleHide = (id: string) => {
-    update((d) => ({
+    const target = menus.find((m) => m.id === id);
+    if (!target) return;
+    const newHidden = !target.isHidden;
+    updateBoth((d) => ({
       ...d,
       menus: d.menus.map((m) =>
-        m.id === id ? { ...m, isHidden: !m.isHidden } : m
+        m.id === id ? { ...m, isHidden: newHidden } : m
       ),
     }));
   };
