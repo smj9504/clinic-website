@@ -11,7 +11,7 @@ const SITE_DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — 한 첩의 위로와 회복`,
+    default: `${SITE_NAME}`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
   openGraph: {
-    title: `${SITE_NAME} — 한 첩의 위로와 회복`,
+    title: `${SITE_NAME}`,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: SITE_NAME,
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — 한 첩의 위로와 회복`,
+    title: `${SITE_NAME}`,
     description: SITE_DESCRIPTION,
     images: ["/opengraph-image"],
   },
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
     canonical: SITE_URL,
   },
   verification: {
-    google: "YOUR_GOOGLE_VERIFICATION_CODE",
+    google: "vUvjLcgYckxdX5m7a2785sIL6TfPqCa_4ntMAi6uAWc",
     other: {
-      "naver-site-verification": "YOUR_NAVER_VERIFICATION_CODE",
+      "naver-site-verification": "9db44186d81259e2ed2506823bbac251392bfcb6",
     },
   },
   icons: {
