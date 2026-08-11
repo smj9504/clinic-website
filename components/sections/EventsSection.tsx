@@ -11,7 +11,7 @@ const BLUR_PLACEHOLDER =
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 import type { EndedVisibility } from "@/lib/storage";
-import { todayKST, addDays } from "@/lib/date";
+import { todayKST, addDays, formatEventPeriod } from "@/lib/date";
 
 function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
   const today = todayKST();
@@ -73,7 +73,7 @@ export default function EventsSection() {
                   className="text-xs font-semibold uppercase text-ink-muted mb-4"
                   style={{ letterSpacing: "0.15em" }}
                 >
-                  {event.date}
+                  {formatEventPeriod(event, t)}
                 </div>
                 <h3
                   className="font-display mb-3"

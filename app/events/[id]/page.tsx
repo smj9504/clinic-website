@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import EventImage from "@/components/EventImage";
 import { useSiteData, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
-import { todayKST } from "@/lib/date";
+import { todayKST, formatEventPeriod } from "@/lib/date";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -15,24 +15,6 @@ const FALLBACK_IMAGE = "/gowoonbit.jpg";
 function isEnded(ev: { endDate?: string }) {
   if (!ev.endDate) return false;
   return ev.endDate < todayKST();
-}
-
-/** 배너/사이드바에 쓰는 이벤트 기간 라벨. 날짜 정보를 실제로 계산해서 보여주고,
- *  종료일 없이 진행중인 이벤트는 "진행중"만 표시한다(등록 시 입력한 고정 문구 대신). */
-function formatEventPeriod(
-  ev: { startDate?: string; endDate?: string; date: string },
-  t: ReturnType<typeof useT>
-): string {
-  if (ev.startDate && ev.endDate) {
-    return `${ev.startDate.replace(/-/g, ".")} – ${ev.endDate.replace(/-/g, ".")}`;
-  }
-  if (ev.startDate && ev.startDate <= todayKST()) {
-    return t("events.ongoing");
-  }
-  if (ev.startDate) {
-    return ev.startDate.replace(/-/g, ".");
-  }
-  return ev.date.replace("EVENT · ", "");
 }
 
 export default function EventDetailPage() {
@@ -274,7 +256,7 @@ export default function EventDetailPage() {
                     className="text-xs font-semibold uppercase text-ink-muted mb-3"
                     style={{ letterSpacing: "0.15em" }}
                   >
-                    {other.date}
+                    {formatEventPeriod(other, t)}
                   </div>
                   <h3
                     className="font-display mb-2"

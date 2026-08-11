@@ -11,7 +11,7 @@ const BLUR_PLACEHOLDER =
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 import type { EndedVisibility } from "@/lib/storage";
-import { todayKST, addDays } from "@/lib/date";
+import { todayKST, addDays, formatEventPeriod } from "@/lib/date";
 
 function isEnded(ev: { endDate?: string }) {
   if (!ev.endDate) return false;
@@ -97,7 +97,7 @@ export default function EventsPage() {
                     className="text-xs font-semibold uppercase text-ink-muted mb-3 flex items-center gap-2"
                     style={{ letterSpacing: "0.15em" }}
                   >
-                    {event.date}
+                    {formatEventPeriod(event, t)}
                     {ended && (
                       <span className="text-[0.65rem] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 normal-case" style={{ letterSpacing: 0 }}>
                         종료
