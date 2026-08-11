@@ -5,16 +5,15 @@ import Link from "next/link";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import type { EndedVisibility } from "@/lib/storage";
+import { todayKST, addDays } from "@/lib/date";
 
 function isHidden(item: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKST();
   if (item.startDate && item.startDate > today) return true;
   if (!item.endDate || item.endDate >= today) return false;
   if (hideRule === undefined) return false;
   if (hideRule === "immediately") return true;
-  const endDate = new Date(item.endDate);
-  endDate.setDate(endDate.getDate() + hideRule);
-  return endDate.toISOString().slice(0, 10) <= today;
+  return addDays(item.endDate, hideRule) <= today;
 }
 
 export default function NoticePage() {

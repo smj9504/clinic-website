@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
 import { updateSiteData, syncImages, type Popup, type PopupItem } from "@/lib/storage";
+import { todayKST } from "@/lib/date";
 import type { Event } from "@/lib/data";
 import {
   PageHeader,
@@ -44,7 +45,7 @@ export default function PopupAdminPage() {
   const [draft, setDraft] = useState<Popup>(popup);
   const [toast, setToast] = useState<string | null>(null);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = todayKST();
   // 종료된 이벤트 제외 (팝업에 뜰 수 없으므로)
   const activeEvents = events.filter((e) => !e.endDate || e.endDate >= todayStr);
   const activeEventIds = new Set(activeEvents.map((e) => e.id));

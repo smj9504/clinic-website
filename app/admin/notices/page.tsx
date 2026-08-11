@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
 import { updateSiteData } from "@/lib/storage";
+import { todayKST } from "@/lib/date";
 import type { Notice } from "@/lib/data";
 import {
   PageHeader,
@@ -15,8 +16,8 @@ import {
 } from "@/components/admin/ui";
 import RichEditor from "@/components/admin/RichEditor";
 
-const today = () => new Date().toISOString().slice(0, 10).replace(/-/g, ".");
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const today = () => todayKST().replace(/-/g, ".");
+const todayISO = todayKST;
 
 type StatusFilter = "all" | "active" | "upcoming" | "ended";
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
 import { updateSiteData, syncImages } from "@/lib/storage";
+import { todayKST } from "@/lib/date";
 import type { Event } from "@/lib/data";
 import {
   PageHeader,
@@ -16,7 +17,7 @@ import {
 } from "@/components/admin/ui";
 import RichEditor from "@/components/admin/RichEditor";
 
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const todayStr = todayKST;
 
 type StatusFilter = "all" | "active" | "upcoming" | "ended";
 
