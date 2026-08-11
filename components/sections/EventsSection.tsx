@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import EventImage from "@/components/EventImage";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
@@ -11,16 +11,15 @@ const BLUR_PLACEHOLDER =
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 import type { EndedVisibility } from "@/lib/storage";
+import { todayKST, addDays } from "@/lib/date";
 
 function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKST();
   if (ev.startDate && ev.startDate > today) return true;
   if (!ev.endDate || ev.endDate >= today) return false;
   if (hideRule === undefined) return false; // 숨기지 않음
   if (hideRule === "immediately") return true;
-  const endDate = new Date(ev.endDate);
-  endDate.setDate(endDate.getDate() + hideRule);
-  return endDate.toISOString().slice(0, 10) <= today;
+  return addDays(ev.endDate, hideRule) <= today;
 }
 
 export default function EventsSection() {
@@ -47,7 +46,7 @@ export default function EventsSection() {
           </Link>
         </div>
 
-        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-start gap-10">
           {featured.map((event) => (
             <Link
               key={event.id}
@@ -55,22 +54,20 @@ export default function EventsSection() {
               className="group block card-lift rounded-lg overflow-hidden"
               data-reveal-item
             >
-              <div className="aspect-[4/3] overflow-hidden bg-bg-alt relative">
-                <div className="relative w-full h-full transition-transform duration-700 ease-out group-hover:scale-[1.06]">
-                  <Image
-                    src={event.image || fallbackImage}
-                    alt={event.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    quality={75}
-                    placeholder="blur"
-                    blurDataURL={BLUR_PLACEHOLDER}
-                  />
-                </div>
+              <EventImage
+                ratio={4 / 3}
+                wrapperClassName="overflow-hidden bg-bg-alt"
+                className="transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+                src={event.image || fallbackImage}
+                alt={event.title}
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                quality={75}
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
+              >
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              </div>
+              </EventImage>
               <div className="p-6">
                 <div
                   className="text-xs font-semibold uppercase text-ink-muted mb-4"

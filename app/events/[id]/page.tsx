@@ -3,8 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import EventImage from "@/components/EventImage";
 import { useSiteData, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+import { todayKST } from "@/lib/date";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -12,7 +14,7 @@ const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 function isEnded(ev: { endDate?: string }) {
   if (!ev.endDate) return false;
-  return ev.endDate < new Date().toISOString().slice(0, 10);
+  return ev.endDate < todayKST();
 }
 
 export default function EventDetailPage() {
@@ -115,18 +117,16 @@ export default function EventDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-16 lg:gap-24">
             {/* Main */}
             <div>
-              <div className="aspect-[16/10] relative rounded overflow-hidden mb-12 bg-bg-alt">
-                <Image
-                  src={event.image || fallbackImage}
-                  alt={event.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 60vw"
-                  quality={75}
-                  placeholder="blur"
-                  blurDataURL={BLUR_PLACEHOLDER}
-                />
-              </div>
+              <EventImage
+                ratio={16 / 10}
+                wrapperClassName="rounded overflow-hidden mb-12 bg-bg-alt"
+                src={event.image || fallbackImage}
+                alt={event.title}
+                sizes="(max-width: 1024px) 100vw, 60vw"
+                quality={75}
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
+              />
 
               <div className="max-w-2xl">
                 <h2
@@ -230,27 +230,24 @@ export default function EventDetailPage() {
               <div className="section-divider" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-10">
               {otherEvents.map((other) => (
                 <Link
                   key={other.id}
                   href={`/events/${other.id}`}
                   className="group block"
                 >
-                  <div className="aspect-[16/10] overflow-hidden rounded mb-6 bg-bg-alt">
-                    <div className="relative w-full h-full transition-transform duration-700 ease-out group-hover:scale-[1.04]">
-                      <Image
-                        src={other.image || fallbackImage}
-                        alt={other.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        quality={75}
-                        placeholder="blur"
-                        blurDataURL={BLUR_PLACEHOLDER}
-                      />
-                    </div>
-                  </div>
+                  <EventImage
+                    ratio={16 / 10}
+                    wrapperClassName="overflow-hidden rounded mb-6 bg-bg-alt"
+                    className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                    src={other.image || fallbackImage}
+                    alt={other.title}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    quality={75}
+                    placeholder="blur"
+                    blurDataURL={BLUR_PLACEHOLDER}
+                  />
                   <div
                     className="text-xs font-semibold uppercase text-ink-muted mb-3"
                     style={{ letterSpacing: "0.15em" }}

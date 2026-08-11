@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import EventImage from "@/components/EventImage";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 
@@ -10,21 +11,20 @@ const BLUR_PLACEHOLDER =
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 import type { EndedVisibility } from "@/lib/storage";
+import { todayKST, addDays } from "@/lib/date";
 
 function isEnded(ev: { endDate?: string }) {
   if (!ev.endDate) return false;
-  return ev.endDate < new Date().toISOString().slice(0, 10);
+  return ev.endDate < todayKST();
 }
 
 function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKST();
   if (ev.startDate && ev.startDate > today) return true;
   if (!ev.endDate || ev.endDate >= today) return false;
   if (hideRule === undefined) return false;
   if (hideRule === "immediately") return true;
-  const endDate = new Date(ev.endDate);
-  endDate.setDate(endDate.getDate() + hideRule);
-  return endDate.toISOString().slice(0, 10) <= today;
+  return addDays(ev.endDate, hideRule) <= today;
 }
 
 export default function EventsPage() {
@@ -73,7 +73,7 @@ export default function EventsPage() {
               {t("events.empty")}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-x-12 gap-y-16">
               {events.map((event) => {
                 const ended = isEnded(event);
                 return (
@@ -82,20 +82,17 @@ export default function EventsPage() {
                   href={`/events/${event.id}`}
                   className={`group block ${ended ? "opacity-60" : ""}`}
                 >
-                  <div className="aspect-[16/10] overflow-hidden rounded mb-6 bg-bg-alt relative">
-                    <div className="relative w-full h-full transition-transform duration-700 ease-out group-hover:scale-[1.04]">
-                        <Image
-                          src={event.image || fallbackImage}
-                          alt={event.title}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                          quality={75}
-                          placeholder="blur"
-                          blurDataURL={BLUR_PLACEHOLDER}
-                        />
-                    </div>
-                  </div>
+                  <EventImage
+                    ratio={16 / 10}
+                    wrapperClassName="overflow-hidden rounded mb-6 bg-bg-alt"
+                    className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                    src={event.image || fallbackImage}
+                    alt={event.title}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    quality={75}
+                    placeholder="blur"
+                    blurDataURL={BLUR_PLACEHOLDER}
+                  />
                   <div
                     className="text-xs font-semibold uppercase text-ink-muted mb-3 flex items-center gap-2"
                     style={{ letterSpacing: "0.15em" }}

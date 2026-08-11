@@ -1,12 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import EventImage from "@/components/EventImage";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import type { PopupItem } from "@/lib/storage";
+import { todayKST } from "@/lib/date";
 
 const DISMISS_EVENT = "popup_dismissed_event";
 const DISMISS_SCHEDULE = "popup_dismissed_schedule";
@@ -27,7 +28,7 @@ function usePreloadImages(urls: string[]) {
 }
 
 function isEventActive(ev: { startDate?: string; endDate?: string }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKST();
   if (ev.startDate && ev.startDate > today) return false;
   if (ev.endDate && ev.endDate < today) return false;
   return true;
@@ -80,7 +81,7 @@ export default function PopupModal() {
     if (hasOpenedRef.current) return;
     if (!eventActive && !scheduleActive) return;
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = todayKST();
     const eventDismissed =
       typeof window !== "undefined"
         ? localStorage.getItem(DISMISS_EVENT) === today
@@ -105,7 +106,7 @@ export default function PopupModal() {
 
   const close = () => {
     if (dismissToday) {
-      const today = new Date().toISOString().split("T")[0];
+      const today = todayKST();
       if (tab === "event") localStorage.setItem(DISMISS_EVENT, today);
       else localStorage.setItem(DISMISS_SCHEDULE, today);
     }
@@ -139,7 +140,7 @@ export default function PopupModal() {
       onClick={close}
     >
       <div
-        className="bg-bg w-full max-w-md rounded-lg overflow-hidden relative"
+        className="bg-bg w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg relative"
         style={{ animation: "scaleIn 400ms cubic-bezier(0.16, 1, 0.3, 1)" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -193,16 +194,15 @@ export default function PopupModal() {
         {/* Event Tab Content — multi-slide */}
         {tab === "event" && eventActive && currentItem && (
           <>
-            <div className="relative aspect-[4/3] bg-accent">
-              <Image
-                src={currentItem.image || fallbackImage}
-                alt={currentItem.title}
-                fill
-                className="object-cover"
-                sizes="480px"
-                priority
-                quality={75}
-              />
+            <EventImage
+              ratio={4 / 3}
+              wrapperClassName="bg-accent rounded-t-lg overflow-hidden"
+              src={currentItem.image || fallbackImage}
+              alt={currentItem.title}
+              sizes="480px"
+              priority
+              quality={75}
+            >
               <div
                 className="absolute inset-0"
                 style={{ background: "rgba(107, 68, 35, 0.3)" }}
@@ -246,7 +246,7 @@ export default function PopupModal() {
                   ))}
                 </div>
               )}
-            </div>
+            </EventImage>
 
             <div className="p-8">
               {!showTabs && (
