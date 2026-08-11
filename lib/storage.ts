@@ -187,6 +187,8 @@ export type PopupItem = {
   body: string;
   image: string;
   linkUrl: string;
+  /** 이미지 위 어두운 브랜드 틴트 오버레이 표시 여부 (미지정 시 true = 기존 동작) */
+  imageOverlay?: boolean;
 };
 
 export type Popup = {

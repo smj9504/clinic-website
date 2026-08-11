@@ -31,6 +31,7 @@ function eventToItem(ev: Event): PopupItem {
     body: ev.description,
     image: ev.image,
     linkUrl: `/events/${ev.id}`,
+    imageOverlay: true,
   };
 }
 
@@ -83,6 +84,15 @@ export default function PopupAdminPage() {
         linkUrl: first?.linkUrl ?? "/events",
       };
     });
+  };
+
+  const toggleOverlay = (eventId: number) => {
+    setDraft((p) => ({
+      ...p,
+      items: (p.items ?? []).map((it) =>
+        it.eventId === eventId ? { ...it, imageOverlay: !(it.imageOverlay ?? true) } : it
+      ),
+    }));
   };
 
   const moveItem = (eventId: number, dir: -1 | 1) => {
@@ -230,12 +240,24 @@ export default function PopupAdminPage() {
                 <div className="w-12 h-9 rounded overflow-hidden flex-shrink-0 bg-bg-alt">
                   <img src={item.image || fallbackImage} alt="" className="w-full h-full object-cover" />
                 </div>
-                <span
-                  className="flex-1 text-sm font-medium truncate"
-                  style={{ letterSpacing: "-0.02em" }}
-                >
-                  {item.title.replace("\n", " — ")}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <div
+                    className="text-sm font-medium truncate"
+                    style={{ letterSpacing: "-0.02em" }}
+                  >
+                    {item.title.replace("\n", " — ")}
+                  </div>
+                  <label className="flex items-center gap-1.5 mt-1 cursor-pointer w-fit">
+                    <input
+                      type="checkbox"
+                      checked={item.imageOverlay ?? true}
+                      onChange={() => toggleOverlay(item.eventId)}
+                      style={{ accentColor: "var(--color-accent)" }}
+                      className="w-3.5 h-3.5"
+                    />
+                    <span className="text-[0.7rem] text-ink-muted">이미지 어둡게 표시</span>
+                  </label>
+                </div>
                 <div className="flex gap-1 flex-shrink-0">
                   <Button
                     size="sm"
@@ -269,6 +291,7 @@ export default function PopupAdminPage() {
           💡 팝업은 사이트 진입 후 2초 뒤에 표시됩니다.
           {items.length > 1 && " 여러 이벤트 선택 시 좌/우 화살표로 넘겨볼 수 있습니다."}
           {" "}사용자가 &ldquo;오늘 하루 보지 않기&rdquo;를 선택하면 같은 날 다시 보이지 않습니다.
+          {" "}&ldquo;이미지 어둡게 표시&rdquo;는 이미지 위에 브랜드 색 틴트를 살짝 얹어 버튼 대비를 높이는 옵션입니다 — 이미지 자체가 충분히 어둡거나 대비가 좋다면 꺼도 됩니다.
         </p>
       </Card>
 

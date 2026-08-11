@@ -183,8 +183,12 @@ export default function PopupModal() {
         {!showTabs && (
           <button
             onClick={close}
-            className="absolute top-4 right-4 text-2xl p-2 z-10"
-            style={{ color: tab === "event" ? "white" : "var(--color-ink)" }}
+            className={
+              tab === "event"
+                ? "absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-black/30 text-white text-base flex items-center justify-center backdrop-blur-sm hover:bg-black/50 transition-colors"
+                : "absolute top-4 right-4 z-10 text-2xl p-2"
+            }
+            style={tab === "event" ? undefined : { color: "var(--color-ink)" }}
             aria-label={t("popup.close")}
           >
             ✕
@@ -203,10 +207,12 @@ export default function PopupModal() {
               priority
               quality={75}
             >
-              <div
-                className="absolute inset-0"
-                style={{ background: "rgba(107, 68, 35, 0.3)" }}
-              />
+              {(currentItem.imageOverlay ?? true) && (
+                <div
+                  className="absolute inset-0"
+                  style={{ background: "rgba(107, 68, 35, 0.3)" }}
+                />
+              )}
 
               {/* Prev / Next arrows */}
               {hasMultiple && (
@@ -232,7 +238,7 @@ export default function PopupModal() {
 
               {/* Dots */}
               {hasMultiple && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 px-2.5 py-1.5 rounded-full bg-black/20 backdrop-blur-sm">
                   {popupItems.map((_, i) => (
                     <button
                       key={i}
