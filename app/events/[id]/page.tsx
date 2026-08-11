@@ -17,6 +17,24 @@ function isEnded(ev: { endDate?: string }) {
   return ev.endDate < todayKST();
 }
 
+/** 배너/사이드바에 쓰는 이벤트 기간 라벨. 날짜 정보를 실제로 계산해서 보여주고,
+ *  종료일 없이 진행중인 이벤트는 "진행중"만 표시한다(등록 시 입력한 고정 문구 대신). */
+function formatEventPeriod(
+  ev: { startDate?: string; endDate?: string; date: string },
+  t: ReturnType<typeof useT>
+): string {
+  if (ev.startDate && ev.endDate) {
+    return `${ev.startDate.replace(/-/g, ".")} – ${ev.endDate.replace(/-/g, ".")}`;
+  }
+  if (ev.startDate && ev.startDate <= todayKST()) {
+    return t("events.ongoing");
+  }
+  if (ev.startDate) {
+    return ev.startDate.replace(/-/g, ".");
+  }
+  return ev.date.replace("EVENT · ", "");
+}
+
 export default function EventDetailPage() {
   const { id } = useParams();
   const { events, clinicInfo, menus } = useSiteData();
@@ -88,7 +106,7 @@ export default function EventDetailPage() {
             className="text-xs font-semibold uppercase opacity-60 mb-5"
             style={{ letterSpacing: "0.2em" }}
           >
-            {event.date}
+            {formatEventPeriod(event, t)}
           </div>
 
           <h1
