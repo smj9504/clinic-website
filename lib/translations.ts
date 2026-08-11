@@ -48,6 +48,7 @@ const ko = {
   "events.empty": "진행중인 이벤트가 없습니다.",
   "events.period": "이벤트 기간",
   "events.contact": "문의",
+  "events.ongoing": "진행중",
 
   // Treatments page
   "treatments.title": "진료 내용",
@@ -143,6 +144,7 @@ const en: Record<keyof typeof ko, string> = {
   "events.empty": "No current events.",
   "events.period": "Period",
   "events.contact": "Contact",
+  "events.ongoing": "Ongoing",
 
   // Treatments page
   "treatments.title": "Treatments",

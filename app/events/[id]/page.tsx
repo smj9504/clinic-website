@@ -188,6 +188,10 @@ export default function EventDetailPage() {
                     <span className="font-medium">
                       {event.startDate && event.endDate
                         ? `${event.startDate.replace(/-/g, ".")} – ${event.endDate.replace(/-/g, ".")}`
+                        : event.startDate && event.startDate <= todayKST()
+                        ? `${event.startDate.replace(/-/g, ".")} – ${t("events.ongoing")}`
+                        : event.startDate
+                        ? event.startDate.replace(/-/g, ".")
                         : event.date.replace("EVENT · ", "")}
                     </span>
                   </div>
