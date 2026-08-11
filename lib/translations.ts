@@ -3,6 +3,9 @@ const ko = {
   "nav.reservation": "예약하기",
   "nav.menuOpen": "메뉴 열기",
 
+  // Loading
+  "loading.status": "페이지를 불러오는 중입니다",
+
   // Hero
   "hero.reservation": "예약하기 →",
   "hero.treatments": "진료 안내",
@@ -94,6 +97,9 @@ const en: Record<keyof typeof ko, string> = {
   // Nav
   "nav.reservation": "Book Now",
   "nav.menuOpen": "Open menu",
+
+  // Loading
+  "loading.status": "Loading the page",
 
   // Hero
   "hero.reservation": "Book Now →",
