@@ -34,7 +34,7 @@ export default function Nav() {
       <div className="h-full flex items-center justify-between container-wide">
         <Link
           href="/"
-          className="font-display font-bold text-xl"
+          className="font-display font-bold text-xl text-accent"
           style={{ letterSpacing: "-0.04em" }}
         >
           {clinicInfo.name}
