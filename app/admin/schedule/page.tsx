@@ -47,9 +47,9 @@ export default function ScheduleAdminPage() {
     setDraft(schedulePopup);
   }, [draftStr]);
 
-  const save = () => {
-    update((d) => ({ ...d, schedulePopup: draft }));
-    setToast("저장되었습니다");
+  const save = async () => {
+    const ok = await update((d) => ({ ...d, schedulePopup: draft }));
+    if (ok) setToast("저장되었습니다");
   };
 
   const updateRow = (

@@ -411,9 +411,9 @@ export async function fetchSiteData(locale: Locale = "ko"): Promise<SiteData> {
   return getSiteData(locale);
 }
 
-/** 메모리 캐시 + localStorage(텍스트만) + DB에 저장 */
-export async function setSiteData(data: SiteData, locale: Locale = "ko") {
-  if (typeof window === "undefined") return;
+/** 메모리 캐시 + localStorage(텍스트만) + DB에 저장. DB 저장이 실제로 성공했는지 여부를 반환한다. */
+export async function setSiteData(data: SiteData, locale: Locale = "ko"): Promise<boolean> {
+  if (typeof window === "undefined") return false;
   const prev = _memCache[locale];
   _memCache[locale] = data;
   try {
@@ -440,7 +440,9 @@ export async function setSiteData(data: SiteData, locale: Locale = "ko") {
       window.dispatchEvent(
         new CustomEvent("siteDataSaveError", { detail: `저장 실패 (${res.status}): ${msg}` })
       );
+      return false;
     }
+    return true;
   } catch (err: unknown) {
     // 네트워크 오류 → 캐시 롤백
     if (prev) {
@@ -452,16 +454,18 @@ export async function setSiteData(data: SiteData, locale: Locale = "ko") {
     window.dispatchEvent(
       new CustomEvent("siteDataSaveError", { detail: `네트워크 오류로 저장에 실패했습니다. (${message})` })
     );
+    return false;
   }
 }
 
+/** DB 저장이 실제로 성공했는지 여부를 반환한다. 호출부는 이 값을 확인한 뒤에만 저장 완료 UI를 보여줘야 한다. */
 export async function updateSiteData(
   updater: (data: SiteData) => SiteData,
   locale: Locale = "ko"
-) {
+): Promise<boolean> {
   const current = getSiteData(locale);
   const next = updater(current);
-  await setSiteData(next, locale);
+  return setSiteData(next, locale);
 }
 
 // ─── 이미지 동기화 (언어 무관하게 동일한 이미지 유지) ───

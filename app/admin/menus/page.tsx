@@ -30,15 +30,15 @@ export default function MenusAdminPage() {
     updateSiteData(fn, "en");
   };
 
-  const save = (id: string) => {
-    update((d) => ({
+  const save = async (id: string) => {
+    const ok = await update((d) => ({
       ...d,
       menus: d.menus.map((m) => (m.id === id ? { ...m, ...draft } as MenuItem : m)),
     }));
     syncImages(editingLocale);
     setEditing(null);
     setDraft({});
-    setToast("메뉴가 저장되었습니다");
+    if (ok) setToast("메뉴가 저장되었습니다");
   };
 
   const toggleHide = (id: string) => {
@@ -67,12 +67,12 @@ export default function MenusAdminPage() {
     });
   };
 
-  const add = () => {
+  const add = async () => {
     if (!newItem.label.trim() || !newItem.href.trim()) {
       alert("메뉴명과 링크를 모두 입력하세요.");
       return;
     }
-    update((d) => ({
+    const ok = await update((d) => ({
       ...d,
       menus: [
         ...d.menus,
@@ -87,7 +87,7 @@ export default function MenusAdminPage() {
     }));
     setNewItem({ label: "", href: "" });
     setShowAdd(false);
-    setToast("새 메뉴가 추가되었습니다");
+    if (ok) setToast("새 메뉴가 추가되었습니다");
   };
 
   return (

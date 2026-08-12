@@ -90,10 +90,10 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
     setStatsDraft(stats ?? defaultStats);
   }, [clinicStr, showStats]);
 
-  const save = () => {
-    updateSiteData((d) => ({ ...d, clinicInfo: draft, showStats: statsVisible, stats: statsDraft }), editingLocale);
+  const save = async () => {
+    const ok = await updateSiteData((d) => ({ ...d, clinicInfo: draft, showStats: statsVisible, stats: statsDraft }), editingLocale);
     syncImages(editingLocale);
-    onSave();
+    if (ok) onSave();
   };
 
   return (
@@ -289,29 +289,30 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
   const { editingLocale } = useAdminLocale();
   const { heroSlides } = useSiteDataForLocale(editingLocale);
   const updateData = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
-    await updateSiteData(fn, editingLocale);
+    const ok = await updateSiteData(fn, editingLocale);
     await syncImages(editingLocale);
+    return ok;
   };
 
-  const update = (id: number, patch: Partial<HeroSlide>) => {
-    updateData((d) => ({
+  const update = async (id: number, patch: Partial<HeroSlide>) => {
+    const ok = await updateData((d) => ({
       ...d,
       heroSlides: d.heroSlides.map((s) => (s.id === id ? { ...s, ...patch } : s)),
     }));
-    onSave();
+    if (ok) onSave();
   };
 
-  const remove = (id: number) => {
+  const remove = async (id: number) => {
     if (!confirm("이 슬라이드를 삭제하시겠습니까?")) return;
-    updateData((d) => ({
+    const ok = await updateData((d) => ({
       ...d,
       heroSlides: d.heroSlides.filter((s) => s.id !== id),
     }));
-    onSave();
+    if (ok) onSave();
   };
 
-  const add = () => {
-    updateData((d) => {
+  const add = async () => {
+    const ok = await updateData((d) => {
       const nextId = Math.max(0, ...d.heroSlides.map((s) => s.id)) + 1;
       return {
         ...d,
@@ -327,7 +328,7 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
         ],
       };
     });
-    onSave();
+    if (ok) onSave();
   };
 
   const move = (id: number, dir: -1 | 1) => {
@@ -433,28 +434,28 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
   const { treatments } = useSiteDataForLocale(editingLocale);
   const updateData = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
 
-  const update = (id: number, patch: Partial<Treatment>) => {
-    updateData((d) => ({
+  const update = async (id: number, patch: Partial<Treatment>) => {
+    const ok = await updateData((d) => ({
       ...d,
       treatments: d.treatments.map((t) =>
         t.id === id ? { ...t, ...patch } : t
       ),
     }));
     syncImages(editingLocale);
-    onSave();
+    if (ok) onSave();
   };
 
-  const remove = (id: number) => {
+  const remove = async (id: number) => {
     if (!confirm("이 진료 항목을 삭제하시겠습니까?")) return;
-    updateData((d) => ({
+    const ok = await updateData((d) => ({
       ...d,
       treatments: d.treatments.filter((t) => t.id !== id),
     }));
-    onSave();
+    if (ok) onSave();
   };
 
-  const add = () => {
-    updateData((d) => {
+  const add = async () => {
+    const ok = await updateData((d) => {
       const nextId = Math.max(0, ...d.treatments.map((t) => t.id)) + 1;
       const nextNum = String(d.treatments.length + 1).padStart(2, "0");
       return {
@@ -472,7 +473,7 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
         ],
       };
     });
-    onSave();
+    if (ok) onSave();
   };
 
   const move = (id: number, dir: -1 | 1) => {
@@ -570,10 +571,10 @@ function AboutTab({ onSave }: { onSave: () => void }) {
   const aboutStr = JSON.stringify(about);
   useEffect(() => { setDraft(about); }, [aboutStr]);
 
-  const save = () => {
-    updateSiteData((d) => ({ ...d, about: draft }), editingLocale);
+  const save = async () => {
+    const ok = await updateSiteData((d) => ({ ...d, about: draft }), editingLocale);
     syncImages(editingLocale);
-    onSave();
+    if (ok) onSave();
   };
 
   const updateFacility = (i: number, v: string) => {

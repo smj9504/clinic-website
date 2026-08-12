@@ -28,10 +28,10 @@ export default function DirectorAdminPage() {
     setDraft(director);
   }, [directorStr]);
 
-  const save = () => {
-    update((d) => ({ ...d, director: draft }));
+  const save = async () => {
+    const ok = await update((d) => ({ ...d, director: draft }));
     syncImages(editingLocale);
-    setToast("저장되었습니다");
+    if (ok) setToast("저장되었습니다");
   };
 
   const updateBioLine = (i: number, v: string) => {

@@ -40,12 +40,13 @@ export default function FaqsAdminPage() {
     setDraft(emptyFaq);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!draft.question.trim() || !draft.answer.trim()) {
       alert("질문과 답변을 모두 입력하세요.");
       return;
     }
-    update((d) => {
+    const wasNew = editing === "new";
+    const ok = await update((d) => {
       if (editing === "new") {
         return {
           ...d,
@@ -61,13 +62,13 @@ export default function FaqsAdminPage() {
       };
     });
     setEditing(null);
-    setToast(editing === "new" ? "FAQ가 추가되었습니다" : "FAQ가 저장되었습니다");
+    if (ok) setToast(wasNew ? "FAQ가 추가되었습니다" : "FAQ가 저장되었습니다");
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (!confirm("이 FAQ를 삭제하시겠습니까?")) return;
-    update((d) => ({ ...d, faqs: d.faqs.filter((f) => f.id !== id) }));
-    setToast("FAQ가 삭제되었습니다");
+    const ok = await update((d) => ({ ...d, faqs: d.faqs.filter((f) => f.id !== id) }));
+    if (ok) setToast("FAQ가 삭제되었습니다");
   };
 
   const move = (id: string, dir: -1 | 1) => {

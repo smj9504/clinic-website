@@ -49,8 +49,9 @@ export default function EventsAdminPage() {
   const { events, eventEndedHide, clinicInfo } = useSiteDataForLocale(editingLocale);
   const fallbackImage = clinicInfo.defaultImage || "/gowoonbit.jpg";
   const update = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
-    await updateSiteData(fn, editingLocale);
+    const ok = await updateSiteData(fn, editingLocale);
     await syncImages(editingLocale);
+    return ok;
   };
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [draft, setDraft] = useState<Omit<Event, "id">>(emptyEvent);
@@ -86,12 +87,13 @@ export default function EventsAdminPage() {
     setDraft(emptyEvent);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!draft.title.trim()) {
       alert("제목을 입력하세요.");
       return;
     }
-    update((d) => {
+    const wasNew = editing === "new";
+    const ok = await update((d) => {
       if (editing === "new") {
         const nextId = Math.max(0, ...d.events.map((e) => e.id)) + 1;
         return { ...d, events: [{ ...draft, id: nextId }, ...d.events] };
@@ -104,12 +106,12 @@ export default function EventsAdminPage() {
       };
     });
     setEditing(null);
-    setToast(editing === "new" ? "이벤트가 추가되었습니다" : "이벤트가 저장되었습니다");
+    if (ok) setToast(wasNew ? "이벤트가 추가되었습니다" : "이벤트가 저장되었습니다");
   };
 
-  const remove = (id: number) => {
+  const remove = async (id: number) => {
     if (!confirm("이 이벤트를 삭제하시겠습니까?")) return;
-    update((d) => ({
+    const ok = await update((d) => ({
       ...d,
       events: d.events.filter((e) => e.id !== id),
       popup: {
@@ -117,7 +119,7 @@ export default function EventsAdminPage() {
         items: (d.popup.items ?? []).filter((it) => it.eventId !== id),
       },
     }));
-    setToast("이벤트가 삭제되었습니다");
+    if (ok) setToast("이벤트가 삭제되었습니다");
   };
 
   const move = (id: number, dir: -1 | 1) => {
@@ -319,11 +321,11 @@ export default function EventsAdminPage() {
         <div className="flex items-center gap-3 flex-wrap">
           <select
             value={eventEndedHide === undefined ? "" : eventEndedHide === "immediately" ? "immediately" : String(eventEndedHide)}
-            onChange={(e) => {
+            onChange={async (e) => {
               const v = e.target.value;
               const val = v === "" ? undefined : v === "immediately" ? "immediately" as const : Number(v);
-              update((d) => ({ ...d, eventEndedHide: val }));
-              setToast("설정이 저장되었습니다");
+              const ok = await update((d) => ({ ...d, eventEndedHide: val }));
+              if (ok) setToast("설정이 저장되었습니다");
             }}
             className="px-4 py-2.5 border border-line bg-surface rounded text-sm outline-none focus:border-accent"
           >

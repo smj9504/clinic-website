@@ -40,8 +40,9 @@ export default function PopupAdminPage() {
   const { popup, events, loaded, clinicInfo } = useSiteDataForLocale(editingLocale);
   const fallbackImage = clinicInfo.defaultImage || "/gowoonbit.jpg";
   const update = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
-    await updateSiteData(fn, editingLocale);
+    const ok = await updateSiteData(fn, editingLocale);
     await syncImages(editingLocale);
+    return ok;
   };
   const [draft, setDraft] = useState<Popup>(popup);
   const [toast, setToast] = useState<string | null>(null);
@@ -114,9 +115,9 @@ export default function PopupAdminPage() {
     });
   };
 
-  const save = () => {
-    update((d) => ({ ...d, popup: draft }));
-    setToast("팝업 설정이 저장되었습니다");
+  const save = async () => {
+    const ok = await update((d) => ({ ...d, popup: draft }));
+    if (ok) setToast("팝업 설정이 저장되었습니다");
   };
 
   // Sort: current month first (종료된 이벤트는 이미 제외됨)

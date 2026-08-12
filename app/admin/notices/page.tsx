@@ -73,12 +73,13 @@ export default function NoticesAdminPage() {
     setDraft({ ...emptyNotice, content: "", date: today(), startDate: todayISO(), endDate: "" });
   };
 
-  const save = () => {
+  const save = async () => {
     if (!draft.title.trim()) {
       alert("제목을 입력하세요.");
       return;
     }
-    update((d) => {
+    const wasNew = editing === "new";
+    const ok = await update((d) => {
       if (editing === "new") {
         const nextId = Math.max(0, ...d.notices.map((n) => n.id)) + 1;
         return { ...d, notices: [{ ...draft, id: nextId }, ...d.notices] };
@@ -89,13 +90,13 @@ export default function NoticesAdminPage() {
       };
     });
     setEditing(null);
-    setToast(editing === "new" ? "공지가 추가되었습니다" : "공지가 저장되었습니다");
+    if (ok) setToast(wasNew ? "공지가 추가되었습니다" : "공지가 저장되었습니다");
   };
 
-  const remove = (id: number) => {
+  const remove = async (id: number) => {
     if (!confirm("이 공지를 삭제하시겠습니까?")) return;
-    update((d) => ({ ...d, notices: d.notices.filter((n) => n.id !== id) }));
-    setToast("공지가 삭제되었습니다");
+    const ok = await update((d) => ({ ...d, notices: d.notices.filter((n) => n.id !== id) }));
+    if (ok) setToast("공지가 삭제되었습니다");
   };
 
   const filters: { key: StatusFilter; label: string }[] = [
@@ -249,11 +250,11 @@ export default function NoticesAdminPage() {
         <div className="flex items-center gap-3 flex-wrap">
           <select
             value={noticeEndedHide === undefined ? "" : noticeEndedHide === "immediately" ? "immediately" : String(noticeEndedHide)}
-            onChange={(e) => {
+            onChange={async (e) => {
               const v = e.target.value;
               const val = v === "" ? undefined : v === "immediately" ? "immediately" as const : Number(v);
-              update((d) => ({ ...d, noticeEndedHide: val }));
-              setToast("설정이 저장되었습니다");
+              const ok = await update((d) => ({ ...d, noticeEndedHide: val }));
+              if (ok) setToast("설정이 저장되었습니다");
             }}
             className="px-4 py-2.5 border border-line bg-surface rounded text-sm outline-none focus:border-accent"
           >
