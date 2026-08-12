@@ -131,27 +131,29 @@ export default function MenusAdminPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-4 py-3">
-                <span className="text-xs text-ink-muted font-mono w-5 text-center shrink-0">{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`font-semibold text-sm ${m.isHidden ? "text-ink-muted line-through" : ""}`}
-                      style={{ letterSpacing: "-0.02em" }}
-                    >
-                      {m.label}
-                    </span>
-                    {m.isHidden ? (
-                      <span className="text-xs px-1.5 py-0.5 bg-bg-alt rounded text-ink-muted">숨김</span>
-                    ) : (
-                      <span className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 rounded">표시</span>
-                    )}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs text-ink-muted font-mono w-5 text-center shrink-0">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`font-semibold text-sm ${m.isHidden ? "text-ink-muted line-through" : ""}`}
+                        style={{ letterSpacing: "-0.02em" }}
+                      >
+                        {m.label}
+                      </span>
+                      {m.isHidden ? (
+                        <span className="text-xs px-1.5 py-0.5 bg-bg-alt rounded text-ink-muted">숨김</span>
+                      ) : (
+                        <span className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 rounded">표시</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-ink-muted font-mono mt-0.5 truncate">{m.href}</div>
                   </div>
-                  <div className="text-xs text-ink-muted font-mono mt-0.5 truncate">{m.href}</div>
                 </div>
-                <div className="flex gap-1 flex-wrap justify-end shrink-0">
-                  <Button size="sm" variant="ghost" onClick={() => move(m.id, -1)} disabled={i === 0} title="위로">↑</Button>
-                  <Button size="sm" variant="ghost" onClick={() => move(m.id, 1)} disabled={i === sorted.length - 1} title="아래로">↓</Button>
+                <div className="flex gap-1 flex-wrap justify-end sm:justify-start shrink-0 pl-7 sm:pl-0">
+                  <Button size="icon" variant="ghost" onClick={() => move(m.id, -1)} disabled={i === 0} title="위로">↑</Button>
+                  <Button size="icon" variant="ghost" onClick={() => move(m.id, 1)} disabled={i === sorted.length - 1} title="아래로">↓</Button>
                   <Button size="sm" variant="ghost" onClick={() => toggleHide(m.id)}>{m.isHidden ? "표시" : "숨김"}</Button>
                   <Button size="sm" variant="secondary" onClick={() => { setEditing(m.id); setDraft({}); }}>수정</Button>
                 </div>

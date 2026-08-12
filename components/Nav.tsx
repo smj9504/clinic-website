@@ -72,7 +72,7 @@ export default function Nav() {
           <div className="flex items-center border border-line rounded-full overflow-hidden text-xs font-semibold">
             <button
               onClick={() => setLocale("ko")}
-              className={`px-3 py-1.5 transition-colors ${
+              className={`px-3 py-3.5 transition-colors ${
                 locale === "ko"
                   ? "bg-ink text-ink-inverse"
                   : "text-ink-muted hover:text-ink"
@@ -82,7 +82,7 @@ export default function Nav() {
             </button>
             <button
               onClick={() => setLocale("en")}
-              className={`px-3 py-1.5 transition-colors ${
+              className={`px-3 py-3.5 transition-colors ${
                 locale === "en"
                   ? "bg-ink text-ink-inverse"
                   : "text-ink-muted hover:text-ink"
@@ -103,7 +103,7 @@ export default function Nav() {
           </a>
 
           <button
-            className="lg:hidden p-2"
+            className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={t("nav.menuOpen")}
           >

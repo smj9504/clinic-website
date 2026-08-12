@@ -43,7 +43,7 @@ export default function Hero() {
 
   return (
     <section
-      className="relative h-screen min-h-[600px] overflow-hidden flex items-center transition-opacity duration-500"
+      className="relative min-h-[max(100dvh,600px)] overflow-hidden flex items-center transition-opacity duration-500"
       style={{ opacity: hydrated ? 1 : 0 }}
     >
       {/* Background images with Ken Burns — 활성 슬라이드 + 인접 슬라이드만 렌더링 */}
@@ -152,24 +152,28 @@ export default function Hero() {
             <button
               key={s.id}
               onClick={() => goTo(i)}
-              className="group relative w-12 h-1 rounded-full overflow-hidden"
-              style={{ background: "rgba(251, 250, 247, 0.25)" }}
+              className="group relative w-12 h-11 shrink-0 flex items-center justify-center"
               aria-label={`${t("slide.label")} ${i + 1}`}
             >
-              {i === activeIndex ? (
-                <div
-                  key={`prog-${animKey}-${i}`}
-                  className="hero-progress-bar absolute inset-0 rounded-full"
-                  style={{
-                    background: "var(--color-ink-inverse)",
-                    "--hero-interval": `${INTERVAL}ms`,
-                  } as React.CSSProperties}
-                />
-              ) : (
-                <div
-                  className="absolute inset-0 rounded-full transition-colors group-hover:bg-white/50"
-                />
-              )}
+              <span
+                className="relative block w-full h-1 rounded-full overflow-hidden"
+                style={{ background: "rgba(251, 250, 247, 0.25)" }}
+              >
+                {i === activeIndex ? (
+                  <div
+                    key={`prog-${animKey}-${i}`}
+                    className="hero-progress-bar absolute inset-0 rounded-full"
+                    style={{
+                      background: "var(--color-ink-inverse)",
+                      "--hero-interval": `${INTERVAL}ms`,
+                    } as React.CSSProperties}
+                  />
+                ) : (
+                  <div
+                    className="absolute inset-0 rounded-full transition-colors group-hover:bg-white/50"
+                  />
+                )}
+              </span>
             </button>
           ))}
         </div>

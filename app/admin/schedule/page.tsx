@@ -278,34 +278,36 @@ export default function ScheduleAdminPage() {
         <div className="space-y-2">
           {draft.rows.map((row, i) => (
             <div key={i} className="flex flex-col sm:flex-row gap-2">
-              <div className="flex gap-2 items-center flex-1 min-w-0">
-                <span className="text-xs text-ink-muted w-6 text-center font-mono shrink-0">{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <TextInput
-                    value={row.day}
-                    onChange={(e) => updateRow(i, "day", e.target.value)}
-                    placeholder="요일/날짜"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <TextInput
-                    value={row.hours}
-                    onChange={(e) => updateRow(i, "hours", e.target.value)}
-                    placeholder="시간"
-                  />
-                </div>
-                <div className="w-28 shrink-0">
-                  <TextInput
-                    value={row.note || ""}
-                    onChange={(e) => updateRow(i, "note", e.target.value)}
-                    placeholder="비고"
-                  />
+              <div className="flex gap-2 items-start flex-1 min-w-0">
+                <span className="text-xs text-ink-muted w-6 text-center font-mono shrink-0 pt-2.5">{i + 1}</span>
+                <div className="grid grid-cols-2 sm:flex gap-2 flex-1 min-w-0">
+                  <div className="min-w-0 sm:flex-1">
+                    <TextInput
+                      value={row.day}
+                      onChange={(e) => updateRow(i, "day", e.target.value)}
+                      placeholder="요일/날짜"
+                    />
+                  </div>
+                  <div className="min-w-0 sm:flex-1">
+                    <TextInput
+                      value={row.hours}
+                      onChange={(e) => updateRow(i, "hours", e.target.value)}
+                      placeholder="시간"
+                    />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1 sm:w-28 sm:shrink-0">
+                    <TextInput
+                      value={row.note || ""}
+                      onChange={(e) => updateRow(i, "note", e.target.value)}
+                      placeholder="비고"
+                    />
+                  </div>
                 </div>
               </div>
               <div className="flex gap-1 justify-end sm:justify-start shrink-0">
-                <Button size="sm" variant="ghost" onClick={() => moveRow(i, -1)} disabled={i === 0}>↑</Button>
-                <Button size="sm" variant="ghost" onClick={() => moveRow(i, 1)} disabled={i === draft.rows.length - 1}>↓</Button>
-                <Button size="sm" variant="danger" onClick={() => removeRow(i)}>
+                <Button size="icon" variant="ghost" onClick={() => moveRow(i, -1)} disabled={i === 0}>↑</Button>
+                <Button size="icon" variant="ghost" onClick={() => moveRow(i, 1)} disabled={i === draft.rows.length - 1}>↓</Button>
+                <Button size="icon" variant="danger" onClick={() => removeRow(i)}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                 </Button>
               </div>

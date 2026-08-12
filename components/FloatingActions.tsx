@@ -186,7 +186,7 @@ export default function FloatingActions() {
 
       {chatOpen && (
         <div
-          className="fixed bottom-32 right-8 z-40 w-[360px] max-w-[calc(100vw-4rem)] h-[520px] bg-bg rounded-lg shadow-2xl flex flex-col overflow-hidden border border-line"
+          className="fixed bottom-32 right-8 z-40 w-[360px] max-w-[calc(100vw-4rem)] h-[520px] max-h-[calc(100dvh-14rem)] bg-bg rounded-lg shadow-2xl flex flex-col overflow-hidden border border-line"
           style={{ animation: "scaleIn 300ms cubic-bezier(0.16, 1, 0.3, 1)" }}
         >
           {/* Header */}
@@ -273,7 +273,7 @@ export default function FloatingActions() {
             />
             <button
               type="submit"
-              className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center shrink-0 hover:brightness-110 transition-all self-center"
+              className="w-11 h-11 rounded-full bg-accent text-white flex items-center justify-center shrink-0 hover:brightness-110 transition-all self-center"
               aria-label="전송"
             >
               <svg

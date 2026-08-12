@@ -287,6 +287,9 @@ img { max-width: 100%; display: block; }
 }
 
 /* ─── Rich content (prose) ─── */
+.prose {
+  overflow-wrap: anywhere;
+}
 .prose h2 {
   font-size: 1.4rem;
   font-weight: 700;

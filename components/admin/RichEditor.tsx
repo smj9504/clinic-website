@@ -21,7 +21,7 @@ function ToolbarButton({
       type="button"
       onClick={onClick}
       title={title}
-      className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+      className={`min-h-[2.25rem] px-2.5 py-2 text-xs font-medium rounded transition-colors ${
         active
           ? "bg-accent text-white"
           : "bg-bg-alt text-ink-muted hover:text-ink hover:bg-bg-alt/80"
@@ -106,7 +106,7 @@ export default function RichEditor({
   return (
     <div className="border border-line rounded overflow-hidden bg-surface">
       {/* Toolbar */}
-      <div className="flex gap-1 flex-wrap px-3 py-2 border-b border-line bg-bg-alt/50">
+      <div className="flex gap-1.5 flex-wrap px-3 py-2 border-b border-line bg-bg-alt/50">
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           active={editor.isActive("bold")}
@@ -189,6 +189,7 @@ export default function RichEditor({
       <style jsx global>{`
         .ProseMirror {
           min-height: 200px;
+          overflow-wrap: anywhere;
         }
         .ProseMirror p {
           margin: 0.5em 0;

@@ -131,9 +131,9 @@ export default function DirectorAdminPage() {
                 className="flex-1 min-w-[180px]"
               />
               <div className="flex gap-1 shrink-0">
-                <Button size="sm" variant="ghost" onClick={() => moveBioLine(i, -1)} disabled={i === 0}>↑</Button>
-                <Button size="sm" variant="ghost" onClick={() => moveBioLine(i, 1)} disabled={i === draft.bio.length - 1}>↓</Button>
-                <Button size="sm" variant="danger" onClick={() => removeBioLine(i)}>
+                <Button size="icon" variant="ghost" onClick={() => moveBioLine(i, -1)} disabled={i === 0}>↑</Button>
+                <Button size="icon" variant="ghost" onClick={() => moveBioLine(i, 1)} disabled={i === draft.bio.length - 1}>↓</Button>
+                <Button size="icon" variant="danger" onClick={() => removeBioLine(i)}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                 </Button>
               </div>

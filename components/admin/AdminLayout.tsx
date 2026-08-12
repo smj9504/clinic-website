@@ -51,7 +51,7 @@ function LocaleToggle() {
           <button
             key={l}
             onClick={() => setEditingLocale(l)}
-            className={`flex-1 py-1.5 text-xs font-bold rounded transition-colors ${
+            className={`flex-1 py-3.5 text-xs font-bold rounded transition-colors ${
               editingLocale === l
                 ? "bg-accent text-ink-inverse"
                 : "bg-white/10 text-white/60 hover:bg-white/15"
@@ -64,7 +64,7 @@ function LocaleToggle() {
       <button
         onClick={handleAutoTranslate}
         disabled={translating}
-        className="w-full mt-2 py-1.5 text-[0.7rem] font-semibold rounded bg-white/10 text-white/70 hover:bg-white/15 hover:text-white transition-colors disabled:opacity-50"
+        className="w-full mt-2 py-3.5 text-[0.7rem] font-semibold rounded bg-white/10 text-white/70 hover:bg-white/15 hover:text-white transition-colors disabled:opacity-50"
       >
         {translating ? "번역 중..." : "한국어 → 영어 자동 번역"}
       </button>
@@ -234,7 +234,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="md:hidden sticky top-0 z-10 bg-surface border-b border-line flex items-center gap-3 px-4 py-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-1.5 rounded hover:bg-bg-alt transition-colors text-xl leading-none"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-bg-alt transition-colors text-xl leading-none"
               aria-label="메뉴 열기"
             >
               ☰

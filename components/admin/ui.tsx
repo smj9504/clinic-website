@@ -97,7 +97,7 @@ export function Button({
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "danger" | "ghost";
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "icon";
 }) {
   const variantClass =
     variant === "primary"
@@ -108,7 +108,12 @@ export function Button({
       ? "text-ink-soft hover:bg-bg-alt"
       : "border border-line bg-surface text-ink hover:bg-bg-alt";
 
-  const sizeClass = size === "sm" ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm";
+  const sizeClass =
+    size === "icon"
+      ? "w-11 h-11 justify-center p-0 text-base shrink-0"
+      : size === "sm"
+      ? "px-3 py-1.5 text-xs"
+      : "px-4 py-2 text-sm";
 
   return (
     <button
@@ -249,7 +254,7 @@ export function Toast({
   const bg = variant === "error" ? "bg-red-600" : "bg-ink";
   return (
     <div
-      className={`fixed bottom-6 right-6 z-50 ${bg} text-ink-inverse px-5 py-3 rounded shadow-lg flex items-center gap-3 max-w-sm`}
+      className={`fixed bottom-6 right-6 z-50 ${bg} text-ink-inverse px-5 py-3 rounded shadow-lg flex items-center gap-3 max-w-[min(24rem,calc(100vw-3rem))]`}
       style={{ animation: "fadeUp 300ms ease" }}
     >
       <span className="text-sm" style={{ letterSpacing: "-0.02em" }}>
