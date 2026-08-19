@@ -79,7 +79,12 @@ export function useServiceCatalog({ includeHidden = false } = {}): CatalogState 
     return () => controller.abort();
   }, [load]);
 
-  return { ...data, loading, setupRequired, error, reload: () => load() };
+  // 호출부가 의존성 배열에 넣어도 안전하도록 참조를 고정한다
+  const reload = useCallback(() => {
+    load();
+  }, [load]);
+
+  return { ...data, loading, setupRequired, error, reload };
 }
 
 export type ServiceDetailState = {

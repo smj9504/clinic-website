@@ -2,17 +2,21 @@
 
 import Link from "next/link";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
+import { useServiceCatalog } from "@/lib/useServices";
 import { useAdminLocale } from "@/lib/adminLocale";
 import { PageHeader, Card } from "@/components/admin/ui";
 
 export default function AdminDashboard() {
   const { editingLocale } = useAdminLocale();
   const data = useSiteDataForLocale(editingLocale);
+  // 시술은 site_data가 아니라 전용 테이블에 있어 따로 조회한다
+  const catalog = useServiceCatalog({ includeHidden: true });
 
   const stats = [
     { label: "활성 메뉴", value: data.menus.filter((m) => !m.isHidden).length, href: "/admin/menus" },
     { label: "히어로 슬라이드", value: data.heroSlides.length, href: "/admin/settings" },
     { label: "이벤트", value: data.events.length, href: "/admin/events" },
+    { label: "시술", value: catalog.services.length, href: "/admin/services" },
     { label: "공지사항", value: data.notices.length, href: "/admin/notices" },
     { label: "FAQ", value: data.faqs.length, href: "/admin/faqs" },
     { label: "팝업", value: data.popup.isActive ? "활성" : "비활성", href: "/admin/popups" },
@@ -66,6 +70,9 @@ export default function AdminDashboard() {
           </li>
           <li>
             <strong className="text-ink">이벤트·공지사항·FAQ</strong> — 추가/수정/삭제 및 순서 변경이 가능합니다.
+          </li>
+          <li>
+            <strong className="text-ink">시술·가격</strong> — 카테고리 → 서브카테고리 → 시술 3단으로 분류하고, 시술마다 가격 옵션과 상세 내용을 등록합니다.
           </li>
           <li>
             <strong className="text-ink">대표원장 / 사이트 설정</strong> — 한의원 정보, 히어로 슬라이드, 진료 안내까지 모두 편집 가능합니다.
