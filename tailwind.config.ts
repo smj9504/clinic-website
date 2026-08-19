@@ -18,6 +18,7 @@ const config: Config = {
         "ink-inverse": "var(--color-ink-inverse)",
         accent: "var(--color-accent)",
         "accent-soft": "var(--color-accent-soft)",
+        sale: "var(--color-sale)",
         line: "var(--color-line)",
         "line-strong": "var(--color-line-strong)",
       },

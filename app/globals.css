@@ -16,6 +16,8 @@
   --color-ink-inverse: #FBFAF7;
   --color-accent: #6B4423;
   --color-accent-soft: #A07855;
+  /* 할인율·판매가 전용. accent(갈색)와 같은 계열이라 부딪히지 않으면서 눈에 띈다 */
+  --color-sale: #B0392C;
   --color-line: #E8E2D8;
   --color-line-strong: #C9BFB0;
 

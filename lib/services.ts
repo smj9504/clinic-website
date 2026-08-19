@@ -235,6 +235,33 @@ export function createPrice(): ServicePrice {
   };
 }
 
+// ─── 표시 순서 ───
+
+/**
+ * 카테고리 → 서브카테고리 → 시술 순으로 정렬한다.
+ * services.sort_order는 서브카테고리 안에서의 순서라, 전체 목록을 그대로
+ * 정렬하면 분류가 뒤섞인다. 상위 순서를 앞세워 묶어 준다.
+ */
+export function sortServicesForDisplay(catalog: ServiceCatalog): Service[] {
+  const LAST = Number.MAX_SAFE_INTEGER;
+  // API가 이미 sort_order로 정렬해 주므로 배열 인덱스가 곧 표시 순서다
+  const categoryRank = new Map(catalog.categories.map((c, i) => [c.id, i]));
+  const subcategoryRank = new Map(
+    catalog.subcategories.map((s, i) => [
+      s.id,
+      { category: categoryRank.get(s.categoryId) ?? LAST, own: i },
+    ])
+  );
+  const rankOf = (s: Service) =>
+    subcategoryRank.get(s.subcategoryId) ?? { category: LAST, own: LAST };
+
+  return [...catalog.services].sort((a, b) => {
+    const ra = rankOf(a);
+    const rb = rankOf(b);
+    return ra.category - rb.category || ra.own - rb.own || a.sortOrder - b.sortOrder;
+  });
+}
+
 // ─── 기타 ───
 
 /**
