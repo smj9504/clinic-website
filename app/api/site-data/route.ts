@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/adminAuth";
 
 /**
  * GET /api/site-data?locale=ko
@@ -36,17 +37,10 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "locale and data required" }, { status: 400 });
   }
 
-  // DB에서 비밀번호 조회 후 검증
+  const denied = await requireAdmin(password);
+  if (denied) return denied;
+
   const supabase = getServiceClient();
-  const { data: configRow } = await supabase
-    .from("site_data")
-    .select("data")
-    .eq("locale", "_config")
-    .single();
-  const storedPassword = configRow?.data?.admin_password || "admin1234";
-  if (password !== storedPassword) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
 
   const { error } = await supabase
     .from("site_data")

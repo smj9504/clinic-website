@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServiceClient } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/adminAuth";
 
 /**
  * POST /api/translate
@@ -11,16 +11,8 @@ import { getServiceClient } from "@/lib/supabase";
 export async function POST(request: NextRequest) {
   const { texts, source = "ko", target = "en", password } = await request.json();
 
-  const supabase = getServiceClient();
-  const { data: configRow } = await supabase
-    .from("site_data")
-    .select("data")
-    .eq("locale", "_config")
-    .single();
-  const storedPassword = configRow?.data?.admin_password || "admin1234";
-  if (password !== storedPassword) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdmin(password);
+  if (denied) return denied;
 
   if (!Array.isArray(texts) || texts.length === 0) {
     return NextResponse.json({ error: "texts array is required" }, { status: 400 });

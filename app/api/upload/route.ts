@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/adminAuth";
 import sharp from "sharp";
 
 const MAX_WIDTH = 1920;
@@ -20,9 +21,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "file is required" }, { status: 400 });
   }
 
-  if (password !== "admin1234") {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdmin(password);
+  if (denied) return denied;
 
   // 10MB limit (원본 기준)
   if (file.size > 10 * 1024 * 1024) {
