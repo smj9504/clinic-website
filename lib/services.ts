@@ -235,6 +235,32 @@ export function createPrice(): ServicePrice {
   };
 }
 
+// ─── 기타 ───
+
+/**
+ * 분류의 안정적인 키. 이름이 한글이면 남는 글자가 없으므로 임의 문자열로 떨어진다.
+ * URL에는 uuid를 쓰므로 slug는 내부 식별용이고, 관리자가 나중에 고칠 수 있다.
+ */
+export function slugify(name: string, prefix = "c"): string {
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return base || `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * 테이블이 아직 없을 때(= supabase-services.sql 미실행)인지 판별한다.
+ * 이 경우 500 대신 빈 카탈로그를 돌려주어 공개 사이트가 깨지지 않게 한다.
+ */
+export function isMissingTableError(
+  error: { code?: string | null; message?: string | null } | null
+): boolean {
+  if (!error) return false;
+  if (error.code === "42P01" || error.code === "PGRST205") return true;
+  return /does not exist|schema cache/i.test(error.message ?? "");
+}
+
 // ─── DB row ↔ 앱 타입 ───
 
 type Json = Record<string, unknown>;

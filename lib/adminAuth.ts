@@ -40,3 +40,10 @@ export async function requireAdmin(password: unknown): Promise<NextResponse | nu
   if (await verifyAdminPassword(password)) return null;
   return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 }
+
+/** 관리자 비밀번호를 헤더로 받는 요청용 게이트 (GET·DELETE처럼 본문이 없는 경우) */
+export const ADMIN_PASSWORD_HEADER = "x-admin-password";
+
+export async function requireAdminRequest(request: Request): Promise<NextResponse | null> {
+  return requireAdmin(request.headers.get(ADMIN_PASSWORD_HEADER));
+}
