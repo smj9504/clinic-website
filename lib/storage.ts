@@ -65,13 +65,20 @@ export const defaultMenus: MenuItem[] = [
     isHidden: false,
     sortOrder: 2,
   },
-  { id: "m4", label: "한의원 소개", href: "/about", isHidden: false, sortOrder: 3 },
   {
-    id: "m5",
+    id: "m4",
+    label: "시술 안내",
+    href: "/services",
+    isHidden: false,
+    sortOrder: 3,
+  },
+  { id: "m5", label: "한의원 소개", href: "/about", isHidden: false, sortOrder: 4 },
+  {
+    id: "m6",
     label: "커뮤니티",
     href: "/community/notice",
     isHidden: false,
-    sortOrder: 4,
+    sortOrder: 5,
   },
 ];
 
@@ -91,13 +98,20 @@ export const defaultMenusEn: MenuItem[] = [
     isHidden: false,
     sortOrder: 2,
   },
-  { id: "m4", label: "About", href: "/about", isHidden: false, sortOrder: 3 },
   {
-    id: "m5",
+    id: "m4",
+    label: "Treatments & Pricing",
+    href: "/services",
+    isHidden: false,
+    sortOrder: 3,
+  },
+  { id: "m5", label: "About", href: "/about", isHidden: false, sortOrder: 4 },
+  {
+    id: "m6",
     label: "Community",
     href: "/community/notice",
     isHidden: false,
-    sortOrder: 4,
+    sortOrder: 5,
   },
 ];
 
@@ -531,6 +545,27 @@ export function resetSiteData() {
   window.dispatchEvent(new CustomEvent("siteDataUpdated"));
 }
 
+
+/**
+ * 시술 카탈로그 번역. 서버가 몇 건씩 나눠 처리하므로 커서를 따라간다.
+ * (시술은 site_data가 아니라 전용 테이블에 있어 별도 엔드포인트를 쓴다)
+ */
+async function translateServicesToEnglish(): Promise<void> {
+  const password = sessionStorage.getItem("clinic_admin_pw") || "";
+  let cursor: number | null = 0;
+  let guard = 0;
+  while (cursor !== null && guard++ < 500) {
+    const res: Response = await fetch("/api/services/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      body: JSON.stringify({ cursor }),
+    });
+    if (!res.ok) throw new Error(`시술 번역 실패 (${res.status})`);
+    const json: { nextCursor?: number | null } = await res.json();
+    cursor = typeof json.nextCursor === "number" ? json.nextCursor : null;
+  }
+}
+
 // ─── 자동 번역 (한국어 → 영어 동기화) ───
 
 /** 한국어 데이터를 번역하여 영어 데이터에 반영 (이미지·구조는 유지, 텍스트만 번역) */
@@ -699,6 +734,7 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
     };
 
     await setSiteData(translatedEn, "en");
+    await translateServicesToEnglish();
     return { success: true };
   } catch (err) {
     return { success: false, error: String(err) };

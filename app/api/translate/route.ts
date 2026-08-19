@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
+import { translateTexts } from "@/lib/translate";
 
 /**
  * POST /api/translate
@@ -18,33 +19,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "texts array is required" }, { status: 400 });
   }
 
-  // 빈 문자열은 번역 불필요
-  const results: string[] = [];
-
   try {
-    for (const text of texts) {
-      if (!text || !text.trim()) {
-        results.push(text);
-        continue;
-      }
-
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${source}&tl=${target}&dt=t&q=${encodeURIComponent(text)}`;
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        results.push(text); // 실패 시 원본 유지
-        continue;
-      }
-
-      const data = await res.json();
-      // Google Translate 응답: [[["translated text","original text",null,null,10]],null,"ko"]
-      const translated = (data[0] as Array<[string]>)
-        .map((segment: [string]) => segment[0])
-        .join("");
-      results.push(translated);
-    }
-
-    return NextResponse.json({ translations: results });
+    const translations = await translateTexts(texts, source, target);
+    return NextResponse.json({ translations });
   } catch (error) {
     return NextResponse.json(
       { error: "Translation failed", details: String(error) },

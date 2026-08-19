@@ -34,8 +34,9 @@ const koData = {
     { id: "m1", label: "홈", href: "/", isHidden: false, sortOrder: 0 },
     { id: "m2", label: "진행중인 이벤트", href: "/events", isHidden: false, sortOrder: 1 },
     { id: "m3", label: "진료 내용", href: "/treatments", isHidden: false, sortOrder: 2 },
-    { id: "m4", label: "한의원 소개", href: "/about", isHidden: false, sortOrder: 3 },
-    { id: "m5", label: "공지사항", href: "/community/notice", isHidden: false, sortOrder: 4 },
+    { id: "m4", label: "시술 안내", href: "/services", isHidden: false, sortOrder: 3 },
+    { id: "m5", label: "한의원 소개", href: "/about", isHidden: false, sortOrder: 4 },
+    { id: "m6", label: "공지사항", href: "/community/notice", isHidden: false, sortOrder: 5 },
   ],
   heroSlides: [
     { id: 1, label: "Korean Medicine Clinic", title: "지친 마음을 먼저 헤아리는\n한 첩의 위로와 회복", subtitle: "오늘의 아픔이 내일의 걸림돌이 되지 않도록\n잊고 지냈던 건강하고 활기찬 일상을 당신께 돌려드립니다", image: sampleImages.hero1 },
