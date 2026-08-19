@@ -170,6 +170,31 @@ export function blockText(b: ServiceBlock, locale: Locale): ServiceBlockText {
   });
 }
 
+/**
+ * 편집기 전용 — 폴백 없이 해당 언어에 실제로 저장된 값만 읽는다.
+ *
+ * pickText는 영어가 비면 한국어로 떨어뜨리는데, 편집기에서 그러면
+ * 번역이 이미 채워진 것처럼 보이고 그대로 저장하면 한국어가 영어 칸에 복사된다.
+ */
+export function rawText<T extends object>(
+  i18n: I18nMap<T> | undefined,
+  locale: Locale
+): Partial<T> {
+  return (i18n?.[locale] ?? {}) as Partial<T>;
+}
+
+/** 편집 중인 언어만 갈아끼운다. 다른 언어의 값은 그대로 둔다. */
+export function withLocalized<T extends object>(
+  i18n: I18nMap<T> | undefined,
+  locale: Locale,
+  patch: Partial<T>
+): I18nMap<T> {
+  return {
+    ...(i18n ?? {}),
+    [locale]: { ...((i18n?.[locale] ?? {}) as Partial<T>), ...patch },
+  } as I18nMap<T>;
+}
+
 // ─── 노출 판정 ───
 
 /**
