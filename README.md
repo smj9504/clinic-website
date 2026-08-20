@@ -137,6 +137,37 @@ clinic-website/
 
 즉, Admin에서 메뉴명을 바꾸면 새로고침 없이 사이트가 즉시 반영됩니다.
 
+## 예약 API 연동 (`/api/reservations`)
+
+원내 예약 서버로 예약 생성을 중계하는 서버 라우트입니다. 브라우저는 이 라우트만
+호출하므로 API 키가 클라이언트에 노출되지 않습니다.
+
+```
+환자 브라우저 → /api/reservations (Vercel, 키 보관) → 예약 서버 POST /external/v2/reservations
+```
+
+Vercel 프로젝트 환경변수에 아래 두 개를 등록해야 동작합니다. 미설정 시 503을 반환합니다.
+
+| 환경변수 | 설명 |
+|---|---|
+| `RESERVATION_API_BASE_URL` | 예약 서버 주소. **외부에서 접근 가능한 주소여야 합니다** (`192.168.x.x` 같은 사설 IP는 Vercel에서 닿지 않음) |
+| `RESERVATION_API_KEY` | 예약 서버 API 키 (`sigma_...`) |
+
+요청 본문은 `reservation_dt`(`YYYY-MM-DD HH:MM`)가 필수이고,
+`patient_uuid` · `reservation_name` · `reservation_phone` 중 최소 하나가 필요합니다.
+허용된 필드만 예약 서버로 전달되며, `reservation_source`는 기본값 `homepage`입니다.
+
+| 응답 | 의미 |
+|---|---|
+| 201 | 생성 성공. 본문은 예약 서버 응답 그대로 |
+| 400 | 입력값 오류 |
+| 429 | 요청 과다 (자체 제한 또는 예약 서버 제한) |
+| 502 / 504 | 예약 서버 연결 실패 / 응답 지연 |
+| 503 | 위 환경변수 미설정 |
+
+> 이 라우트는 인증 없이 공개됩니다. 실제 오픈 전에는 캡차 등 추가 방어를 붙이세요.
+> 현재 IP당 분당 5회 제한은 서버리스 인스턴스 메모리 기반이라 best-effort입니다.
+
 ## 추후 백엔드 연동
 
 `lib/storage.ts`의 함수들만 fetch() 호출로 교체하면 백엔드 연동 완료:
