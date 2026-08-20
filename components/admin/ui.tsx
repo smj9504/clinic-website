@@ -1,6 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import {
+  MAX_REQUEST_BYTES,
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_LABEL,
+  shrinkForUpload,
+} from "@/lib/imageUpload";
 
 export function PageHeader({
   title,
@@ -143,15 +149,23 @@ export function ImageInput({
   const [uploading, setUploading] = useState(false);
 
   const onFile = async (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      alert("10MB 이하 이미지만 업로드 가능합니다.");
+    if (file.size > MAX_UPLOAD_BYTES) {
+      alert(`${MAX_UPLOAD_LABEL} 이하 이미지만 업로드 가능합니다.`);
       return;
     }
     setUploading(true);
     try {
+      // 전송 전에 1920px WebP로 축소 — 서버가 어차피 같은 크기로 변환하므로
+      // 최종 화질은 그대로면서 요청 본문 크기 제한에 걸리지 않는다.
+      const upload = await shrinkForUpload(file);
+      if (upload.size > MAX_REQUEST_BYTES) {
+        alert("이미지를 압축하지 못했습니다. JPG 또는 PNG로 변환한 뒤 다시 시도해주세요.");
+        return;
+      }
+
       const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", upload);
       formData.append("password", password);
 
       const res = await fetch("/api/upload", { method: "POST", body: formData });
@@ -213,7 +227,9 @@ export function ImageInput({
           </Button>
         )}
       </div>
-      <p className="text-xs text-ink-muted">최대 업로드 용량: 10MB</p>
+      <p className="text-xs text-ink-muted">
+        최대 업로드 용량: {MAX_UPLOAD_LABEL} · 업로드 시 1920px WebP로 자동 압축됩니다
+      </p>
 
       <div>
         <label className="block text-xs text-ink-muted mb-1.5">또는 이미지 URL 직접 입력</label>
