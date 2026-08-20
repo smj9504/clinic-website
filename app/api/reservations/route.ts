@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
  * 필요한 환경변수 (Vercel 프로젝트 설정에 등록):
  *   RESERVATION_API_BASE_URL  예) https://api.example.com   ← 외부에서 접근 가능한 주소여야 함
  *   RESERVATION_API_KEY       예) sigma_...
+ *   RESERVATION_API_SOURCE    (선택) 아래 ALLOWED_SOURCES 중 하나. 미설정 시 안 보냄
  */
 
 const UPSTREAM_PATH = "/external/v2/reservations";
@@ -16,6 +17,41 @@ const UPSTREAM_TIMEOUT_MS = 15_000;
 
 /** 문서상 형식: YYYY-MM-DD HH:MM */
 const RESERVATION_DT_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+
+/**
+ * 예약 서버가 허용하는 reservation_source 값 (2026-08 실측).
+ * "homepage" 같은 임의 값을 보내면 400으로 거부된다. 목록에 홈페이지용 값이 없어
+ * 기본적으로는 이 필드를 아예 보내지 않고 서버 기본값(internal)에 맡긴다.
+ * 업체가 홈페이지용 값을 추가해 주면 RESERVATION_API_SOURCE만 바꾸면 된다.
+ */
+const ALLOWED_SOURCES = ["internal", "naver", "kakao", "daangn", "doctalk"];
+
+/** source로 구분할 수 없는 동안, 접수 화면에서 알아볼 수 있도록 메모에 남기는 표시 */
+const MEMO_PREFIX = "[홈페이지]";
+
+/**
+ * 예약 서버는 오류를 RFC 7807(application/problem+json)로 준다.
+ * detail에 사람이 읽을 수 있는 한국어 사유가 들어 있어 연동 디버깅에 필요하다.
+ */
+function upstreamMessage(data: unknown, fallback: string): string {
+  if (data && typeof data === "object") {
+    const d = data as Record<string, unknown>;
+    for (const key of ["detail", "title", "error", "message"]) {
+      const v = d[key];
+      if (typeof v === "string" && v) return v;
+    }
+  }
+  return fallback;
+}
+
+/** 업체에 문의할 때 쓸 수 있도록 예약 서버가 준 요청 ID를 꺼낸다 */
+function upstreamRequestId(data: unknown): string | undefined {
+  if (data && typeof data === "object") {
+    const v = (data as Record<string, unknown>).request_id;
+    if (typeof v === "string" && v) return v;
+  }
+  return undefined;
+}
 
 /**
  * 최소한의 스팸 방어. Vercel은 인스턴스마다 메모리가 분리되고 수시로 재생성되므로
@@ -80,6 +116,18 @@ export async function POST(request: NextRequest) {
     return bad("이름 또는 연락처를 입력해주세요.", 400);
   }
 
+  // reservation_source는 클라이언트가 정하지 않는다. 이 라우트를 거친 예약은 항상
+  // 홈페이지 유입이고, 값을 열어두면 naver/kakao 등으로 위장할 수 있기 때문이다.
+  const configured = process.env.RESERVATION_API_SOURCE?.trim();
+  const source = configured && ALLOWED_SOURCES.includes(configured) ? configured : undefined;
+  if (configured && !source) {
+    console.warn(
+      `[reservations] RESERVATION_API_SOURCE="${configured}"는 예약 서버가 받지 않는 값이라 생략합니다`
+    );
+  }
+
+  const memo = str(body.reservation_memo);
+
   // 화이트리스트한 필드만 그대로 전달한다 — 클라이언트가 임의 필드를 주입하지 못하게
   const payload = {
     reservation_dt: reservationDt,
@@ -87,8 +135,8 @@ export async function POST(request: NextRequest) {
     ...(str(body.doctor_uuid) && { doctor_uuid: str(body.doctor_uuid) }),
     ...(reservationName && { reservation_name: reservationName }),
     ...(reservationPhone && { reservation_phone: reservationPhone }),
-    ...(str(body.reservation_memo) && { reservation_memo: str(body.reservation_memo) }),
-    reservation_source: str(body.reservation_source) || "homepage",
+    reservation_memo: memo ? `${MEMO_PREFIX} ${memo}` : MEMO_PREFIX,
+    ...(source && { reservation_source: source }),
   };
 
   const controller = new AbortController();
@@ -114,16 +162,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (!upstream.ok) {
-      // 예약 서버의 오류 메시지는 연동 디버깅에 필요하므로 문자열일 때만 그대로 전달
-      const upstreamError =
-        data && typeof data === "object" && "error" in data && typeof data.error === "string"
-          ? data.error
-          : upstream.statusText;
+      const upstreamError = upstreamMessage(data, upstream.statusText);
+      const requestId = upstreamRequestId(data);
 
-      console.error(`[reservations] upstream ${upstream.status}: ${upstreamError}`);
+      console.error(
+        `[reservations] upstream ${upstream.status}: ${upstreamError}` +
+          (requestId ? ` (request_id=${requestId})` : "")
+      );
 
       const res = NextResponse.json(
-        { error: upstreamError, upstream_status: upstream.status },
+        {
+          error: upstreamError,
+          upstream_status: upstream.status,
+          ...(requestId && { upstream_request_id: requestId }),
+        },
         { status: upstream.status }
       );
       // 429면 예약 서버가 알려준 대기 시간을 그대로 넘겨준다

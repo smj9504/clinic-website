@@ -148,14 +148,34 @@ clinic-website/
 
 Vercel 프로젝트 환경변수에 아래 두 개를 등록해야 동작합니다. 미설정 시 503을 반환합니다.
 
-| 환경변수 | 설명 |
-|---|---|
-| `RESERVATION_API_BASE_URL` | 예약 서버 주소. **외부에서 접근 가능한 주소여야 합니다** (`192.168.x.x` 같은 사설 IP는 Vercel에서 닿지 않음) |
-| `RESERVATION_API_KEY` | 예약 서버 API 키 (`sigma_...`) |
+| 환경변수 | 필수 | 설명 |
+|---|---|---|
+| `RESERVATION_API_BASE_URL` | 필수 | 예약 서버 주소. **외부에서 접근 가능한 주소여야 합니다** (`192.168.x.x` 같은 사설 IP는 Vercel에서 닿지 않음) |
+| `RESERVATION_API_KEY` | 필수 | 예약 서버 API 키 (`sigma_...`) |
+| `RESERVATION_API_SOURCE` | 선택 | 아래 허용값 중 하나. 미설정 시 전송하지 않아 예약 서버 기본값(`internal`)이 적용됨 |
 
 요청 본문은 `reservation_dt`(`YYYY-MM-DD HH:MM`)가 필수이고,
 `patient_uuid` · `reservation_name` · `reservation_phone` 중 최소 하나가 필요합니다.
-허용된 필드만 예약 서버로 전달되며, `reservation_source`는 기본값 `homepage`입니다.
+허용된 필드만 예약 서버로 전달됩니다.
+
+### reservation_source 주의
+
+예약 서버는 이 값을 정해진 목록으로만 받습니다 (2026-08 실측).
+
+```
+internal, naver, kakao, daangn, doctalk
+```
+
+홈페이지용 값이 목록에 없어서 **기본적으로 이 필드를 보내지 않습니다.** 임의 값
+(`homepage` 등)을 보내면 예약이 400으로 거부되기 때문입니다. 업체가 홈페이지용 값을
+추가해 주면 `RESERVATION_API_SOURCE`만 설정하면 되고, 허용되지 않는 값이 들어오면
+경고 로그를 남기고 생략해 예약 자체는 성공시킵니다.
+
+그동안 접수 화면에서 홈페이지 예약을 구분할 수 있도록 **메모 앞에 `[홈페이지]`를
+붙여서** 전송합니다. 불필요하면 `MEMO_PREFIX` 상수를 지우면 됩니다.
+
+생성된 예약은 확정이 아니라 `예약중` 상태로 들어가므로, 직원이 확인·확정하는
+절차가 필요합니다.
 
 | 응답 | 의미 |
 |---|---|
