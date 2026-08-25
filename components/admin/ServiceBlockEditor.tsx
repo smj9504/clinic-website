@@ -23,9 +23,18 @@ const TYPE_LABEL: Record<ServiceBlockType, string> = {
   notice: "주의 사항",
   qna: "Q&A",
   gallery: "사진",
+  checklist: "사진 + 체크리스트 (2단 배치)",
 };
 
-const BLOCK_ORDER: ServiceBlockType[] = ["richtext", "points", "steps", "notice", "qna", "gallery"];
+const BLOCK_ORDER: ServiceBlockType[] = [
+  "richtext",
+  "points",
+  "steps",
+  "notice",
+  "qna",
+  "gallery",
+  "checklist",
+];
 
 /** points · steps · notice 공용 — 한 줄씩 추가·삭제·이동 */
 function StringListEditor({
@@ -179,6 +188,42 @@ function GalleryEditor({
   );
 }
 
+/** checklist 전용 — 사진 1장 + 체크리스트 줄 목록 */
+function ChecklistEditor({
+  block,
+  text,
+  onBlockChange,
+  onTextChange,
+}: {
+  block: ServiceBlock;
+  text: Partial<ServiceBlockText>;
+  onBlockChange: (patch: Partial<ServiceBlock>) => void;
+  onTextChange: (patch: Partial<ServiceBlockText>) => void;
+}) {
+  const image = (block.images ?? [])[0];
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold mb-1.5">사진</label>
+        <ImageInput
+          value={image?.url ?? ""}
+          onChange={(url) => onBlockChange({ images: url ? [{ id: image?.id ?? newId("img"), url }] : [] })}
+          aspectRatio="4 / 5"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold mb-1.5">체크리스트 항목</label>
+        <StringListEditor
+          items={text.items ?? []}
+          placeholder="예: 목과 어깨가 자주 결리고 뻣뻣한 느낌이 지속되는 경우"
+          onChange={(items) => onTextChange({ items })}
+        />
+      </div>
+    </div>
+  );
+}
+
 export type ServiceBlockEditorProps = {
   blocks: ServiceBlock[];
   locale: Locale;
@@ -278,6 +323,15 @@ export default function ServiceBlockEditor({ blocks, locale, onChange }: Service
 
               {block.type === "gallery" && (
                 <GalleryEditor
+                  block={block}
+                  text={text}
+                  onBlockChange={(patch) => updateBlock(block.id, patch)}
+                  onTextChange={(patch) => updateText(block, patch)}
+                />
+              )}
+
+              {block.type === "checklist" && (
+                <ChecklistEditor
                   block={block}
                   text={text}
                   onBlockChange={(patch) => updateBlock(block.id, patch)}

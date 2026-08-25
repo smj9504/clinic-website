@@ -1,17 +1,12 @@
 "use client";
 
-import {
-  categoryText,
-  subcategoryText,
-  type ServiceCategory,
-  type ServiceSubcategory,
-} from "@/lib/services";
+import { categoryText, type ServiceCategory } from "@/lib/services";
 import type { Locale } from "@/lib/i18n";
 import type { TranslationKey } from "@/lib/translations";
 
 export const ALL = "all";
 
-function Chip({
+function Tab({
   label,
   active,
   onClick,
@@ -25,85 +20,61 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`px-4 min-h-[2.75rem] rounded-full border text-sm font-medium transition-colors ${
-        active
-          ? "border-accent text-accent"
-          : "border-line text-ink-muted hover:border-line-strong hover:text-ink"
-      }`}
-      style={{ letterSpacing: "-0.02em" }}
+      className="relative font-display pb-2 transition-colors duration-200"
+      style={{
+        fontSize: "clamp(1.1rem, 2vw, 1.5rem)",
+        fontWeight: 700,
+        letterSpacing: "-0.02em",
+        color: active ? "var(--color-ink)" : "var(--color-ink-muted)",
+        opacity: active ? 1 : 0.6,
+      }}
     >
       {label}
+      <span
+        className="absolute left-0 right-0 bottom-0 h-0.5 bg-accent transition-transform duration-200 origin-left"
+        style={{ transform: active ? "scaleX(1)" : "scaleX(0)" }}
+        aria-hidden="true"
+      />
     </button>
   );
 }
 
 export type CategoryFilterProps = {
   categories: ServiceCategory[];
-  subcategories: ServiceSubcategory[];
   activeCategory: string;
-  activeSubcategory: string;
   onCategoryChange: (id: string) => void;
-  onSubcategoryChange: (id: string) => void;
   locale: Locale;
   t: (key: TranslationKey) => string;
 };
 
 /**
- * 카테고리 칩 한 줄 + (카테고리를 고른 경우) 서브카테고리 칩 한 줄.
- * 서브카테고리가 하나뿐이면 고를 것이 없으므로 둘째 줄을 그리지 않는다.
+ * 카테고리 언더라인 탭. 서브카테고리는 고르는 UI 없이 선택한 카테고리의
+ * 시술을 모두 카드로 보여준다 (필터링은 app/services/page.tsx에서 처리).
  */
 export default function CategoryFilter({
   categories,
-  subcategories,
   activeCategory,
-  activeSubcategory,
   onCategoryChange,
-  onSubcategoryChange,
   locale,
   t,
 }: CategoryFilterProps) {
   if (categories.length === 0) return null;
 
-  const childSubcategories =
-    activeCategory === ALL
-      ? []
-      : subcategories.filter((s) => s.categoryId === activeCategory);
-
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2 justify-center">
-        <Chip
-          label={t("services.all")}
-          active={activeCategory === ALL}
-          onClick={() => onCategoryChange(ALL)}
+    <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-5 md:gap-x-16">
+      <Tab
+        label={t("services.all")}
+        active={activeCategory === ALL}
+        onClick={() => onCategoryChange(ALL)}
+      />
+      {categories.map((category) => (
+        <Tab
+          key={category.id}
+          label={categoryText(category, locale).name}
+          active={activeCategory === category.id}
+          onClick={() => onCategoryChange(category.id)}
         />
-        {categories.map((category) => (
-          <Chip
-            key={category.id}
-            label={categoryText(category, locale).name}
-            active={activeCategory === category.id}
-            onClick={() => onCategoryChange(category.id)}
-          />
-        ))}
-      </div>
-
-      {childSubcategories.length > 1 && (
-        <div className="flex flex-wrap gap-2 justify-center pt-1">
-          <Chip
-            label={t("services.all")}
-            active={activeSubcategory === ALL}
-            onClick={() => onSubcategoryChange(ALL)}
-          />
-          {childSubcategories.map((subcategory) => (
-            <Chip
-              key={subcategory.id}
-              label={subcategoryText(subcategory, locale).name}
-              active={activeSubcategory === subcategory.id}
-              onClick={() => onSubcategoryChange(subcategory.id)}
-            />
-          ))}
-        </div>
-      )}
+      ))}
     </div>
   );
 }

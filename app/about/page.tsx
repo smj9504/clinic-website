@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import DirectorFeature from "@/components/sections/DirectorFeature";
+import FacilityCarousel from "@/components/sections/FacilityCarousel";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
-import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
+import { useScrollReveal } from "@/lib/useScrollReveal";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -15,7 +16,6 @@ export default function AboutPage() {
   const t = useT();
   const philRef = useScrollReveal<HTMLDivElement>();
   const facilityHeaderRef = useScrollReveal<HTMLDivElement>();
-  const facilityGridRef = useScrollRevealGroup<HTMLDivElement>();
   const hoursRef = useScrollReveal<HTMLDivElement>();
 
   return (
@@ -91,45 +91,15 @@ export default function AboutPage() {
 
       {/* Facility */}
       {about.facilityImages.length > 0 && (
-        <section className="py-20 md:py-32 bg-bg-alt">
+        <section className="py-20 md:py-32 bg-bg-alt overflow-hidden">
           <div className="container-default">
             <div ref={facilityHeaderRef} className="reveal-fade-up mb-16">
               <span className="section-label block mb-4">Facility</span>
               <h2 className="section-title">{t("about.facility")}</h2>
               <div className="section-divider" />
             </div>
-            <div
-              ref={facilityGridRef}
-              className={`grid grid-cols-1 ${
-                about.facilityImages.length >= 3
-                  ? "md:grid-cols-3"
-                  : about.facilityImages.length === 2
-                  ? "md:grid-cols-2"
-                  : ""
-              } gap-6`}
-            >
-              {about.facilityImages.map((src, i) => (
-                <div
-                  key={i}
-                  className="aspect-[4/3] relative rounded overflow-hidden bg-bg"
-                  data-reveal-item
-                >
-                  {src && (
-                    <Image
-                      src={src}
-                      alt={`${t("about.facility")} ${i + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      quality={75}
-                      placeholder="blur"
-                      blurDataURL={BLUR_PLACEHOLDER}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
           </div>
+          <FacilityCarousel images={about.facilityImages} altBase={t("about.facility")} />
         </section>
       )}
 

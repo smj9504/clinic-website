@@ -1,7 +1,9 @@
 const ko = {
   // Nav
   "nav.reservation": "예약하기",
+  "nav.reservationRequest": "상담 신청",
   "nav.menuOpen": "메뉴 열기",
+  "nav.submenuToggle": "하위 메뉴 열기/닫기",
 
   // Loading
   "loading.status": "페이지를 불러오는 중입니다",
@@ -53,6 +55,40 @@ const ko = {
   // Treatments page
   "treatments.title": "진료 내용",
 
+  // Skin beauty / Korean treatment hub pages
+  "skinBeauty.title": "피부미용",
+  "koreanTreatment.title": "한방치료",
+  "hub.moreDetail": "자세히 보기 →",
+  "hub.equipmentCta": "장비소개 더 보기 →",
+
+  // Skin beauty — equipment showcase
+  "skinBeauty.showcase.label": "전부 같은 관리가 아닙니다.",
+  "skinBeauty.showcase.title": "고운빛 시그니처 케어",
+  "skinBeauty.showcase.body":
+    "잡티·처짐·노화는 각각 다른 원인과 다른 피부층에서 일어납니다.\n고운빛한의원은 이 다양한 증상의 원인을 정확하게 진단하고,\n가장 정밀한 장비와 가장 섬세한 손길로 관리를 완성합니다.",
+  "skinBeauty.showcase.cta": "장비소개 더 보기",
+  "skinBeauty.feature.label": "정확한 진단과 꼼꼼한 시술",
+
+  // Skin beauty — equipment carousel
+  "skinBeauty.carousel.title": "고운빛의",
+  "skinBeauty.carousel.titleHighlight": "시술 장비",
+  "skinBeauty.carousel.subtitle":
+    "HIFU·고주파부터 레이저 케어까지,\n고민에 맞춰 장비를 선택해 관리합니다.",
+  "skinBeauty.carousel.prev": "이전 장비",
+  "skinBeauty.carousel.next": "다음 장비",
+
+  // Equipment catalog
+  "equipment.title": "장비소개",
+  "equipment.intro": "고운빛한의원의 시술 장비를 안내드립니다.",
+  "equipment.empty": "등록된 장비가 없습니다.",
+  "equipment.linkedServicesTitle": "연결된 시술",
+  "equipment.closeModal": "닫기",
+
+  // SubPage detail
+  "subpage.notFound": "페이지를 찾을 수 없습니다.",
+  "subpage.comingSoon": "콘텐츠 준비 중입니다.",
+  "subpage.back": "목록으로",
+
   // Community
   "notice.title": "공지사항",
   "notice.tab": "공지사항",
@@ -72,7 +108,6 @@ const ko = {
   "services.untilPrefix": "",
   "services.untilSuffix": "까지",
   "services.detail": "자세히 보기",
-  "services.priceTitle": "가격 안내",
   "services.option": "옵션",
   "services.originalPrice": "정가",
   "services.discount": "할인",
@@ -90,6 +125,8 @@ const ko = {
   "popup.dismiss": "오늘 하루 보지 않기",
   "popup.detail": "자세히 →",
   "popup.close": "팝업 닫기",
+  "popup.dismissTodayShort": "오늘은 그만 볼래요",
+  "popup.closeShort": "닫기",
 
   // Chat
   "chat.title": "무엇을 도와드릴까요?",
@@ -120,7 +157,9 @@ const ko = {
 const en: Record<keyof typeof ko, string> = {
   // Nav
   "nav.reservation": "Book Now",
+  "nav.reservationRequest": "Request",
   "nav.menuOpen": "Open menu",
+  "nav.submenuToggle": "Toggle submenu",
 
   // Loading
   "loading.status": "Loading the page",
@@ -172,6 +211,40 @@ const en: Record<keyof typeof ko, string> = {
   // Treatments page
   "treatments.title": "Treatments",
 
+  // Skin beauty / Korean treatment hub pages
+  "skinBeauty.title": "Skin Beauty",
+  "koreanTreatment.title": "Korean Medicine Treatment",
+  "hub.moreDetail": "Learn more →",
+  "hub.equipmentCta": "See our equipment →",
+
+  // Skin beauty — equipment showcase
+  "skinBeauty.showcase.label": "Not all care is the same.",
+  "skinBeauty.showcase.title": "Gowoonbit Signature Care",
+  "skinBeauty.showcase.body":
+    "Blemishes, sagging, and aging each begin from different causes and different layers of the skin.\nGowoonbit precisely diagnoses the root cause behind each concern,\nand completes your care with the most precise equipment and the most careful hands.",
+  "skinBeauty.showcase.cta": "See our equipment",
+  "skinBeauty.feature.label": "Precise diagnosis, careful treatment",
+
+  // Skin beauty — equipment carousel
+  "skinBeauty.carousel.title": "Gowoonbit's",
+  "skinBeauty.carousel.titleHighlight": "Treatment Equipment",
+  "skinBeauty.carousel.subtitle":
+    "From HIFU and RF to laser care,\nwe select the equipment suited to your needs.",
+  "skinBeauty.carousel.prev": "Previous equipment",
+  "skinBeauty.carousel.next": "Next equipment",
+
+  // Equipment catalog
+  "equipment.title": "Equipment",
+  "equipment.intro": "Introducing Gowoonbit Korean Medicine Clinic's treatment equipment.",
+  "equipment.empty": "No equipment has been added yet.",
+  "equipment.linkedServicesTitle": "Related Treatments",
+  "equipment.closeModal": "Close",
+
+  // SubPage detail
+  "subpage.notFound": "Page not found.",
+  "subpage.comingSoon": "Content coming soon.",
+  "subpage.back": "Back to list",
+
   // Community
   "notice.title": "Notices",
   "notice.tab": "Notices",
@@ -191,7 +264,6 @@ const en: Record<keyof typeof ko, string> = {
   "services.untilPrefix": "Until ",
   "services.untilSuffix": "",
   "services.detail": "View details",
-  "services.priceTitle": "Pricing",
   "services.option": "Option",
   "services.originalPrice": "Regular",
   "services.discount": "Off",
@@ -209,6 +281,8 @@ const en: Record<keyof typeof ko, string> = {
   "popup.dismiss": "Don't show today",
   "popup.detail": "Details →",
   "popup.close": "Close popup",
+  "popup.dismissTodayShort": "Don't show today",
+  "popup.closeShort": "Close",
 
   // Chat
   "chat.title": "How can we help?",

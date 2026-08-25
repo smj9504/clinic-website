@@ -43,7 +43,7 @@ export default function Hero() {
 
   return (
     <section
-      className="relative min-h-[max(100dvh,600px)] overflow-hidden flex items-center transition-opacity duration-500"
+      className="relative min-h-[max(calc(100dvh-240px),440px)] overflow-hidden flex items-center transition-opacity duration-500"
       style={{ opacity: hydrated ? 1 : 0 }}
     >
       {/* Background images with Ken Burns — 활성 슬라이드 + 인접 슬라이드만 렌더링 */}
@@ -58,11 +58,22 @@ export default function Hero() {
           return (
             <div
               key={s.id}
-              className={`absolute inset-0 transition-opacity duration-[1200ms] ease-out ${
+              className={`absolute inset-0 overflow-hidden transition-opacity duration-[1200ms] ease-out ${
                 i === activeIndex ? "opacity-100" : "opacity-0"
               }`}
             >
-              <div className={i === activeIndex ? "ken-burns" : ""} style={{ width: "100%", height: "100%" }}>
+              <div
+                className={
+                  i === activeIndex
+                    ? i === 2
+                      ? "ken-burns-zoom"
+                      : i % 2 === 0
+                        ? "ken-burns-pan-right"
+                        : "ken-burns-pan-left"
+                    : ""
+                }
+                style={{ width: "100%", height: "100%" }}
+              >
                 <Image
                   src={s.image}
                   alt={s.title}
@@ -139,9 +150,17 @@ export default function Hero() {
           <a href={clinicInfo.reservationUrl} target="_blank" rel="noopener noreferrer" className="btn-primary">
             {t("hero.reservation")}
           </a>
-          <Link href="/treatments" className="btn-secondary">
-            {t("hero.treatments")}
-          </Link>
+          {slide.linkUrl && slide.linkLabel && (
+            slide.linkUrl.startsWith("http") ? (
+              <a href={slide.linkUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary">
+                {slide.linkLabel}
+              </a>
+            ) : (
+              <Link href={slide.linkUrl} className="btn-secondary">
+                {slide.linkLabel}
+              </Link>
+            )
+          )}
         </div>
       </div>
 
@@ -180,11 +199,11 @@ export default function Hero() {
       )}
 
       {/* Scroll indicator */}
-      <div className="absolute bottom-12 right-8 z-10 hidden md:flex flex-col items-center gap-2 text-ink-inverse opacity-50">
-        <span className="text-[0.65rem] uppercase" style={{ letterSpacing: "0.15em", writingMode: "vertical-rl" }}>
+      <div className="absolute bottom-3 md:bottom-12 right-1/2 translate-x-1/2 md:right-8 md:translate-x-0 z-10 flex flex-col items-center gap-2 text-ink-inverse opacity-70">
+        <span className="text-[0.65rem] uppercase hidden md:block" style={{ letterSpacing: "0.15em", writingMode: "vertical-rl" }}>
           Scroll
         </span>
-        <div className="w-px h-8 bg-current animate-pulse" />
+        <div className="w-px h-5 md:h-8 bg-current animate-pulse" />
       </div>
     </section>
   );

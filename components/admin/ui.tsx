@@ -126,25 +126,40 @@ export function Button({
   );
 }
 
+const VIDEO_EXT_RE = /\.(mp4|webm|mov)(\?|$)/i;
+
+/** URL 확장자로 동영상 여부를 판별한다 — DataURL(data:video/...)도 함께 잡는다 */
+function isVideoUrl(url: string): boolean {
+  return url.startsWith("data:video/") || VIDEO_EXT_RE.test(url);
+}
+
 /**
- * 이미지 입력 — URL 입력 OR 파일 업로드 (DataURL로 LocalStorage 저장)
- * 실제 운영에선 파일 업로드 → R2/S3 URL 반환으로 교체
+ * 이미지/동영상 입력 — URL 입력 OR 파일 업로드
+ *
+ * allowVideo가 꺼져 있으면(기본값) 기존과 동일하게 이미지만 받는다.
+ * 켜면 mp4·webm·mov도 업로드할 수 있고, 미리보기가 URL 확장자를 보고
+ * <video>/<img>를 자동으로 분기한다.
  */
 export function ImageInput({
   value,
   onChange,
   aspectRatio = "16 / 10",
+  allowVideo = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   aspectRatio?: string;
+  allowVideo?: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
+  const maxSize = allowVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
+  const maxSizeLabel = allowVideo ? "이미지 10MB · 동영상 100MB" : "10MB";
+
   const onFile = async (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      alert("10MB 이하 이미지만 업로드 가능합니다.");
+    if (file.size > maxSize) {
+      alert(`업로드 용량 초과 (최대: ${maxSizeLabel})`);
       return;
     }
     setUploading(true);
@@ -163,11 +178,13 @@ export function ImageInput({
       }
       onChange(json.url);
     } catch (err) {
-      alert("이미지 업로드에 실패했습니다.");
+      alert("업로드에 실패했습니다.");
     } finally {
       setUploading(false);
     }
   };
+
+  const preview = value && isVideoUrl(value);
 
   return (
     <div className="space-y-3">
@@ -176,14 +193,22 @@ export function ImageInput({
           className="relative w-full max-w-md bg-bg-alt rounded overflow-hidden border border-line"
           style={{ aspectRatio }}
         >
-          <img
-            src={value}
-            alt="preview"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.opacity = "0.3";
-            }}
-          />
+          {preview ? (
+            <video
+              src={value}
+              controls
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <img
+              src={value}
+              alt="preview"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.opacity = "0.3";
+              }}
+            />
+          )}
         </div>
       )}
 
@@ -191,7 +216,7 @@ export function ImageInput({
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept={allowVideo ? "image/*,video/mp4,video/webm,video/quicktime" : "image/*"}
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -209,14 +234,19 @@ export function ImageInput({
         </Button>
         {value && (
           <Button type="button" variant="ghost" onClick={() => onChange("")}>
-            이미지 제거
+            {preview ? "동영상 제거" : "이미지 제거"}
           </Button>
         )}
       </div>
-      <p className="text-xs text-ink-muted">최대 업로드 용량: 10MB</p>
+      <p className="text-xs text-ink-muted">
+        최대 업로드 용량: {maxSizeLabel}
+        {allowVideo && " (mp4 · webm · mov)"}
+      </p>
 
       <div>
-        <label className="block text-xs text-ink-muted mb-1.5">또는 이미지 URL 직접 입력</label>
+        <label className="block text-xs text-ink-muted mb-1.5">
+          또는 {allowVideo ? "이미지·동영상" : "이미지"} URL 직접 입력
+        </label>
         <TextInput
           type="url"
           placeholder="https://images.unsplash.com/..."

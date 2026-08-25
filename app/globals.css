@@ -45,16 +45,16 @@ img { max-width: 100%; display: block; }
 @layer components {
   .container-default {
     @apply mx-auto;
-    max-width: 1200px;
-    padding-left: clamp(1rem, 4vw, 3rem);
-    padding-right: clamp(1rem, 4vw, 3rem);
+    max-width: 1360px;
+    padding-left: clamp(1.5rem, 3vw, 2rem);
+    padding-right: clamp(1.5rem, 3vw, 2rem);
   }
 
   .container-wide {
     @apply mx-auto;
-    max-width: 1440px;
-    padding-left: clamp(1rem, 4vw, 3rem);
-    padding-right: clamp(1rem, 4vw, 3rem);
+    max-width: 1600px;
+    padding-left: clamp(1.5rem, 3vw, 2rem);
+    padding-right: clamp(1.5rem, 3vw, 2rem);
   }
 
   /* Section label - eyebrow text */
@@ -185,6 +185,33 @@ img { max-width: 100%; display: block; }
   transform: scale(1);
 }
 
+/* ─── Nav dropdown (desktop hover submenu) ─── */
+.nav-dropdown {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-dropdown.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* ─── Mobile accordion (submenu expand/collapse) ─── */
+.nav-accordion {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-accordion.open {
+  grid-template-rows: 1fr;
+}
+.nav-accordion > div {
+  overflow: hidden;
+}
+
 /* Staggered children items */
 [data-reveal-item] {
   opacity: 0;
@@ -195,6 +222,20 @@ img { max-width: 100%; display: block; }
 [data-reveal-item].revealed {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Staggered items that should arrive from a side instead of below — e.g. chat bubbles */
+[data-reveal-item].reveal-from-left {
+  transform: translateY(0) translateX(-16px);
+}
+[data-reveal-item].reveal-from-left.revealed {
+  transform: translateY(0) translateX(0);
+}
+[data-reveal-item].reveal-from-right {
+  transform: translateY(0) translateX(16px);
+}
+[data-reveal-item].reveal-from-right.revealed {
+  transform: translateY(0) translateX(0);
 }
 
 /* ─── Loading screen brand pulse ─── */
@@ -211,14 +252,32 @@ img { max-width: 100%; display: block; }
   animation: fadeIn 200ms ease forwards;
 }
 
-/* ─── Ken Burns for Hero ─── */
-@keyframes kenBurns {
+/* ─── Ken Burns for Hero ───
+   확대와 함께 좌우로 천천히 이동시켜 정지 이미지가 영상처럼 흐르는 느낌을 준다.
+   슬라이드마다 방향을 번갈아(좌→우 / 우→좌) 적용해 매 전환이 같은 움직임의 반복으로 읽히지 않게 하고,
+   세 번째 슬라이드는 팬 대신 확대(줌인)를 강조해 리듬에 변주를 준다.
+   이동 폭만큼 원본보다 크게 확대해 두어야 팬 도중 빈 여백이 드러나지 않는다. */
+@keyframes kenBurnsPanRight {
+  0% { transform: scale(1.15) translateX(-6%); }
+  100% { transform: scale(1.15) translateX(6%); }
+}
+@keyframes kenBurnsPanLeft {
+  0% { transform: scale(1.15) translateX(6%); }
+  100% { transform: scale(1.15) translateX(-6%); }
+}
+@keyframes kenBurnsZoom {
   0% { transform: scale(1); }
-  100% { transform: scale(1.08); }
+  100% { transform: scale(1.18); }
 }
 
-.ken-burns {
-  animation: kenBurns 8s ease-out forwards;
+.ken-burns-pan-right {
+  animation: kenBurnsPanRight 8s cubic-bezier(0.25, 0, 0.35, 1) forwards;
+}
+.ken-burns-pan-left {
+  animation: kenBurnsPanLeft 8s cubic-bezier(0.25, 0, 0.35, 1) forwards;
+}
+.ken-burns-zoom {
+  animation: kenBurnsZoom 8s cubic-bezier(0.25, 0, 0.35, 1) forwards;
 }
 
 /* ─── Hero progress bar ─── */
@@ -254,6 +313,21 @@ img { max-width: 100%; display: block; }
   box-shadow: 0 20px 60px rgba(26, 23, 21, 0.1), 0 8px 24px rgba(26, 23, 21, 0.06);
 }
 
+/* ─── Body area map (통증 부위 핫스팟) ─── */
+@keyframes bodyAreaPulse {
+  0% { transform: scale(1); opacity: 0.45; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+@keyframes bodyAreaPanelEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.body-area-panel-enter {
+  animation: bodyAreaPanelEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* ─── Treatment cell hover ─── */
 .treatment-cell {
   position: relative;
@@ -272,10 +346,15 @@ img { max-width: 100%; display: block; }
   opacity: 1;
 }
 
-/* ─── Page transition ─── */
+/* ─── Page transition ───
+   forwards로 끝나는 transform 애니메이션은 종료 후에도 요소에 transform 값이
+   남아, 그 자손의 position:fixed가 뷰포트가 아니라 이 요소를 containing block으로
+   삼게 만든다(장비 페이지 모달이 스크롤 위치에 붙어버리던 버그의 원인).
+   to 키프레임에서 transform을 생략해, 애니메이션이 끝나는 시점에는 이미
+   transform이 적용되지 않은 상태로 수렴하게 한다. */
 @keyframes pageEnter {
   from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; }
 }
 
 .page-transition-enter {
@@ -309,6 +388,283 @@ img { max-width: 100%; display: block; }
 .prose strong { font-weight: 700; }
 .prose ul, .prose ol { padding-left: 1.5em; margin: 0.6em 0; }
 .prose li { margin: 0.3em 0; }
+
+/* ─── Prose checklist (h3 바로 다음 ul) ───
+   admin/DB에 저장된 자유 텍스트 body 안에서 "이런 분들께 권해드립니다" 류의
+   체크리스트가 h3 + ul 패턴으로 반복 등장한다. 박스나 카드 대신
+   세리프 느낌의 굵은 인덱스 숫자(01, 02…) + 얇은 구분선만으로 스캔하기 쉽게 만든다.
+   숫자는 CSS counter로 생성해 스크린리더에 중복 텍스트 노이즈를 남기지 않는다. */
+.prose h3 + ul {
+  list-style: none;
+  counter-reset: checklist;
+  padding-left: 0;
+  margin: 1em 0 1.5em;
+  display: grid;
+  grid-template-columns: 1fr;
+  border-top: 1px solid var(--color-line);
+}
+.prose h3 + ul > li {
+  counter-increment: checklist;
+  position: relative;
+  margin: 0;
+  padding: 1.1em 0 1.1em 3.25rem;
+  border-bottom: 1px solid var(--color-line);
+  line-height: 1.6;
+}
+.prose h3 + ul > li::before {
+  content: counter(checklist, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 1.05em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  color: var(--color-accent);
+  transition: color 0.3s ease;
+}
+.prose h3 + ul > li:hover::before {
+  color: var(--color-accent-soft);
+}
+
+/* 체크리스트 스태거 reveal: body 컨테이너가 이미 .reveal-fade-up으로 스크롤
+   진입 시 .revealed를 받으므로(app/subpages/[slug]/page.tsx), 새 observer를
+   추가하지 않고 그 상태 전환에 편승한다. .revealed가 붙기 전까지 각 li는
+   숨겨 두었다가, 붙는 순간 [data-reveal-item]과 동일한 모션(translateY(24px)→0,
+   0.5s, cubic-bezier(0.16, 1, 0.3, 1))으로 nth-child 순서에 따라 순차 재생한다. */
+.prose h3 + ul > li {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.reveal-fade-up.revealed .prose h3 + ul > li,
+.prose.revealed h3 + ul > li {
+  animation: heroTextUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.prose h3 + ul > li:nth-child(1) { animation-delay: 0ms; }
+.prose h3 + ul > li:nth-child(2) { animation-delay: 80ms; }
+.prose h3 + ul > li:nth-child(3) { animation-delay: 160ms; }
+.prose h3 + ul > li:nth-child(4) { animation-delay: 240ms; }
+.prose h3 + ul > li:nth-child(5) { animation-delay: 320ms; }
+.prose h3 + ul > li:nth-child(n+6) { animation-delay: 400ms; }
+
+@media (min-width: 768px) {
+  .prose h3 + ul {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 2.5rem;
+  }
+  /* 2열 그리드에서는 각 행의 셀마다 아래쪽 선이 생겨 홀수 개일 때 마지막 셀에도
+     선이 남는다. 대신 그리드 컨테이너의 border-top/각 li의 border-bottom을
+     유지하되, 마지막 행 판별이 순수 CSS로는 불완전하므로 border-top 방식을
+     열마다 반복해 시각적으로는 촘촘한 라인 그리드로 보이게 한다. */
+  .prose h3 + ul > li {
+    padding-right: 1rem;
+  }
+}
+
+/* ─── Prose quote-list (h2 섹션 안에 등장하는 ul) ───
+   pain-treatment/traffic-accident/herbal-clinic/chuna/pharmacopuncture
+   (m8, 한방·치료) body에는 체크리스트와 완전히 별개인 일반 소제목 섹션
+   (h3 + p, 치료법 설명)이 같은 body 안에 섞여 있다.
+   처음엔 h2 + ul(인접 형제)로 좁혀 두었으나, traffic-accident의
+   "자동차보험으로 부담 없이 치료받으세요" 섹션은 실제로
+   h2 → img → p(설명) → h3(물리치료 등 다른 소제목) → ... → p → ul 순서라
+   ul이 h2 바로 다음이 아니라 훨씬 뒤에 온다 — h2 + ul로는 이 ul을 전혀
+   잡지 못했다. 그래서 일반 형제 결합자(~)로 넓혀 "이 h2 섹션 어딘가에
+   등장하는 ul"을 모두 잡도록 했다.
+   넓혀도 안전한 이유(전체 slug body를 Playwright로 직접 재조사해 확인):
+   - lifting/laser/skin-booster(그룹 A, h3+ul)의 ul들은 nearestH2가 전부
+     null이다 — 즉 그 body들에는 h2 자체가 없어 h2 ~ ul이 애초에 매칭될
+     h2 조상이 없다. 그룹 A와 겹칠 수 없다.
+   - pain-treatment/herbal-clinic/traffic-accident/chuna/pharmacopuncture의
+     ul들은 전부(총 6개) "가장 가까운 h2와 그 ul 사이에 다른 h2가 하나도
+     끼어 있지 않음"을 확인했다 — 즉 뒤에 오는 다른 h2 섹션의 ul을 잘못
+     끌어오는 경우가 실제 데이터에 없다.
+   비주얼은 그리드/인덱스 숫자가 아니라 "인용구형 문장" 리듬: 마커 없이 세로로
+   쌓고, 각 문장을 살짝 키운 크기로 읽히게 한다. .prose blockquote의 3px 컬러
+   border-left 인상을 참고하되 그 클래스를 재사용하지 않고 새로 만든 이유는
+   craft-floor.md가 리스트 아이템 위의 1px 초과 컬러 border-left를 금지하기
+   때문 — 대신 border-top(1px, line 컬러)만으로 구분한다. */
+.prose h2 ~ ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 1.25em 0 1.75em;
+}
+.prose h2 ~ ul > li {
+  position: relative;
+  margin: 0;
+  padding: 1.15em 0 1.15em 1.75rem;
+  border-top: 1px solid var(--color-line);
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.75;
+  letter-spacing: -0.01em;
+  color: var(--color-ink-soft);
+}
+.prose h2 ~ ul > li:last-child {
+  border-bottom: 1px solid var(--color-line);
+}
+.prose h2 ~ ul > li::before {
+  content: '\201C';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.25em;
+  line-height: 1;
+  color: var(--color-accent-soft);
+}
+
+/* 그룹 A와 동일한 stagger reveal 관성: 새 observer 없이 부모 .prose가
+   .revealed를 받는 시점에 편승, heroTextUp 키프레임 재사용, nth-child delay. */
+.prose h2 ~ ul > li {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.reveal-fade-up.revealed .prose h2 ~ ul > li,
+.prose.revealed h2 ~ ul > li {
+  animation: heroTextUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.prose h2 ~ ul > li:nth-child(1) { animation-delay: 0ms; }
+.prose h2 ~ ul > li:nth-child(2) { animation-delay: 80ms; }
+.prose h2 ~ ul > li:nth-child(3) { animation-delay: 160ms; }
+.prose h2 ~ ul > li:nth-child(4) { animation-delay: 240ms; }
+.prose h2 ~ ul > li:nth-child(5) { animation-delay: 320ms; }
+.prose h2 ~ ul > li:nth-child(6) { animation-delay: 400ms; }
+.prose h2 ~ ul > li:nth-child(n+7) { animation-delay: 480ms; }
+
+@media (max-width: 767px) {
+  .prose h2 ~ ul > li {
+    font-size: 1.05rem;
+    padding: 1em 0 1em 1.5rem;
+  }
+  .prose h2 ~ ul > li::before {
+    font-size: 2em;
+    top: 0.58em;
+  }
+}
+
+/* ─── Prose step sequence (p 바로 다음 ol) ───
+   "다음과 같은 순서로 이루어집니다" 류의 문장 뒤에 오는 ol은 체크리스트(무순서
+   항목 나열)와 달리 실제 진행 순서를 나타낸다. h2/h3 뒤 ul과 겹치지 않는
+   p + ol 선택자로 좁혀서, 순서가 있는 프로세스라는 사실 자체를 형태로
+   전달한다: 세로로 이어지는 연결선 위에 원형 스텝 숫자를 얹어 "다음 단계로
+   이어진다"는 흐름을 읽을 수 있게 한다. */
+.prose p + ol {
+  list-style: none;
+  counter-reset: step;
+  padding-left: 0;
+  margin: 1.5em 0 1.75em;
+}
+.prose p + ol > li {
+  counter-increment: step;
+  position: relative;
+  margin: 0;
+  padding: 0 0 1.75em 3.25rem;
+  min-height: 2.5rem;
+  line-height: 1.7;
+}
+.prose p + ol > li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-ink-inverse);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+}
+.prose p + ol > li::after {
+  content: '';
+  position: absolute;
+  left: 1.25rem;
+  top: 2.5rem;
+  bottom: 0;
+  width: 1px;
+  background: var(--color-line-strong);
+}
+.prose p + ol > li:last-child::after {
+  display: none;
+}
+.prose p + ol > li:last-child {
+  padding-bottom: 0;
+}
+
+.prose p + ol > li {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.reveal-fade-up.revealed .prose p + ol > li,
+.prose.revealed p + ol > li {
+  animation: heroTextUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.prose p + ol > li:nth-child(1) { animation-delay: 0ms; }
+.prose p + ol > li:nth-child(2) { animation-delay: 80ms; }
+.prose p + ol > li:nth-child(3) { animation-delay: 160ms; }
+.prose p + ol > li:nth-child(4) { animation-delay: 240ms; }
+.prose p + ol > li:nth-child(5) { animation-delay: 320ms; }
+.prose p + ol > li:nth-child(n+6) { animation-delay: 400ms; }
+
+/* ─── Prose method description (h3 바로 다음 p) ───
+   h3+ul(체크리스트)·h2+ul(인용구 리스트)와 나란히 등장하는 세 번째 패턴:
+   "추나요법 / 침·약침 치료 / 부항·온열요법" 처럼 병렬적인 치료 방식을
+   각각 소제목+설명 문단으로 나열하는 구간. 지금까지는 h3/p가 일반 본문과
+   똑같이 렌더링되어 "이게 하나의 흐름인지, 병렬적인 항목들인지" 구분이 안 됐다.
+
+   두 형제 패턴과 마찬가지로 accent 포인트 + 헤어라인 규칙 조합을 쓰되,
+   숫자(h3+ul)·인용부호(h2+ul)와 겹치지 않도록 마크의 위치를 다르게 둔다:
+   텍스트 "앞"이 아니라 h3 "아래"에 짧은 밑줄을 붙여 세 번째 표식으로 구분한다.
+   문단이 여러 문장이라 체크리스트만큼 촘촘하게 붙이지 않고, 인용구 리스트처럼
+   글자를 키우지도 않는다 — 짝(h3+p) 사이의 여백만 넉넉히 벌려 리듬을 만든다.
+
+   h3/p는 형제 요소라 공통 wrapper가 없어 nth-child로 짝 단위 stagger를
+   줄 수 없다. 개별 항목 stagger 대신 구간 전체를 하나의 묶음으로 보고
+   .prose가 .revealed를 받는 시점에 통째로 fade-up한다 — 무리하게 짝별
+   지연을 흉내 내지 않고, 실제 DOM 구조가 지원하는 만큼만 애니메이션한다. */
+.prose h3:has(+ p) {
+  margin-top: 2em;
+  margin-bottom: 0;
+  position: relative;
+}
+.prose h3:has(+ p)::after {
+  content: '';
+  display: block;
+  width: 2rem;
+  height: 1px;
+  margin-top: 0.6em;
+  background: var(--color-accent-soft);
+}
+.prose h3 + p {
+  margin-top: 0.75em;
+  margin-bottom: 0;
+}
+/* 연속된 h3+p 묶음의 마지막 문단 아래에만 경계선을 둔다 — 다음 항목이
+   또 다른 h3+p가 아닐 때(=묶음이 끝났을 때)만 매칭되므로 항목 사이에는
+   선이 반복되지 않고, 묶음 전체를 감싸는 하나의 구간처럼 읽힌다. */
+.prose h3 + p:not(:has(+ h3)) {
+  padding-bottom: 1.75em;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.prose h3:has(+ p),
+.prose h3 + p {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.reveal-fade-up.revealed .prose h3:has(+ p),
+.reveal-fade-up.revealed .prose h3 + p,
+.prose.revealed h3:has(+ p),
+.prose.revealed h3 + p {
+  animation: heroTextUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .prose blockquote {
   border-left: 3px solid var(--color-accent);
   padding-left: 1em;
@@ -341,4 +697,20 @@ img { max-width: 100%; display: block; }
     opacity: 1 !important;
     transform: none !important;
   }
+}
+
+/* ─── Checklist hero (components/subpages/ChecklistHero.tsx) ───
+   다크 브라운 배경 위, 중앙 원형 사진을 둘러싼 밝은 solid 버블(pill/rounded-2xl)
+   섹션 전용 스타일. 기존 .prose h3+ul(그룹 A) / .prose h2~ul(그룹 B)와는 완전히
+   별개의 컴포넌트라 selector도 겹치지 않게 새로 둔다 — 저 두 블록은 여기서
+   손대지 않는다.
+   hover는 배경색을 바꾸지 않는다(이미 var(--color-bg) solid라 더 밝게 갈 여지가
+   거의 없고, 버블 배경을 어둡게 하면 방금 고친 대비가 다시 흔들린다) — 대신
+   살짝 떠오르는 그림자 강조만으로 상호작용 가능함을 알린다. */
+.checklist-hero-bubble {
+  transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.checklist-hero-bubble:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(26, 23, 21, 0.32), 0 4px 12px rgba(26, 23, 21, 0.18) !important;
 }

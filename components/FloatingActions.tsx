@@ -41,7 +41,7 @@ function findAnswer(
     },
     {
       patterns: ["예약", "접수", "신청", "book", "reservation", "appointment"],
-      answer: `네이버를 통해 온라인 예약이 가능합니다.\n\n전화 예약도 가능합니다: ${clinicInfo.phone}`,
+      answer: `네이버를 통해 온라인 예약이 가능합니다.\n\n홈페이지에서 상담·예약을 간단히 신청하실 수도 있습니다. (상단 '상담 신청' 메뉴)\n\n전화 예약도 가능합니다: ${clinicInfo.phone}`,
     },
     {
       patterns: ["주차", "parking"],
@@ -161,12 +161,18 @@ export default function FloatingActions() {
 
   return (
     <>
-      <div className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-3">
+      <div className="fixed bottom-5 right-5 sm:bottom-8 sm:right-8 z-40 flex flex-col items-end gap-2.5 sm:gap-3">
+        {/*
+          좁은 화면에서는 라벨 버튼 3개가 세로로 쌓이며 본문 텍스트를 오래 가리므로,
+          예약 링크는 아이콘 전용 원형 버튼으로 축소하고 "상담 신청"은 숨긴다
+          (채팅 버튼이 같은 문의 동선을 대신한다). sm 이상에서는 기존 라벨 버튼 유지.
+        */}
         <a
           href={clinicInfo.reservationUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-accent text-ink-inverse px-6 py-3.5 rounded-full text-sm font-semibold inline-flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:bg-accent-soft"
+          aria-label={t("hero.reservation")}
+          className="hidden sm:inline-flex bg-accent text-ink-inverse px-6 py-3.5 rounded-full text-sm font-semibold items-center gap-2 transition-all hover:-translate-y-0.5 hover:bg-accent-soft"
           style={{
             letterSpacing: "-0.02em",
             boxShadow: "0 8px 32px rgba(107, 68, 35, 0.3)",
@@ -174,9 +180,26 @@ export default function FloatingActions() {
         >
           {t("hero.reservation")}
         </a>
+        <a
+          href={clinicInfo.reservationUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t("hero.reservation")}
+          className="sm:hidden w-12 h-12 rounded-full bg-accent text-ink-inverse flex items-center justify-center text-xl transition-transform hover:scale-110"
+          style={{ boxShadow: "0 8px 32px rgba(107, 68, 35, 0.3)" }}
+        >
+          📅
+        </a>
+        <Link
+          href="/reservation"
+          className="hidden sm:inline-flex bg-bg text-ink px-6 py-3 rounded-full text-sm font-semibold items-center gap-2 border border-line transition-all hover:-translate-y-0.5 hover:border-accent"
+          style={{ letterSpacing: "-0.02em", boxShadow: "0 8px 32px rgba(26, 23, 21, 0.12)" }}
+        >
+          {t("nav.reservationRequest")}
+        </Link>
         <button
           onClick={() => (chatOpen ? setChatOpen(false) : handleOpen())}
-          className="w-14 h-14 rounded-full bg-surface-dark text-ink-inverse flex items-center justify-center text-2xl transition-transform hover:scale-110"
+          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-surface-dark text-ink-inverse flex items-center justify-center text-xl sm:text-2xl transition-transform hover:scale-110"
           style={{ boxShadow: "0 8px 32px rgba(26, 23, 21, 0.2)" }}
           aria-label={t("chat.open")}
         >
@@ -186,7 +209,7 @@ export default function FloatingActions() {
 
       {chatOpen && (
         <div
-          className="fixed bottom-32 right-8 z-40 w-[360px] max-w-[calc(100vw-4rem)] h-[520px] max-h-[calc(100dvh-14rem)] bg-bg rounded-lg shadow-2xl flex flex-col overflow-hidden border border-line"
+          className="fixed bottom-[4.75rem] right-5 sm:bottom-32 sm:right-8 z-40 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100dvh-8rem)] sm:max-h-[calc(100dvh-14rem)] bg-bg rounded-lg shadow-2xl flex flex-col overflow-hidden border border-line"
           style={{ animation: "scaleIn 300ms cubic-bezier(0.16, 1, 0.3, 1)" }}
         >
           {/* Header */}

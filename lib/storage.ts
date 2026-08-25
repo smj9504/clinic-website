@@ -21,12 +21,18 @@ import {
   heroSlidesEn as defaultHeroSlidesEn,
   clinicInfo as defaultClinicInfo,
   clinicInfoEn as defaultClinicInfoEn,
+  subPages as defaultSubPages,
+  subPagesEn as defaultSubPagesEn,
+  equipment as defaultEquipment,
+  equipmentEn as defaultEquipmentEn,
   sampleImages,
   type Event,
   type Treatment,
   type Director,
   type Notice,
   type HeroSlide,
+  type SubPage,
+  type Equipment,
 } from "./data";
 
 import type { Locale } from "./i18n";
@@ -51,31 +57,43 @@ export type MenuItem = {
 
 export const defaultMenus: MenuItem[] = [
   { id: "m1", label: "홈", href: "/", isHidden: false, sortOrder: 0 },
+  { id: "m5", label: "소개", href: "/about", isHidden: false, sortOrder: 1 },
   {
-    id: "m2",
-    label: "진행중인 이벤트",
-    href: "/events",
-    isHidden: false,
-    sortOrder: 1,
-  },
-  {
-    id: "m3",
-    label: "진료 내용",
-    href: "/treatments",
+    id: "m7",
+    label: "피부미용",
+    href: "/skin-beauty",
     isHidden: false,
     sortOrder: 2,
+    children: [
+      { id: "m7c1", label: "리프팅", href: "/subpages/lifting", isHidden: false, sortOrder: 0 },
+      { id: "m7c2", label: "레이저", href: "/subpages/laser", isHidden: false, sortOrder: 1 },
+      { id: "m7c3", label: "스킨부스터", href: "/subpages/skin-booster", isHidden: false, sortOrder: 2 },
+    ],
+  },
+  {
+    id: "m8",
+    label: "한방치료",
+    href: "/korean-treatment",
+    isHidden: false,
+    sortOrder: 3,
+    children: [
+      { id: "m8c1", label: "통증치료", href: "/subpages/pain-treatment", isHidden: false, sortOrder: 0 },
+      { id: "m8c2", label: "교통사고 후유증", href: "/subpages/traffic-accident", isHidden: false, sortOrder: 1 },
+      { id: "m8c3", label: "한약클리닉", href: "/subpages/herbal-clinic", isHidden: false, sortOrder: 2 },
+      { id: "m8c4", label: "추나치료", href: "/subpages/chuna", isHidden: false, sortOrder: 3 },
+      { id: "m8c5", label: "약침치료", href: "/subpages/pharmacopuncture", isHidden: false, sortOrder: 4 },
+    ],
   },
   {
     id: "m4",
-    label: "시술 안내",
+    label: "이벤트/시술가격",
     href: "/services",
     isHidden: false,
-    sortOrder: 3,
+    sortOrder: 4,
   },
-  { id: "m5", label: "한의원 소개", href: "/about", isHidden: false, sortOrder: 4 },
   {
     id: "m6",
-    label: "커뮤니티",
+    label: "공지사항",
     href: "/community/notice",
     isHidden: false,
     sortOrder: 5,
@@ -84,36 +102,80 @@ export const defaultMenus: MenuItem[] = [
 
 export const defaultMenusEn: MenuItem[] = [
   { id: "m1", label: "Home", href: "/", isHidden: false, sortOrder: 0 },
+  { id: "m5", label: "About", href: "/about", isHidden: false, sortOrder: 1 },
   {
-    id: "m2",
-    label: "Events",
-    href: "/events",
-    isHidden: false,
-    sortOrder: 1,
-  },
-  {
-    id: "m3",
-    label: "Treatments",
-    href: "/treatments",
+    id: "m7",
+    label: "Skin Beauty",
+    href: "/skin-beauty",
     isHidden: false,
     sortOrder: 2,
+    children: [
+      { id: "m7c1", label: "Lifting", href: "/subpages/lifting", isHidden: false, sortOrder: 0 },
+      { id: "m7c2", label: "Laser", href: "/subpages/laser", isHidden: false, sortOrder: 1 },
+      { id: "m7c3", label: "Skin Booster", href: "/subpages/skin-booster", isHidden: false, sortOrder: 2 },
+    ],
+  },
+  {
+    id: "m8",
+    label: "Korean Medicine Treatment",
+    href: "/korean-treatment",
+    isHidden: false,
+    sortOrder: 3,
+    children: [
+      { id: "m8c1", label: "Pain Treatment", href: "/subpages/pain-treatment", isHidden: false, sortOrder: 0 },
+      { id: "m8c2", label: "Traffic Accident Aftereffects", href: "/subpages/traffic-accident", isHidden: false, sortOrder: 1 },
+      { id: "m8c3", label: "Herbal Medicine Clinic", href: "/subpages/herbal-clinic", isHidden: false, sortOrder: 2 },
+      { id: "m8c4", label: "Chuna Therapy", href: "/subpages/chuna", isHidden: false, sortOrder: 3 },
+      { id: "m8c5", label: "Pharmacopuncture", href: "/subpages/pharmacopuncture", isHidden: false, sortOrder: 4 },
+    ],
   },
   {
     id: "m4",
-    label: "Treatments & Pricing",
+    label: "Events & Pricing",
     href: "/services",
     isHidden: false,
-    sortOrder: 3,
+    sortOrder: 4,
   },
-  { id: "m5", label: "About", href: "/about", isHidden: false, sortOrder: 4 },
   {
     id: "m6",
-    label: "Community",
+    label: "Notice",
     href: "/community/notice",
     isHidden: false,
     sortOrder: 5,
   },
 ];
+
+/**
+ * 구버전(진행중인 이벤트/진료 내용/시술 안내/한의원 소개/커뮤니티 6개 평면 메뉴)으로
+ * 이미 저장된 site_data를 새 구조(홈/소개/피부미용/한방치료/이벤트-시술가격/공지사항)로
+ * 자가 치유한다. 매 로드마다 실행되므로 멱등성이 보장되어야 한다.
+ */
+export function migrateMenus(menus: MenuItem[], locale: Locale): MenuItem[] {
+  const hasChildren = menus.some((m) => m.children && m.children.length > 0);
+  const hasNewIds = menus.some((m) => m.id === "m7" || m.id === "m8");
+  if (hasChildren || hasNewIds) return menus; // 이미 마이그레이션된 구조
+
+  const isOldShape =
+    menus.some((m) => m.href === "/events") && menus.length <= 6;
+  if (!isOldShape) return menus; // 구버전 형태가 아니면 손대지 않음 (관리자가 자유롭게 커스텀한 구조일 수 있음)
+
+  // id는 관리자가 메뉴를 추가/재구성하면서 기본값과 어긋날 수 있으므로,
+  // 항상 안정적으로 유지되는 href를 기준으로 기존 항목을 찾는다.
+  const byHref = new Map(menus.map((m) => [m.href, m]));
+  const fresh = locale === "en" ? defaultMenusEn : defaultMenus;
+
+  return fresh.map((freshItem) => {
+    const existing = byHref.get(freshItem.href);
+    if (!existing) return freshItem; // /skin-beauty, /korean-treatment처럼 새로 생기는 항목은 기본값 그대로
+    // 기존에 admin이 편집했을 라벨/배너/숨김 상태는 보존, 구조(순서/children)는 새 기본값 사용
+    return {
+      ...freshItem,
+      label: existing.label,
+      bannerImage: existing.bannerImage,
+      isHidden: existing.isHidden,
+    };
+  });
+}
 
 // ─── FAQ 타입 ───
 export type FaqItem = {
@@ -203,6 +265,8 @@ export type PopupItem = {
   linkUrl: string;
   /** 이미지 위 어두운 브랜드 틴트 오버레이 표시 여부 (미지정 시 true = 기존 동작) */
   imageOverlay?: boolean;
+  /** 팝업 하단 카테고리 탭에 표시할 짧은 라벨 (미지정 시 이벤트 제목으로 대체) */
+  categoryLabel?: string;
 };
 
 export type Popup = {
@@ -312,6 +376,10 @@ export type SiteData = {
   eventEndedHide?: EndedVisibility;
   /** 종료된 공지사항 숨김: "immediately" = 종료 즉시, 숫자 = 종료 후 N일 뒤 숨김 */
   noticeEndedHide?: EndedVisibility;
+  /** 피부미용/한방치료 서브메뉴가 연결되는 콘텐츠 페이지 */
+  subPages?: SubPage[];
+  /** 장비소개 카탈로그 */
+  equipment?: Equipment[];
 };
 
 const defaultSiteDataByLocale: Record<Locale, SiteData> = {
@@ -334,6 +402,8 @@ const defaultSiteDataByLocale: Record<Locale, SiteData> = {
       { label: "진료 분야", value: 5, suffix: "개" },
     ],
     clinicInfo: defaultClinicInfo,
+    subPages: defaultSubPages,
+    equipment: defaultEquipment,
   },
   en: {
     menus: defaultMenusEn,
@@ -354,6 +424,8 @@ const defaultSiteDataByLocale: Record<Locale, SiteData> = {
       { label: "Specialties", value: 5, suffix: "" },
     ],
     clinicInfo: defaultClinicInfoEn,
+    subPages: defaultSubPagesEn,
+    equipment: defaultEquipmentEn,
   },
 };
 
@@ -389,6 +461,12 @@ function stripBase64Images(data: SiteData): SiteData {
     popup: { ...data.popup, image: strip(data.popup.image) },
     menus: data.menus.map((m) => ({ ...m, bannerImage: strip(m.bannerImage ?? "") })),
     clinicInfo: { ...data.clinicInfo, defaultImage: strip(data.clinicInfo.defaultImage ?? "") },
+    subPages: (data.subPages ?? []).map((sp) => ({
+      ...sp,
+      image: strip(sp.image ?? ""),
+      fullBleedImage: strip(sp.fullBleedImage ?? ""),
+    })),
+    equipment: (data.equipment ?? []).map((eq) => ({ ...eq, image: strip(eq.image ?? "") })),
   };
 }
 
@@ -400,7 +478,9 @@ export function getSiteData(locale: Locale = "ko"): SiteData {
     const raw = localStorage.getItem(storageKey(locale));
     if (!raw) return getDefaultSiteData(locale);
     const parsed = JSON.parse(raw);
-    return { ...getDefaultSiteData(locale), ...parsed };
+    const merged: SiteData = { ...getDefaultSiteData(locale), ...parsed };
+    merged.menus = migrateMenus(merged.menus, locale);
+    return merged;
   } catch {
     return getDefaultSiteData(locale);
   }
@@ -412,7 +492,8 @@ export async function fetchSiteData(locale: Locale = "ko"): Promise<SiteData> {
     const res = await fetch(`/api/site-data?locale=${locale}`, { cache: "no-store" });
     const json = await res.json();
     if (json.data) {
-      const merged = { ...getDefaultSiteData(locale), ...json.data };
+      const merged: SiteData = { ...getDefaultSiteData(locale), ...json.data };
+      merged.menus = migrateMenus(merged.menus, locale);
       _memCache[locale] = merged;
       try {
         localStorage.setItem(storageKey(locale), JSON.stringify(stripBase64Images(merged)));
@@ -514,6 +595,18 @@ export async function syncImages(locale: Locale) {
       bannerImages: current.clinicInfo.bannerImages,
       defaultImage: current.clinicInfo.defaultImage,
     },
+    subPages: (other.subPages ?? []).map((sp) => {
+      const cur = (current.subPages ?? []).find((c) => c.id === sp.id);
+      return {
+        ...sp,
+        image: cur?.image ?? sp.image,
+        fullBleedImage: cur?.fullBleedImage ?? sp.fullBleedImage,
+      };
+    }),
+    equipment: (other.equipment ?? []).map((eq) => {
+      const cur = (current.equipment ?? []).find((c) => c.id === eq.id);
+      return { ...eq, image: cur?.image ?? eq.image, serviceIds: cur?.serviceIds ?? eq.serviceIds };
+    }),
   };
 
   await setSiteData(synced, otherLocale);
@@ -604,10 +697,22 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
   pushText(koData.schedulePopup.title);
   pushText(koData.schedulePopup.notice);
   koData.schedulePopup.rows.forEach((r) => { pushText(r.day); pushText(r.hours); pushText(r.note || ""); });
-  // Menus
-  koData.menus.forEach((m) => pushText(m.label));
+  // Menus (children 포함)
+  koData.menus.forEach((m) => {
+    pushText(m.label);
+    (m.children ?? []).forEach((c) => pushText(c.label));
+  });
   // Stats
   (koData.stats ?? []).forEach((s) => { pushText(s.label); pushText(s.suffix); });
+  // SubPages
+  (koData.subPages ?? []).forEach((sp) => { pushText(sp.title); pushText(sp.intro ?? ""); pushText(sp.body); });
+  // Equipment
+  (koData.equipment ?? []).forEach((eq) => {
+    pushText(eq.title);
+    pushText(eq.subtitle ?? "");
+    pushText(eq.description);
+    eq.tags.forEach((tag) => pushText(tag));
+  });
 
   try {
     // 배치 번역 (50개씩 분할)
@@ -721,6 +826,14 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
         sortOrder: m.sortOrder,
         label: next(),
         bannerImage: m.bannerImage,
+        children: (m.children ?? []).map((c, ci) => ({
+          ...(enData.menus[i]?.children?.[ci] || c),
+          id: c.id,
+          href: c.href,
+          isHidden: c.isHidden,
+          sortOrder: c.sortOrder,
+          label: next(),
+        })),
       })),
       stats: (koData.stats ?? []).map((s) => ({
         ...s,
@@ -731,6 +844,31 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
       clinicInfo: enData.clinicInfo,
       eventEndedHide: koData.eventEndedHide,
       noticeEndedHide: koData.noticeEndedHide,
+      subPages: (koData.subPages ?? []).map((sp, i) => ({
+        ...((enData.subPages ?? [])[i] || sp),
+        id: sp.id,
+        slug: sp.slug,
+        parentMenuId: sp.parentMenuId,
+        title: next(),
+        intro: next() || undefined,
+        body: next(),
+        image: sp.image,
+        fullBleedImage: sp.fullBleedImage,
+        isHidden: sp.isHidden,
+        sortOrder: sp.sortOrder,
+      })),
+      equipment: (koData.equipment ?? []).map((eq, i) => ({
+        ...((enData.equipment ?? [])[i] || eq),
+        id: eq.id,
+        title: next(),
+        subtitle: next() || undefined,
+        description: next(),
+        tags: eq.tags.map(() => next()),
+        image: eq.image,
+        isHidden: eq.isHidden,
+        sortOrder: eq.sortOrder,
+        serviceIds: eq.serviceIds ?? [],
+      })),
     };
 
     await setSiteData(translatedEn, "en");

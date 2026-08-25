@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { computePrice, formatKRW } from "@/lib/price";
-import { priceText, serviceText, type Service, type ServiceBadge } from "@/lib/services";
+import { isVideoUrl, priceText, serviceText, type Service, type ServiceBadge } from "@/lib/services";
 import type { Locale } from "@/lib/i18n";
 import type { TranslationKey } from "@/lib/translations";
 
@@ -45,8 +45,9 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
         이벤트 카드처럼 원본 비율을 살리는 대신, 4:3으로 잘라 통일한다.
       */}
       <div className="relative bg-bg-alt overflow-hidden" style={{ aspectRatio: "4 / 3" }}>
+        {/* 대표 미디어가 동영상이면 카드에서는 재생하지 않고 폴백 이미지를 보여준다 — 재생은 상세 페이지에서만 */}
         <Image
-          src={service.image || fallbackImage}
+          src={isVideoUrl(service.image) ? fallbackImage : service.image || fallbackImage}
           alt={name}
           fill
           className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"

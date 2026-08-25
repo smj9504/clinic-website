@@ -39,7 +39,6 @@ export default function ServicesPage() {
   const t = useT();
 
   const [activeCategory, setActiveCategory] = useState<string>(ALL);
-  const [activeSubcategory, setActiveSubcategory] = useState<string>(ALL);
 
   const banner = getBannerImage(menus, "/services", heroSlides[0]?.image);
   const fallbackImage = clinicInfo.defaultImage || FALLBACK_IMAGE;
@@ -48,19 +47,11 @@ export default function ServicesPage() {
     const ordered = sortServicesForDisplay({ categories, subcategories, services });
     if (activeCategory === ALL) return ordered;
 
-    if (activeSubcategory !== ALL) {
-      return ordered.filter((s) => s.subcategoryId === activeSubcategory);
-    }
     const childIds = new Set(
       subcategories.filter((s) => s.categoryId === activeCategory).map((s) => s.id)
     );
     return ordered.filter((s) => childIds.has(s.subcategoryId));
-  }, [categories, subcategories, services, activeCategory, activeSubcategory]);
-
-  const selectCategory = (id: string) => {
-    setActiveCategory(id);
-    setActiveSubcategory(ALL); // 다른 카테고리의 서브카테고리가 선택된 채로 남지 않도록
-  };
+  }, [categories, subcategories, services, activeCategory]);
 
   return (
     <>
@@ -108,11 +99,8 @@ export default function ServicesPage() {
           <div className="mb-10 md:mb-14">
             <CategoryFilter
               categories={categories}
-              subcategories={subcategories}
               activeCategory={activeCategory}
-              activeSubcategory={activeSubcategory}
-              onCategoryChange={selectCategory}
-              onSubcategoryChange={setActiveSubcategory}
+              onCategoryChange={setActiveCategory}
               locale={locale}
               t={t}
             />

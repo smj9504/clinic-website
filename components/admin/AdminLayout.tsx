@@ -12,8 +12,11 @@ import type { Locale } from "@/lib/i18n";
 const adminMenu = [
   { href: "/admin", label: "대시보드", icon: "◎" },
   { href: "/admin/menus", label: "메뉴 관리", icon: "≡" },
+  { href: "/admin/subpages", label: "시술 페이지", icon: "▣" },
+  { href: "/admin/equipment", label: "장비소개", icon: "⚕" },
   { href: "/admin/events", label: "이벤트", icon: "◆" },
   { href: "/admin/services", label: "시술·가격", icon: "₩" },
+  { href: "/admin/reservations", label: "예약 신청", icon: "📅" },
   { href: "/admin/director", label: "대표원장", icon: "◉" },
   { href: "/admin/notices", label: "공지사항", icon: "▤" },
   { href: "/admin/faqs", label: "FAQ", icon: "?" },

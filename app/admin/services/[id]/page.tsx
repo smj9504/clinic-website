@@ -303,11 +303,15 @@ export default function ServiceEditPage() {
           </div>
 
           <div>
-            <Field label="대표 이미지" hint="권장 비율 4:3 · 목록 카드에서 4:3으로 잘려 표시됩니다.">
+            <Field
+              label="대표 이미지 / 동영상"
+              hint="목록 카드는 4:3, 상세 페이지는 16:10으로 표시됩니다. 동영상은 상세 페이지에서만 재생됩니다."
+            >
               <ImageInput
                 value={draft.image}
                 onChange={(image) => patch({ image })}
                 aspectRatio="4 / 3"
+                allowVideo
               />
             </Field>
 

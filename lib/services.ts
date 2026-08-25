@@ -42,12 +42,13 @@ export type ServicePrice = {
 // ─── 상세 블록 ───
 
 export type ServiceBlockType =
-  | "richtext" // 시술 안내 — 서식글, 본문에 이미지 삽입 가능
-  | "points"   // 시술 추천 — POINT 01 · 02 · 03
-  | "steps"    // 시술 효과 및 주기 — 01 · 02 번호 목록
-  | "notice"   // 주의 사항 — 경고 톤
-  | "qna"      // Q&A — 아코디언
-  | "gallery"; // 시술 사진 — 이미지 그리드
+  | "richtext"  // 시술 안내 — 서식글, 본문에 이미지 삽입 가능
+  | "points"    // 시술 추천 — POINT 01 · 02 · 03
+  | "steps"     // 시술 효과 및 주기 — 01 · 02 번호 목록
+  | "notice"    // 주의 사항 — 경고 톤
+  | "qna"       // Q&A — 아코디언
+  | "gallery"   // 시술 사진 — 이미지 그리드
+  | "checklist"; // 이런 증상, 고민 — 사진 + 체크마크 목록 (2단 레이아웃)
 
 export type QnaPair = { q: string; a: string };
 
@@ -228,6 +229,7 @@ export const BLOCK_PRESETS: Record<ServiceBlockType, { ko: string; en: string }>
   notice: { ko: "주의 사항", en: "Precautions" },
   qna: { ko: "Q&A", en: "Q&A" },
   gallery: { ko: "시술 사진", en: "Photos" },
+  checklist: { ko: "이런 증상, 고민이라면", en: "Is This You?" },
 };
 
 export function createBlock(type: ServiceBlockType): ServiceBlock {
@@ -236,7 +238,7 @@ export function createBlock(type: ServiceBlockType): ServiceBlock {
     id: newId("blk"),
     type,
     isHidden: false,
-    ...(type === "gallery" ? { images: [] } : {}),
+    ...(type === "gallery" || type === "checklist" ? { images: [] } : {}),
     i18n: {
       ko: { title: preset.ko },
       en: { title: preset.en },
@@ -288,6 +290,17 @@ export function sortServicesForDisplay(catalog: ServiceCatalog): Service[] {
 }
 
 // ─── 기타 ───
+
+const VIDEO_EXT_RE = /\.(mp4|webm|mov|m4v)(\?|#|$)/i;
+
+/**
+ * 대표 이미지 URL이 동영상인지 판별한다 (확장자 기반).
+ * 시술 대표 이미지는 사진/동영상을 같은 필드에 저장하므로, 공개 페이지에서
+ * <Image>(next/image)로 렌더링할지 <video>로 재생할지 이걸로 분기한다.
+ */
+export function isVideoUrl(url: string): boolean {
+  return VIDEO_EXT_RE.test(url);
+}
 
 /**
  * 분류의 안정적인 키. 이름이 한글이면 남는 글자가 없으므로 임의 문자열로 떨어진다.

@@ -91,13 +91,22 @@ export function useSiteDataForLocale(locale: Locale): SiteData & { loaded: boole
 }
 
 /**
+ * 최상위 메뉴 + 모든 children을 하나의 평면 배열로 펼친다.
+ * children이 없는 배열에 대해서는 no-op이라 기존 동작을 깨지 않는다.
+ */
+function flattenMenus(menus: SiteData["menus"]): SiteData["menus"] {
+  return menus.flatMap((m) => [m, ...(m.children ?? [])]);
+}
+
+/**
  * 메뉴의 bannerImage를 경로(href)로 조회
  */
 export function getBannerImage(menus: SiteData["menus"], pathname: string, fallback?: string): string {
+  const flat = flattenMenus(menus);
   // 정확한 매칭 우선, 없으면 prefix 매칭
-  const exact = menus.find((m) => m.href === pathname);
+  const exact = flat.find((m) => m.href === pathname);
   if (exact?.bannerImage) return exact.bannerImage;
-  const prefix = menus.find((m) => m.href !== "/" && pathname.startsWith(m.href));
+  const prefix = flat.find((m) => m.href !== "/" && pathname.startsWith(m.href));
   return prefix?.bannerImage || fallback || "";
 }
 
@@ -105,8 +114,9 @@ export function getBannerImage(menus: SiteData["menus"], pathname: string, fallb
  * 메뉴의 label을 경로(href)로 조회
  */
 export function getMenuLabel(menus: SiteData["menus"], pathname: string, fallback: string): string {
-  const exact = menus.find((m) => m.href === pathname);
+  const flat = flattenMenus(menus);
+  const exact = flat.find((m) => m.href === pathname);
   if (exact) return exact.label;
-  const prefix = menus.find((m) => m.href !== "/" && pathname.startsWith(m.href));
+  const prefix = flat.find((m) => m.href !== "/" && pathname.startsWith(m.href));
   return prefix?.label || fallback;
 }

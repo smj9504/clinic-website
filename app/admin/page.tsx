@@ -1,22 +1,33 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useServiceCatalog } from "@/lib/useServices";
 import { useAdminLocale } from "@/lib/adminLocale";
 import { PageHeader, Card } from "@/components/admin/ui";
+import { fetchReservationRequests } from "@/lib/reservationsApi";
 
 export default function AdminDashboard() {
   const { editingLocale } = useAdminLocale();
   const data = useSiteDataForLocale(editingLocale);
   // 시술은 site_data가 아니라 전용 테이블에 있어 따로 조회한다
   const catalog = useServiceCatalog({ includeHidden: true });
+  // 예약 신청도 전용 테이블이라 따로 조회한다
+  const [pendingReservations, setPendingReservations] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchReservationRequests().then((res) => {
+      if (res) setPendingReservations(res.reservations.filter((r) => r.status === "pending").length);
+    });
+  }, []);
 
   const stats = [
     { label: "활성 메뉴", value: data.menus.filter((m) => !m.isHidden).length, href: "/admin/menus" },
     { label: "히어로 슬라이드", value: data.heroSlides.length, href: "/admin/settings" },
     { label: "이벤트", value: data.events.length, href: "/admin/events" },
     { label: "시술", value: catalog.services.length, href: "/admin/services" },
+    { label: "예약 신청 대기", value: pendingReservations ?? "-", href: "/admin/reservations" },
     { label: "공지사항", value: data.notices.length, href: "/admin/notices" },
     { label: "FAQ", value: data.faqs.length, href: "/admin/faqs" },
     { label: "팝업", value: data.popup.isActive ? "활성" : "비활성", href: "/admin/popups" },

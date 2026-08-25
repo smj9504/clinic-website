@@ -7,7 +7,7 @@ import PriceTable from "@/components/services/PriceTable";
 import ServiceBlocks from "@/components/services/ServiceBlocks";
 import ServiceCard from "@/components/services/ServiceCard";
 import { useService, useServiceCatalog } from "@/lib/useServices";
-import { categoryText, serviceText, subcategoryText } from "@/lib/services";
+import { categoryText, isVideoUrl, serviceText, subcategoryText } from "@/lib/services";
 import { useSiteData, getMenuLabel } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
 
@@ -61,125 +61,143 @@ export default function ServiceDetailPage() {
 
   return (
     <>
-      {/* Hero */}
-      <section className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden">
-        <div className="absolute inset-0">
-          <Image
-            src={service.image || fallbackImage}
-            alt={name}
-            fill
-            className="object-cover"
-            sizes="100vw"
-            priority
-            quality={75}
-            placeholder="blur"
-            blurDataURL={BLUR_PLACEHOLDER}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(to bottom, rgba(44,38,32,0.75) 0%, rgba(44,38,32,0.92) 100%)",
-            }}
-          />
-        </div>
-
-        <div className="container-default relative text-ink-inverse">
+      {/*
+        상품 상세: 밝은 배경 + 좌(이미지 → 시술 안내 블록) / 우(가격, 폭 고정 sticky).
+        오른쪽 가격 컬럼이 왼쪽 콘텐츠 전체 높이 동안 화면에 붙어 있어야 하므로,
+        그리드가 ServiceBlocks까지 함께 감싼다 — 별도 섹션으로 나누면 sticky가 걸릴
+        스크롤 구간이 이미지 높이만큼밖에 안 된다.
+      */}
+      <section className="pt-28 pb-16 md:pt-36 md:pb-20">
+        <div className="container-default">
           <Link
             href="/services"
-            className="inline-flex items-center gap-2 text-sm font-medium opacity-70 hover:opacity-100 transition-opacity mb-10"
+            className="inline-flex items-center gap-2 text-sm font-medium text-ink-muted hover:text-ink transition-colors mb-6"
           >
             &larr; {listLabel}
           </Link>
 
-          {(categoryName || subcategoryName) && (
-            <nav
-              aria-label="분류"
-              className="text-xs font-semibold uppercase opacity-60 mb-5 flex items-center gap-2 flex-wrap"
-              style={{ letterSpacing: "0.15em" }}
-            >
-              {categoryName && <span>{categoryName}</span>}
-              {categoryName && subcategoryName && <span aria-hidden="true">&rsaquo;</span>}
-              {subcategoryName && <span>{subcategoryName}</span>}
-            </nav>
-          )}
-
-          <h1
-            className="font-display"
-            style={{
-              fontSize: "clamp(1.875rem, 4.5vw, 3.25rem)",
-              fontWeight: 600,
-              letterSpacing: "-0.04em",
-              lineHeight: 1.15,
-            }}
-          >
-            {name}
-          </h1>
-          {summary && (
-            <p className="mt-4 text-lg opacity-80" style={{ letterSpacing: "-0.01em" }}>
-              {summary}
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* Content */}
-      <section className="py-16 md:py-24">
-        <div className="container-default">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 lg:gap-20">
-            {/*
-              좁은 화면에서는 가격이 먼저 보이도록 DOM에서 앞에 두고,
-              넓은 화면에서만 오른쪽 열로 보낸다.
-            */}
-            <aside className="lg:order-2">
-              <div className="bg-bg-alt rounded p-6 md:p-8 lg:sticky" style={{ top: "120px" }}>
-                <h2
-                  className="font-display mb-5"
-                  style={{ fontSize: "1.1rem", fontWeight: 600, letterSpacing: "-0.03em" }}
-                >
-                  {t("services.priceTitle")}
-                </h2>
-
-                <PriceTable prices={service.prices} locale={locale} t={t} />
-
-                {period && (
-                  <div className="mt-5 pt-4 border-t border-line flex justify-between text-sm gap-3">
-                    <span className="text-ink-muted shrink-0">{t("events.period")}</span>
-                    <span
-                      className="font-medium text-right"
-                      style={{ fontVariantNumeric: "tabular-nums" }}
-                    >
-                      {period}
-                    </span>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10 lg:gap-14 items-start">
+            {/* 이미지 + 시술 안내 블록 */}
+            <div className="min-w-0">
+              <div
+                className="relative bg-bg-alt rounded overflow-hidden"
+                style={{ aspectRatio: "16 / 10" }}
+              >
+                {isVideoUrl(service.image) ? (
+                  <video
+                    src={service.image}
+                    controls
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <Image
+                    src={service.image || fallbackImage}
+                    alt={name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 60vw"
+                    priority
+                    quality={80}
+                    placeholder="blur"
+                    blurDataURL={BLUR_PLACEHOLDER}
+                  />
+                )}
+                {service.badges.length > 0 && (
+                  <div className="absolute right-0 bottom-0 flex">
+                    {service.badges.map((badge) => (
+                      <span
+                        key={badge}
+                        className={`px-2.5 py-1.5 text-xs font-bold ${
+                          badge === "HOT"
+                            ? "bg-sale text-white"
+                            : badge === "BEST"
+                              ? "bg-accent text-ink-inverse"
+                              : "bg-ink text-ink-inverse"
+                        }`}
+                        style={{ letterSpacing: "0.08em" }}
+                      >
+                        {badge}
+                      </span>
+                    ))}
                   </div>
                 )}
-
-                <a
-                  href={clinicInfo.reservationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full mt-6 py-4 bg-accent text-white text-center text-sm font-semibold rounded transition-all hover:brightness-110"
-                  style={{ letterSpacing: "0.02em" }}
-                >
-                  {t("services.reserve")}
-                </a>
-                <a
-                  href={`tel:${clinicInfo.phone.replace(/-/g, "")}`}
-                  className="block w-full mt-3 py-4 border border-line bg-surface text-ink text-center text-sm font-semibold rounded transition-all hover:bg-bg"
-                  style={{ letterSpacing: "0.02em" }}
-                >
-                  {clinicInfo.phone}
-                </a>
-
-                <p className="mt-5 text-xs text-ink-muted" style={{ lineHeight: 1.75 }}>
-                  {t("services.priceNotice")}
-                </p>
               </div>
-            </aside>
 
-            <div className="lg:order-1 min-w-0">
-              <ServiceBlocks blocks={service.blocks ?? []} locale={locale} />
+              {(categoryName || subcategoryName) && (
+                <nav
+                  aria-label="분류"
+                  className="text-xs font-semibold uppercase text-ink-muted mt-6 mb-3 flex items-center gap-2 flex-wrap"
+                  style={{ letterSpacing: "0.15em" }}
+                >
+                  {categoryName && <span>{categoryName}</span>}
+                  {categoryName && subcategoryName && <span aria-hidden="true">&rsaquo;</span>}
+                  {subcategoryName && <span>{subcategoryName}</span>}
+                </nav>
+              )}
+
+              <h1
+                className="font-display"
+                style={{
+                  fontSize: "clamp(1.625rem, 3.5vw, 2.5rem)",
+                  fontWeight: 600,
+                  letterSpacing: "-0.04em",
+                  lineHeight: 1.2,
+                }}
+              >
+                {name}
+              </h1>
+              {summary && (
+                <p className="mt-3 text-ink-muted" style={{ lineHeight: 1.7, letterSpacing: "-0.01em" }}>
+                  {summary}
+                </p>
+              )}
+
+              <div className="mt-12 md:mt-16">
+                <ServiceBlocks blocks={service.blocks ?? []} locale={locale} />
+              </div>
             </div>
+
+            {/* 가격 — 폭 고정, 스크롤 동안 화면에 고정 */}
+            <aside
+              className="lg:sticky bg-bg-alt rounded p-6"
+              style={{ top: "104px" }}
+            >
+              <PriceTable prices={service.prices} locale={locale} t={t} />
+
+              {period && (
+                <div className="mt-5 pt-4 border-t border-line flex justify-between text-sm gap-3">
+                  <span className="text-ink-muted shrink-0">{t("events.period")}</span>
+                  <span
+                    className="font-medium text-right"
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                  >
+                    {period}
+                  </span>
+                </div>
+              )}
+
+              <a
+                href={clinicInfo.reservationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full mt-6 py-4 bg-accent text-white text-center text-sm font-semibold rounded transition-all hover:brightness-110"
+                style={{ letterSpacing: "0.02em" }}
+              >
+                {t("services.reserve")}
+              </a>
+              <a
+                href={`tel:${clinicInfo.phone.replace(/-/g, "")}`}
+                className="block w-full mt-3 py-4 border border-line bg-surface text-ink text-center text-sm font-semibold rounded transition-all hover:bg-bg"
+                style={{ letterSpacing: "0.02em" }}
+              >
+                {clinicInfo.phone}
+              </a>
+
+              <p className="mt-5 text-xs text-ink-muted" style={{ lineHeight: 1.75 }}>
+                {t("services.priceNotice")}
+              </p>
+            </aside>
           </div>
         </div>
       </section>

@@ -324,6 +324,8 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
             title: "새 슬라이드 제목",
             subtitle: "부제목을 입력하세요",
             image: "",
+            linkLabel: "",
+            linkUrl: "",
           },
         ],
       };
@@ -405,6 +407,25 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
                     onChange={(e) => update(s.id, { subtitle: e.target.value })}
                   />
                 </Field>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="버튼 텍스트" hint="이 배경에서 보여줄 이동 버튼">
+                    <TextInput
+                      value={s.linkLabel ?? ""}
+                      onChange={(e) => update(s.id, { linkLabel: e.target.value })}
+                      placeholder="예: 진료 안내"
+                    />
+                  </Field>
+                  <Field label="버튼 링크" hint="예: /treatments">
+                    <TextInput
+                      value={s.linkUrl ?? ""}
+                      onChange={(e) => update(s.id, { linkUrl: e.target.value })}
+                      placeholder="/treatments"
+                    />
+                  </Field>
+                </div>
+                <p className="text-xs text-ink-muted -mt-2">
+                  &ldquo;예약하기&rdquo; 버튼은 항상 표시되며, 위 버튼은 이 슬라이드가 보일 때만 함께 표시됩니다. 텍스트나 링크를 비워두면 버튼이 숨겨집니다.
+                </p>
               </div>
               <div>
                 <Field label="배경 이미지" hint="권장 크기 1920×1080 이상">

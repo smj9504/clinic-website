@@ -1,16 +1,15 @@
 "use client";
 
-import Link from "next/link";
-import EventImage from "@/components/EventImage";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import type { PopupItem } from "@/lib/storage";
 import { todayKST } from "@/lib/date";
 
 const DISMISS_EVENT = "popup_dismissed_event";
-const DISMISS_SCHEDULE = "popup_dismissed_schedule";
+const AUTO_ADVANCE_MS = 6000;
 
 /** HTML 태그를 제거하고 순수 텍스트만 반환 */
 function stripHtml(str: string): string {
@@ -37,15 +36,11 @@ function isEventActive(ev: { startDate?: string; endDate?: string }) {
 export default function PopupModal() {
   const pathname = usePathname();
   const isHome = pathname === "/" || pathname === "";
-  const { popup, schedulePopup, events, loaded, clinicInfo } = useSiteData();
+  const { popup, events, loaded, clinicInfo } = useSiteData();
   const fallbackImage = clinicInfo.defaultImage || "/gowoonbit.jpg";
   const t = useT();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"event" | "schedule">("event");
-  const [dismissToday, setDismissToday] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
-
-  const scheduleActive = schedulePopup?.isActive;
 
   // 삭제된 이벤트와 종료/예정 이벤트는 제외, 이벤트 데이터와 동기화
   const popupItems: PopupItem[] = useMemo(() => {
@@ -79,331 +74,169 @@ export default function PopupModal() {
     if (!loaded) return; // DB 로드 완료 전에는 실행하지 않음
     if (!isHome) return; // 메인 화면에서만 팝업 표시
     if (hasOpenedRef.current) return;
-    if (!eventActive && !scheduleActive) return;
+    if (!eventActive) return;
 
     const today = todayKST();
     const eventDismissed =
       typeof window !== "undefined"
         ? localStorage.getItem(DISMISS_EVENT) === today
         : true;
-    const scheduleDismissed =
-      typeof window !== "undefined"
-        ? localStorage.getItem(DISMISS_SCHEDULE) === today
-        : true;
 
-    const showEvent = eventActive && !eventDismissed;
-    const showSchedule = scheduleActive && !scheduleDismissed;
-
-    if (!showEvent && !showSchedule) return;
-
-    if (showEvent) setTab("event");
-    else if (showSchedule) setTab("schedule");
+    if (eventDismissed) return;
 
     hasOpenedRef.current = true;
     const timer = setTimeout(() => setOpen(true), 2000);
     return () => clearTimeout(timer);
-  }, [loaded, isHome, eventActive, scheduleActive, popupItems.length]);
+  }, [loaded, isHome, eventActive, popupItems.length]);
 
-  const close = () => {
-    if (dismissToday) {
-      const today = todayKST();
-      if (tab === "event") localStorage.setItem(DISMISS_EVENT, today);
-      else localStorage.setItem(DISMISS_SCHEDULE, today);
+  const close = (dismiss = false) => {
+    if (dismiss) {
+      localStorage.setItem(DISMISS_EVENT, todayKST());
     }
     setOpen(false);
-    setDismissToday(false);
     setSlideIndex(0);
   };
 
   // 열린 상태에서 표시할 내용이 없으면 자동 닫기
-  const canShowEvent = eventActive && tab === "event";
-  const canShowSchedule = scheduleActive && tab === "schedule";
   useEffect(() => {
-    if (open && !canShowEvent && !canShowSchedule) {
+    if (open && !eventActive) {
       setOpen(false);
     }
-  }, [open, canShowEvent, canShowSchedule]);
+  }, [open, eventActive]);
+
+  // 배경 페이지에 가로 스크롤이 남아있으면 fixed 팝업도 함께 밀려 잘려 보이는
+  // 모바일 브라우저가 있어, 팝업이 열린 동안은 body의 가로 스크롤을 막는다.
+  useEffect(() => {
+    if (!open) return;
+    const prevOverflowX = document.body.style.overflowX;
+    document.body.style.overflowX = "hidden";
+    return () => {
+      document.body.style.overflowX = prevOverflowX;
+    };
+  }, [open]);
+
+  const hasMultiple = popupItems.length > 1;
+
+  // 5~7초마다 다음 카테고리로 자동 전환. 사용자가 직접 탭을 클릭하면 타이머가 리셋된다.
+  useEffect(() => {
+    if (!open || !hasMultiple) return;
+    const timer = setTimeout(() => {
+      setSlideIndex((i) => (i + 1) % popupItems.length);
+    }, AUTO_ADVANCE_MS);
+    return () => clearTimeout(timer);
+  }, [open, hasMultiple, slideIndex, popupItems.length]);
 
   if (!open) return null;
 
-  const showTabs = eventActive && scheduleActive;
   const currentItem = popupItems[slideIndex] ?? popupItems[0];
-  const hasMultiple = popupItems.length > 1;
-
-  const prev = () => setSlideIndex((i) => (i - 1 + popupItems.length) % popupItems.length);
-  const next = () => setSlideIndex((i) => (i + 1) % popupItems.length);
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md"
       style={{ background: "rgba(0,0,0,0.4)", animation: "fadeIn 300ms ease" }}
-      onClick={close}
+      onClick={() => close()}
     >
       <div
-        className="bg-bg w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg relative"
+        className="bg-bg w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-lg relative flex flex-col"
         style={{ animation: "scaleIn 400ms cubic-bezier(0.16, 1, 0.3, 1)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Tabs */}
-        {showTabs && (
-          <div className="flex border-b border-line relative">
-            <button
-              onClick={() => { setTab("event"); setDismissToday(false); setSlideIndex(0); }}
-              className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${
-                tab === "event"
-                  ? "text-accent border-b-2 border-accent"
-                  : "text-ink-muted hover:text-ink"
-              }`}
-              style={{ letterSpacing: "-0.02em" }}
-            >
-              {t("popup.label")}
-            </button>
-            <button
-              onClick={() => { setTab("schedule"); setDismissToday(false); }}
-              className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${
-                tab === "schedule"
-                  ? "text-accent border-b-2 border-accent"
-                  : "text-ink-muted hover:text-ink"
-              }`}
-              style={{ letterSpacing: "-0.02em" }}
-            >
-              {t("popup.scheduleLabel")}
-            </button>
-            <button
-              onClick={close}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-xl p-2 text-ink-muted hover:text-ink transition-colors"
-              aria-label={t("popup.close")}
-            >
-              ✕
-            </button>
-          </div>
-        )}
+        <button
+          onClick={() => close()}
+          className="absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-black/30 text-white text-base flex items-center justify-center backdrop-blur-sm hover:bg-black/50 transition-colors"
+          aria-label={t("popup.close")}
+        >
+          ✕
+        </button>
 
-        {/* Close button when no tabs */}
-        {!showTabs && (
-          <button
-            onClick={close}
-            className={
-              tab === "event"
-                ? "absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-black/30 text-white text-base flex items-center justify-center backdrop-blur-sm hover:bg-black/50 transition-colors"
-                : "absolute top-4 right-4 z-10 text-2xl p-2"
-            }
-            style={tab === "event" ? undefined : { color: "var(--color-ink)" }}
-            aria-label={t("popup.close")}
+        {/* Image — no text, slides left/right between events */}
+        {currentItem && (
+          <div
+            className="relative w-full bg-accent overflow-hidden aspect-[4/5] sm:aspect-[16/9]"
           >
-            ✕
-          </button>
-        )}
+            {popupItems.map((item, i) => {
+              // 다음 카테고리로 넘어갈 때 항상 왼쪽으로 미끄러지도록, 순환을 고려한 최단 상대 위치를 구한다.
+              const count = popupItems.length;
+              let offset = i - slideIndex;
+              if (offset > count / 2) offset -= count;
+              if (offset < -count / 2) offset += count;
 
-        {/* Event Tab Content — multi-slide */}
-        {tab === "event" && eventActive && currentItem && (
-          <>
-            <EventImage
-              ratio={4 / 3}
-              wrapperClassName="bg-accent rounded-t-lg overflow-hidden"
-              src={currentItem.image || fallbackImage}
-              alt={currentItem.title}
-              sizes="480px"
-              priority
-              quality={75}
-            >
-              {(currentItem.imageOverlay ?? true) && (
+              return (
                 <div
-                  className="absolute inset-0"
-                  style={{ background: "rgba(107, 68, 35, 0.3)" }}
-                />
-              )}
-
-              {/* Prev / Next arrows */}
-              {hasMultiple && (
-                <>
-                  <button
-                    onClick={prev}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/30 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/50 transition-colors"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m15 18-6-6 6-6" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={next}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/30 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/50 transition-colors"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m9 18 6-6-6-6" />
-                    </svg>
-                  </button>
-                </>
-              )}
-
-              {/* Dots */}
-              {hasMultiple && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 px-2.5 py-1.5 rounded-full bg-black/20 backdrop-blur-sm">
-                  {popupItems.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSlideIndex(i)}
-                      className="w-2 h-2 rounded-full transition-all"
-                      style={{
-                        background: i === slideIndex ? "white" : "rgba(255,255,255,0.4)",
-                        transform: i === slideIndex ? "scale(1.3)" : "scale(1)",
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </EventImage>
-
-            <div className="p-8">
-              {!showTabs && (
-                <div
-                  className="text-xs font-semibold uppercase text-accent mb-3"
-                  style={{ letterSpacing: "0.2em" }}
+                  key={item.eventId}
+                  className="absolute inset-0 transition-transform ease-in-out"
+                  style={{
+                    transform: `translateX(${offset * 100}%)`,
+                    transitionDuration: "600ms",
+                    pointerEvents: i === slideIndex ? "auto" : "none",
+                  }}
                 >
-                  {t("popup.label")}
-                  {hasMultiple && (
-                    <span className="ml-2 text-ink-muted normal-case" style={{ letterSpacing: "0" }}>
-                      {slideIndex + 1} / {popupItems.length}
-                    </span>
+                  <Image
+                    src={item.image || fallbackImage}
+                    alt={item.categoryLabel || item.title}
+                    fill
+                    sizes="1024px"
+                    priority={i === slideIndex}
+                    quality={75}
+                    className="object-cover"
+                  />
+                  {(item.imageOverlay ?? true) && (
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: "rgba(107, 68, 35, 0.15)" }}
+                    />
                   )}
                 </div>
-              )}
-              <h3
-                className="font-display mb-6"
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 700,
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1.3,
-                  whiteSpace: "pre-line",
-                }}
-              >
-                {currentItem.title}
-              </h3>
-              <p
-                className="text-ink-soft"
-                style={{
-                  fontSize: "0.95rem",
-                  lineHeight: 1.7,
-                  whiteSpace: "pre-line",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}
-              >
-                {currentItem.body}
-              </p>
-              <div className="flex justify-between items-center mt-6 pt-6 border-t border-line">
-                <label className="text-sm text-ink-muted flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={dismissToday}
-                    onChange={(e) => setDismissToday(e.target.checked)}
-                    style={{ accentColor: "var(--color-accent)" }}
-                  />
-                  {t("popup.dismiss")}
-                </label>
-                <Link
-                  href={currentItem.linkUrl}
-                  onClick={() => setOpen(false)}
-                  className="text-accent text-sm font-semibold inline-flex items-center gap-2"
-                  style={{ letterSpacing: "-0.02em" }}
-                >
-                  {t("popup.detail")}
-                </Link>
-              </div>
-            </div>
-          </>
-        )}
+              );
+            })}
 
-        {/* Schedule Tab Content */}
-        {tab === "schedule" && scheduleActive && (
-          <div className="p-8">
-            {!showTabs && (
-              <div
-                className="text-xs font-semibold uppercase text-accent mb-3"
-                style={{ letterSpacing: "0.2em" }}
-              >
-                {t("popup.scheduleLabel")}
-              </div>
-            )}
-            <h3
-              className="font-display mb-2"
-              style={{
-                fontSize: "1.5rem",
-                fontWeight: 700,
-                letterSpacing: "-0.04em",
-                lineHeight: 1.3,
-              }}
-            >
-              {schedulePopup.title}
-            </h3>
-            <div
-              className="text-xs text-ink-muted mb-6"
-              style={{ letterSpacing: "0.1em" }}
-            >
-              {schedulePopup.month}
-            </div>
-
-            <div className="space-y-0 rounded-lg overflow-hidden border border-line">
-              {schedulePopup.rows.map((row, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center justify-between px-5 py-3.5 ${
-                    i < schedulePopup.rows.length - 1
-                      ? "border-b border-line"
-                      : ""
-                  } ${row.note ? "bg-bg-alt" : ""}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="font-semibold text-sm"
-                      style={{ letterSpacing: "-0.02em" }}
-                    >
-                      {row.day}
-                    </span>
-                    {row.note && (
-                      <span className="text-[0.7rem] bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">
-                        {row.note}
-                      </span>
-                    )}
-                  </div>
-                  <span
-                    className={`text-sm ${
-                      row.hours === "휴진" || row.hours === "Closed"
-                        ? "text-red-500 font-semibold"
-                        : "text-ink-soft"
-                    }`}
-                  >
-                    {row.hours}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {schedulePopup.notice && (
-              <div
-                className="mt-4 text-sm text-ink-muted bg-bg-alt rounded-lg px-5 py-3 text-center"
-                style={{ letterSpacing: "-0.01em" }}
-              >
-                {schedulePopup.notice}
-              </div>
-            )}
-
-            <div className="flex justify-between items-center mt-6 pt-6 border-t border-line">
-              <label className="text-sm text-ink-muted flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={dismissToday}
-                  onChange={(e) => setDismissToday(e.target.checked)}
-                  style={{ accentColor: "var(--color-accent)" }}
-                />
-                {t("popup.dismiss")}
-              </label>
-            </div>
+            {/* Whole image is a link to event detail */}
+            <a
+              href={currentItem.linkUrl}
+              onClick={() => setOpen(false)}
+              className="absolute inset-0"
+              aria-label={currentItem.categoryLabel || currentItem.title}
+            />
           </div>
         )}
+
+        {/* Bottom category tabs — 2 columns on mobile, 4 columns on larger screens (wraps if more) */}
+        {hasMultiple && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 w-full flex-shrink-0">
+            {popupItems.map((item, i) => (
+              <button
+                key={item.eventId}
+                onClick={() => setSlideIndex(i)}
+                className="min-w-0 py-3.5 px-2 text-xs sm:text-sm font-semibold text-center transition-colors line-clamp-2 sm:truncate"
+                style={{
+                  letterSpacing: "-0.01em",
+                  background: i === slideIndex ? "var(--color-accent)" : "var(--color-bg)",
+                  color: i === slideIndex ? "#fff" : "var(--color-ink-muted)",
+                }}
+              >
+                {item.categoryLabel || item.title.split("\n")[0]}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Bottom close bar */}
+        <div className="flex w-full flex-shrink-0 border-t border-line">
+          <button
+            onClick={() => close(true)}
+            className="flex-1 py-4 text-sm font-medium bg-ink text-white hover:opacity-90 transition-opacity"
+            style={{ letterSpacing: "-0.01em" }}
+          >
+            {t("popup.dismissTodayShort")}
+          </button>
+          <button
+            onClick={() => close()}
+            className="flex-1 py-4 text-sm font-medium bg-bg-alt text-ink hover:bg-line/40 transition-colors"
+            style={{ letterSpacing: "-0.01em" }}
+          >
+            {t("popup.closeShort")}
+          </button>
+        </div>
       </div>
     </div>
   );

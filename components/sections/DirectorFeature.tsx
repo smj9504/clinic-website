@@ -16,7 +16,7 @@ export default function DirectorFeature() {
   const textRef = useScrollReveal<HTMLDivElement>({ rootMargin: "0px 0px -80px 0px" });
 
   return (
-    <section className="py-20 md:py-36">
+    <section className="py-20 md:py-36 overflow-x-hidden">
       <div className="container-default">
         <div ref={headerRef} className="reveal-fade-up mb-16">
           <span className="section-label block mb-4">Director</span>

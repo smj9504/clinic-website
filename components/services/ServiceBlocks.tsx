@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
 import { blockText, type ServiceBlock } from "@/lib/services";
 import type { Locale } from "@/lib/i18n";
+import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -23,6 +23,8 @@ function hasContent(block: ServiceBlock, locale: Locale): boolean {
     case "points":
     case "steps":
     case "notice":
+      return (text.items ?? []).some((item) => item.trim() !== "");
+    case "checklist":
       return (text.items ?? []).some((item) => item.trim() !== "");
     case "qna":
       return (text.qna ?? []).some((pair) => pair.q?.trim() || pair.a?.trim());
@@ -52,62 +54,55 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * 채팅 말풍선 스타일 — 질문은 왼쪽 정렬 연한 말풍선, 답변은 오른쪽 정렬 진한 말풍선.
+ * 아코디언이 아니라 항상 펼쳐 보여준다: 시술 Q&A는 3~5개 안팎이라 접어 둘 필요가 적고,
+ * 말풍선 자체가 이미 질문/답변을 시각적으로 분리해 주므로 클릭해서 열어야 하는
+ * 추가 상호작용을 넣지 않는 편이 자연스럽게 읽힌다.
+ */
 function QnaList({ items, blockId }: { items: { q: string; a: string }[]; blockId: string }) {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const listRef = useScrollRevealGroup<HTMLDivElement>();
 
   return (
-    <ul className="border-t border-line">
-      {items.map((pair, i) => {
-        const open = openIndex === i;
-        return (
-          <li key={`${blockId}-${i}`} className="border-b border-line">
-            <button
-              type="button"
-              onClick={() => setOpenIndex(open ? null : i)}
-              aria-expanded={open}
-              className="w-full flex items-start gap-4 text-left py-5 min-h-[3rem]"
-            >
-              <span
-                className="text-accent font-bold shrink-0"
-                style={{ fontSize: "0.95rem", lineHeight: 1.7 }}
+    <div ref={listRef} className="space-y-6">
+      {items.map((pair, i) => (
+        <div key={`${blockId}-${i}`} className="space-y-2">
+          {pair.q && (
+            <div data-reveal-item className="reveal-from-left flex">
+              <div
+                className="max-w-[85%] sm:max-w-[75%] bg-bg-alt rounded-2xl rounded-tl-sm px-5 py-3.5"
               >
-                Q
-              </span>
-              <span
-                className="flex-1 font-medium"
-                style={{ letterSpacing: "-0.02em", lineHeight: 1.7 }}
-              >
-                {pair.q}
-              </span>
-              <span
-                className={`shrink-0 text-ink-muted text-xl leading-none transition-transform duration-300 mt-1 ${
-                  open ? "rotate-45" : ""
-                }`}
-                aria-hidden="true"
-              >
-                +
-              </span>
-            </button>
-            {open && pair.a && (
-              <div className="flex items-start gap-4 pb-6 pr-8">
                 <span
-                  className="text-ink-muted font-bold shrink-0"
-                  style={{ fontSize: "0.95rem", lineHeight: 1.9 }}
+                  className="text-accent font-bold mr-2"
+                  style={{ fontSize: "0.85rem" }}
+                  aria-hidden="true"
                 >
-                  A
+                  Q.
                 </span>
+                <span
+                  className="font-semibold text-ink"
+                  style={{ letterSpacing: "-0.02em", lineHeight: 1.6 }}
+                >
+                  {pair.q}
+                </span>
+              </div>
+            </div>
+          )}
+          {pair.a && (
+            <div data-reveal-item className="reveal-from-right flex justify-end">
+              <div className="max-w-[85%] sm:max-w-[75%] bg-ink rounded-2xl rounded-tr-sm px-5 py-4">
                 <p
-                  className="flex-1 text-ink-soft"
-                  style={{ lineHeight: 1.9, letterSpacing: "-0.01em", whiteSpace: "pre-line" }}
+                  className="text-ink-inverse"
+                  style={{ lineHeight: 1.85, letterSpacing: "-0.01em", whiteSpace: "pre-line" }}
                 >
                   {pair.a}
                 </p>
               </div>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -177,7 +172,7 @@ function BlockBody({ block, locale }: { block: ServiceBlock; locale: Locale }) {
 
     case "notice":
       return (
-        <div className="bg-bg-alt rounded p-6 md:p-8" style={{ borderLeft: "3px solid var(--color-sale)" }}>
+        <div className="bg-bg-alt rounded p-6 md:p-8">
           <ul className="space-y-3">
             {(text.items ?? [])
               .filter((item) => item.trim() !== "")
@@ -244,6 +239,85 @@ function BlockBody({ block, locale }: { block: ServiceBlock; locale: Locale }) {
   }
 }
 
+/**
+ * 사진 + 체크마크 목록 2단 레이아웃 — 다른 블록과 달리 이미지가 섹션 제목과
+ * 나란히 배치되므로 SectionTitle을 재사용하지 않고 자체 레이아웃을 그린다.
+ */
+function ChecklistBlock({ block, locale }: { block: ServiceBlock; locale: Locale }) {
+  const text = blockText(block, locale);
+  const items = (text.items ?? []).filter((item) => item.trim() !== "");
+  const image = (block.images ?? [])[0];
+  const imageRef = useScrollReveal<HTMLDivElement>();
+  const listRef = useScrollRevealGroup<HTMLUListElement>();
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[5fr_7fr] gap-10 md:gap-16 items-center">
+      <div
+        ref={imageRef}
+        className="reveal-slide-left relative aspect-[4/5] md:aspect-[3/4] overflow-hidden rounded bg-bg-alt"
+      >
+        {image?.url && (
+          <Image
+            src={image.url}
+            alt={text.title || ""}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 40vw"
+            quality={75}
+            placeholder="blur"
+            blurDataURL={BLUR_PLACEHOLDER}
+          />
+        )}
+      </div>
+
+      <div>
+        <span className="section-label block mb-4">Check</span>
+        {text.title && (
+          <h2
+            className="font-display mb-8"
+            style={{
+              fontSize: "clamp(1.5rem, 3vw, 2.1rem)",
+              fontWeight: 600,
+              letterSpacing: "-0.04em",
+              lineHeight: 1.35,
+            }}
+          >
+            {text.title}
+          </h2>
+        )}
+        <ul ref={listRef} className="space-y-4">
+          {items.map((item, i) => (
+            <li key={i} data-reveal-item className="flex items-start gap-3">
+              <svg
+                className="shrink-0 text-accent"
+                style={{ width: "1.25rem", height: "1.25rem", marginTop: "0.15em" }}
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.5" />
+                <path
+                  d="M6 10.5l2.5 2.5L14 7.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span
+                className="flex-1 text-ink-soft"
+                style={{ lineHeight: 1.7, letterSpacing: "-0.01em" }}
+              >
+                {item}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 export type ServiceBlocksProps = {
   blocks: ServiceBlock[];
   locale: Locale;
@@ -256,6 +330,9 @@ export default function ServiceBlocks({ blocks, locale }: ServiceBlocksProps) {
   return (
     <div className="space-y-16 md:space-y-20">
       {visible.map((block) => {
+        if (block.type === "checklist") {
+          return <ChecklistBlock key={block.id} block={block} locale={locale} />;
+        }
         const { title } = blockText(block, locale);
         return (
           <section key={block.id}>

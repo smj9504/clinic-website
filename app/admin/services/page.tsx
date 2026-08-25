@@ -15,6 +15,7 @@ import {
 } from "@/lib/servicesApi";
 import {
   categoryText,
+  isVideoUrl,
   priceText,
   serviceText,
   subcategoryText,
@@ -515,11 +516,15 @@ export default function ServicesAdminPage() {
                     className={`border border-line rounded p-2.5 ${service.isHidden ? "opacity-60" : ""}`}
                   >
                     <div className="flex gap-2.5">
-                      <div className="w-14 h-14 bg-bg-alt rounded overflow-hidden shrink-0">
+                      <div className="w-14 h-14 bg-bg-alt rounded overflow-hidden shrink-0 flex items-center justify-center">
                         {service.image && (
-                          // 관리자 목록 썸네일 — next/image 최적화가 필요 없는 크기
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={service.image} alt="" className="w-full h-full object-cover" />
+                          isVideoUrl(service.image) ? (
+                            <span className="text-lg" aria-label="동영상" title="동영상">🎬</span>
+                          ) : (
+                            // 관리자 목록 썸네일 — next/image 최적화가 필요 없는 크기
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={service.image} alt="" className="w-full h-full object-cover" />
+                          )
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
