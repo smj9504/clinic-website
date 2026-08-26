@@ -296,7 +296,7 @@ export default function ServicesAdminPage() {
           </h3>
           <p className="text-sm text-ink-soft" style={{ lineHeight: 1.8 }}>
             시술 테이블이 아직 만들어지지 않았습니다. Supabase 대시보드의 SQL Editor에서 프로젝트
-            루트의 <code className="bg-bg-alt px-1.5 py-0.5 rounded text-xs">supabase-services.sql</code> 을
+            루트의 <code className="bg-bg-alt px-1.5 py-0.5 rounded text-xs">supabase-schema.sql</code> 을
             한 번 실행한 뒤 새로고침해 주세요.
           </p>
         </Card>

@@ -2,7 +2,7 @@
  * 시술 카탈로그 — 타입 · DB row 변환 · 다국어 텍스트 선택
  *
  * 시술 데이터는 site_data JSON 블롭이 아니라 전용 테이블 3개에 저장된다.
- * (스키마는 supabase-services.sql 참고)
+ * (스키마는 supabase-schema.sql 참고)
  *
  * 언어 공통 값(이미지 URL, 가격, 순서, 노출 여부)은 컬럼에 두고,
  * 번역 대상 텍스트만 각 레코드의 i18n 안에 넣는다. 이렇게 하면
@@ -315,7 +315,7 @@ export function slugify(name: string, prefix = "c"): string {
 }
 
 /**
- * 테이블이 아직 없을 때(= supabase-services.sql 미실행)인지 판별한다.
+ * 테이블이 아직 없을 때(= supabase-schema.sql 미실행)인지 판별한다.
  * 이 경우 500 대신 빈 카탈로그를 돌려주어 공개 사이트가 깨지지 않게 한다.
  */
 export function isMissingTableError(

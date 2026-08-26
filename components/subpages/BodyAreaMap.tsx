@@ -77,6 +77,9 @@ export default function BodyAreaMap({
         <div ref={hotspotGroupRef} className="absolute inset-0">
           {areas.map((area) => {
             const isActive = area.id === activeId;
+            // TreatmentAreaMap과 동일한 이유로, 라벨이 이미지 중심 방향으로 자라도록
+            // 좌/우 절반에 따라 순서를 뒤집어 overflow-hidden 컨테이너에 잘리지 않게 한다.
+            const growsLeft = area.x > 50;
             return (
               <button
                 key={area.id}
@@ -85,12 +88,15 @@ export default function BodyAreaMap({
                 onMouseEnter={() => setActiveId(area.id)}
                 onFocus={() => setActiveId(area.id)}
                 onClick={() => setActiveId(isActive ? null : area.id)}
-                className="absolute flex items-center gap-2 -translate-x-1/2 -translate-y-1/2"
+                className="absolute flex items-center -translate-x-1/2 -translate-y-1/2"
                 style={{ left: `${area.x}%`, top: `${area.y}%` }}
                 aria-pressed={isActive}
                 aria-label={area.label}
               >
-                <span className="relative shrink-0 flex items-center justify-center" style={{ width: "1.75rem", height: "1.75rem" }}>
+                <span
+                  className={"relative shrink-0 flex items-center justify-center" + (growsLeft ? " order-2" : " order-1")}
+                  style={{ width: "1.75rem", height: "1.75rem" }}
+                >
                   {isActive && (
                     <span
                       className="absolute inset-0 rounded-full"
@@ -121,7 +127,12 @@ export default function BodyAreaMap({
                   </span>
                 </span>
                 <span
-                  className="rounded-full px-3.5 py-1.5 text-sm font-semibold whitespace-nowrap transition-colors duration-200"
+                  className={
+                    "rounded-full px-2.5 py-1 text-xs sm:px-3.5 sm:py-1.5 sm:text-sm font-semibold whitespace-nowrap transition-colors duration-200" +
+                    (growsLeft ? " order-1 mr-2" : " order-2 ml-2") +
+                    // TreatmentAreaMap과 동일한 이유로 모바일은 활성 라벨만 보인다.
+                    (isActive ? "" : " hidden sm:inline-block")
+                  }
                   style={{
                     background: isActive ? "var(--color-accent)" : "var(--color-surface)",
                     color: isActive ? "var(--color-ink-inverse)" : "var(--color-ink)",

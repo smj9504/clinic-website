@@ -20,21 +20,16 @@ function Tab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className="relative font-display pb-2 transition-colors duration-200"
+      className="relative shrink-0 text-left px-4 py-3 md:px-5 md:py-3.5 rounded-lg transition-colors duration-200 whitespace-nowrap md:whitespace-normal"
       style={{
-        fontSize: "clamp(1.1rem, 2vw, 1.5rem)",
         fontWeight: 700,
         letterSpacing: "-0.02em",
-        color: active ? "var(--color-ink)" : "var(--color-ink-muted)",
-        opacity: active ? 1 : 0.6,
+        fontSize: "0.9375rem",
+        color: active ? "var(--color-ink-inverse)" : "var(--color-ink)",
+        background: active ? "var(--color-accent)" : "transparent",
       }}
     >
       {label}
-      <span
-        className="absolute left-0 right-0 bottom-0 h-0.5 bg-accent transition-transform duration-200 origin-left"
-        style={{ transform: active ? "scaleX(1)" : "scaleX(0)" }}
-        aria-hidden="true"
-      />
     </button>
   );
 }
@@ -48,8 +43,10 @@ export type CategoryFilterProps = {
 };
 
 /**
- * 카테고리 언더라인 탭. 서브카테고리는 고르는 UI 없이 선택한 카테고리의
- * 시술을 모두 카드로 보여준다 (필터링은 app/services/page.tsx에서 처리).
+ * 카테고리 탭 — 좁은 화면에서는 가로 스크롤 탭, md 이상에서는 좌측 세로
+ * 탭 목록으로 배치한다(app/services/page.tsx가 md 이상에서 그리드로 감싼다).
+ * 서브카테고리는 고르는 UI 없이 선택한 카테고리의 시술을 모두 리스트로
+ * 보여준다(필터링은 app/services/page.tsx에서 처리).
  */
 export default function CategoryFilter({
   categories,
@@ -61,12 +58,8 @@ export default function CategoryFilter({
   if (categories.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-5 md:gap-x-16">
-      <Tab
-        label={t("services.all")}
-        active={activeCategory === ALL}
-        onClick={() => onCategoryChange(ALL)}
-      />
+    <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0">
+      <Tab label={t("services.all")} active={activeCategory === ALL} onClick={() => onCategoryChange(ALL)} />
       {categories.map((category) => (
         <Tab
           key={category.id}

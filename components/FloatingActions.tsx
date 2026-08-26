@@ -1,9 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import { useCart } from "@/lib/cart";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+
+/** CartSummaryBar가 화면 하단에 뜨는 페이지 — 이 경로에서만 FAB 스택을 그만큼 밀어올린다 */
+function showsCartSummaryBar(pathname: string): boolean {
+  return pathname === "/services" || pathname.startsWith("/services/");
+}
 
 type Message = {
   id: string;
@@ -90,6 +97,11 @@ function findAnswer(
 export default function FloatingActions() {
   const { clinicInfo, faqs } = useSiteData();
   const t = useT();
+  const pathname = usePathname() || "/";
+  const { count: cartCount } = useCart();
+  // CartSummaryBar(높이 80px)가 화면 하단에 떠 있는 동안은 FAB 스택이 그 위에 겹치므로,
+  // 바 높이 + 여백만큼 밀어올린다.
+  const pushedUp = cartCount > 0 && showsCartSummaryBar(pathname);
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -161,7 +173,11 @@ export default function FloatingActions() {
 
   return (
     <>
-      <div className="fixed bottom-5 right-5 sm:bottom-8 sm:right-8 z-40 flex flex-col items-end gap-2.5 sm:gap-3">
+      <div
+        className={`fixed right-5 sm:right-8 z-40 flex flex-col items-end gap-2.5 sm:gap-3 transition-[bottom] duration-200 ${
+          pushedUp ? "bottom-[6.5rem] sm:bottom-28" : "bottom-5 sm:bottom-8"
+        }`}
+      >
         {/*
           좁은 화면에서는 라벨 버튼 3개가 세로로 쌓이며 본문 텍스트를 오래 가리므로,
           예약 링크는 아이콘 전용 원형 버튼으로 축소하고 "상담 신청"은 숨긴다
@@ -185,10 +201,27 @@ export default function FloatingActions() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={t("hero.reservation")}
-          className="sm:hidden w-12 h-12 rounded-full bg-accent text-ink-inverse flex items-center justify-center text-xl transition-transform hover:scale-110"
+          className="sm:hidden w-12 h-12 rounded-full bg-accent text-ink-inverse flex items-center justify-center transition-transform hover:scale-110"
           style={{ boxShadow: "0 8px 32px rgba(107, 68, 35, 0.3)" }}
         >
-          📅
+          {/* 이모지(📅)는 색이 고정돼 있어 text-ink-inverse가 안 먹힌다 — currentColor를 따르는 outline 아이콘으로 흰색 계열이 되게 한다 */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="5" width="18" height="16" rx="2" />
+            <path d="M3 10h18" />
+            <path d="M8 3v4" />
+            <path d="M16 3v4" />
+          </svg>
         </a>
         <Link
           href="/reservation"
@@ -209,7 +242,9 @@ export default function FloatingActions() {
 
       {chatOpen && (
         <div
-          className="fixed bottom-[4.75rem] right-5 sm:bottom-32 sm:right-8 z-40 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100dvh-8rem)] sm:max-h-[calc(100dvh-14rem)] bg-bg rounded-lg shadow-2xl flex flex-col overflow-hidden border border-line"
+          className={`fixed right-5 sm:right-8 z-40 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100dvh-8rem)] sm:max-h-[calc(100dvh-14rem)] bg-bg rounded-lg shadow-2xl flex flex-col overflow-hidden border border-line ${
+            pushedUp ? "bottom-[10.25rem] sm:bottom-52" : "bottom-[4.75rem] sm:bottom-32"
+          }`}
           style={{ animation: "scaleIn 300ms cubic-bezier(0.16, 1, 0.3, 1)" }}
         >
           {/* Header */}

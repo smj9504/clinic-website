@@ -30,7 +30,7 @@ function adminHeaders(): Record<string, string> {
 
 export type CatalogState = ServiceCatalog & {
   loading: boolean;
-  /** supabase-services.sql을 아직 실행하지 않은 상태 */
+  /** supabase-schema.sql을 아직 실행하지 않은 상태 */
   setupRequired: boolean;
   error: string | null;
   reload: () => void;
@@ -109,10 +109,14 @@ export function useService(id: string | undefined, { includeHidden = false } = {
 
   useEffect(() => {
     if (!id) {
-      setState((p) => ({ ...p, notFound: true }));
+      setState({ service: null, subcategory: null, category: null, notFound: true, error: null });
       setLoading(false);
       return;
     }
+
+    // id가 바뀌어 재조회하는 동안에도 이전 시술 데이터를 화면에 남겨 둔다 —
+    // 상세 페이지가 로딩 스피너로 전체를 덮지 않고 부분 스켈레톤만 보여줄 수 있도록.
+    setState((prev) => (prev.service && prev.service.id !== id ? { ...prev, notFound: false, error: null } : prev));
 
     const controller = new AbortController();
     setLoading(true);

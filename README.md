@@ -18,10 +18,10 @@ npm run dev
 # http://localhost:3000/admin — Admin (비밀번호: admin1234)
 ```
 
-### 최초 1회: 시술 카탈로그 테이블 생성
+### 최초 1회: 시술 카탈로그 · 예약 신청 테이블 생성
 
-시술·가격 기능은 전용 테이블을 씁니다. Supabase 대시보드의 SQL Editor에서
-`supabase-services.sql` 을 한 번 실행하세요. (여러 번 실행해도 안전합니다.)
+시술·가격, 예약 신청, SMS 본인인증 기능은 전용 테이블을 씁니다. Supabase 대시보드의
+SQL Editor에서 `supabase-schema.sql` 을 한 번 실행하세요. (여러 번 실행해도 안전합니다.)
 
 실행 전에도 사이트는 정상 동작하며, 관리자 화면에 안내가 표시됩니다.
 
@@ -130,7 +130,7 @@ clinic-website/
 │   ├── servicesApi.ts                 # 시술 변경 API (관리자)
 │   └── adminAuth.ts                   # 관리자 비밀번호 검증 (서버)
 ├── supabase-setup.sql                 # site_data 테이블
-├── supabase-services.sql              # ★ 시술 카탈로그 테이블 3개
+├── supabase-schema.sql                # ★ 시술 카탈로그 · 예약 신청 · SMS 본인인증 테이블
 ├── tailwind.config.ts
 ├── next.config.mjs
 └── package.json

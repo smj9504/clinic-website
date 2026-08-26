@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 
-const INTERVAL = 7000;
+const INTERVAL = 8000;
 
 // 1x1 SVG blur placeholder (로딩 중 표시)
 const BLUR_PLACEHOLDER =

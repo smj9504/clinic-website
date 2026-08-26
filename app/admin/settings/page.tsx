@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
-import { updateSiteData, syncImages, changePassword } from "@/lib/storage";
-import type { HeroSlide, Treatment } from "@/lib/data";
+import { updateSiteData, syncImages, changePassword, defaultHomeSections } from "@/lib/storage";
+import type { HeroSlide, Treatment, HomeSectionConfig, HomeSectionId } from "@/lib/data";
 import {
   PageHeader,
   Field,
@@ -16,7 +16,7 @@ import {
   Toast,
 } from "@/components/admin/ui";
 
-type Tab = "clinic" | "hero" | "treatments" | "about" | "password";
+type Tab = "clinic" | "hero" | "treatments" | "layout" | "about" | "password";
 
 export default function SettingsAdminPage() {
   const { editingLocale } = useAdminLocale();
@@ -29,6 +29,7 @@ export default function SettingsAdminPage() {
     { key: "clinic", label: "한의원 기본 정보" },
     { key: "hero", label: "히어로 슬라이드" },
     { key: "treatments", label: "진료 내용" },
+    { key: "layout", label: "메인페이지 구성" },
     { key: "about", label: "한의원 소개" },
     { key: "password", label: "비밀번호 변경" },
   ];
@@ -60,6 +61,7 @@ export default function SettingsAdminPage() {
       {tab === "clinic" && <ClinicInfoTab onSave={() => showToast("저장되었습니다")} />}
       {tab === "hero" && <HeroSlidesTab onSave={() => showToast("저장되었습니다")} />}
       {tab === "treatments" && <TreatmentsTab onSave={() => showToast("저장되었습니다")} />}
+      {tab === "layout" && <HomeLayoutTab onSave={() => showToast("저장되었습니다")} />}
       {tab === "about" && <AboutTab onSave={() => showToast("저장되었습니다")} />}
       {tab === "password" && <PasswordTab onSave={() => showToast("비밀번호가 변경되었습니다")} />}
 
@@ -579,6 +581,87 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
           </Card>
         ))}
       </div>
+    </>
+  );
+}
+
+// ─── Home Layout Tab ───
+const HOME_SECTION_LABELS: Record<HomeSectionId, string> = {
+  stats: "통계 (진료 경력·환자 수 등)",
+  signature: "시그니처 시술",
+  events: "이벤트",
+  treatments: "진료 내용",
+  director: "대표원장 소개",
+  notice: "공지사항",
+};
+
+function HomeLayoutTab({ onSave }: { onSave: () => void }) {
+  const { homeSections } = useSiteDataForLocale("ko");
+  const sections: HomeSectionConfig[] = (homeSections && homeSections.length > 0 ? homeSections : defaultHomeSections)
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const updateBoth = (fn: (list: HomeSectionConfig[]) => HomeSectionConfig[]) => {
+    updateSiteData((d) => ({ ...d, homeSections: fn(d.homeSections ?? defaultHomeSections) }), "ko");
+    updateSiteData((d) => ({ ...d, homeSections: fn(d.homeSections ?? defaultHomeSections) }), "en");
+    onSave();
+  };
+
+  const move = (id: HomeSectionId, dir: -1 | 1) => {
+    updateBoth((list) => {
+      const sorted = [...list].sort((a, b) => a.sortOrder - b.sortOrder);
+      const idx = sorted.findIndex((s) => s.id === id);
+      const target = idx + dir;
+      if (idx < 0 || target < 0 || target >= sorted.length) return list;
+      [sorted[idx], sorted[target]] = [sorted[target], sorted[idx]];
+      return sorted.map((s, i) => ({ ...s, sortOrder: i }));
+    });
+  };
+
+  const toggleHide = (id: HomeSectionId, current: boolean) => {
+    updateBoth((list) => list.map((s) => (s.id === id ? { ...s, isHidden: !current } : s)));
+  };
+
+  return (
+    <>
+      <Card className="mb-4">
+        <p className="text-sm text-ink-soft" style={{ lineHeight: 1.7 }}>
+          메인페이지에서 히어로 배너 아래에 표시되는 섹션들의 순서와 표시 여부를 관리합니다.
+          히어로 배너는 항상 최상단에 고정됩니다.
+        </p>
+      </Card>
+      <Card className="p-0 overflow-hidden">
+        {sections.map((s, i) => (
+          <div
+            key={s.id}
+            className="flex items-center gap-2 px-4 py-3 border-b border-line/50 last:border-b-0"
+          >
+            <span className="text-xs text-ink-muted font-mono w-5 text-center shrink-0">{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`font-semibold text-sm ${s.isHidden ? "text-ink-muted line-through" : ""}`}
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  {HOME_SECTION_LABELS[s.id]}
+                </span>
+                {s.isHidden ? (
+                  <span className="text-xs px-1.5 py-0.5 bg-bg-alt rounded text-ink-muted">숨김</span>
+                ) : (
+                  <span className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 rounded">표시</span>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <Button size="icon" variant="ghost" onClick={() => move(s.id, -1)} disabled={i === 0} title="위로">↑</Button>
+              <Button size="icon" variant="ghost" onClick={() => move(s.id, 1)} disabled={i === sections.length - 1} title="아래로">↓</Button>
+              <Button size="sm" variant="ghost" onClick={() => toggleHide(s.id, s.isHidden)}>
+                {s.isHidden ? "표시" : "숨김"}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </Card>
     </>
   );
 }

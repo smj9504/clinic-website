@@ -12,12 +12,6 @@ const AUTO_ADVANCE_MS = 3000;
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNGM0VGRTgiLz48L3N2Zz4=";
 
-function circleSize(role: "center" | "side" | "hidden") {
-  if (role === "center") return { w: "min(64vw, 22rem)", h: "min(64vw, 22rem)" };
-  if (role === "side") return { w: "min(32vw, 11rem)", h: "min(32vw, 11rem)" };
-  return { w: "0px", h: "0px" };
-}
-
 function EquipmentCircle({
   eq,
   role,
@@ -29,7 +23,6 @@ function EquipmentCircle({
 }) {
   if (role === "hidden") return <div className="hidden sm:block" style={{ width: "11rem" }} aria-hidden="true" />;
 
-  const size = circleSize(role);
   const isCenter = role === "center";
 
   return (
@@ -37,10 +30,13 @@ function EquipmentCircle({
       type="button"
       onClick={onClick}
       disabled={isCenter}
-      className="relative shrink-0 rounded-full transition-all duration-500 ease-out"
+      className={
+        "relative shrink-0 rounded-full transition-all duration-500 ease-out " +
+        (isCenter ? "" : "hidden min-[420px]:block")
+      }
       style={{
-        width: size.w,
-        height: size.h,
+        width: isCenter ? "min(40vw, 22rem)" : "min(11vw, 11rem)",
+        height: isCenter ? "min(40vw, 22rem)" : "min(11vw, 11rem)",
         opacity: isCenter ? 1 : 0.55,
         cursor: isCenter ? "default" : "pointer",
       }}
@@ -152,12 +148,15 @@ export default function EquipmentCarousel() {
           {t("skinBeauty.carousel.subtitle")}
         </p>
 
-        <div className="relative flex items-center justify-center gap-3 sm:gap-8 md:gap-12">
+        <div
+          className="flex items-center justify-center"
+          style={{ gap: "clamp(0.375rem, 2vw, 3rem)" }}
+        >
           <button
             type="button"
             onClick={() => goTo(prevIdx)}
-            className="absolute left-0 sm:static shrink-0 z-10 flex items-center justify-center rounded-full bg-surface hover:bg-accent hover:text-ink-inverse transition-colors duration-200"
-            style={{ width: "2.75rem", height: "2.75rem", boxShadow: "0 4px 16px rgba(26, 23, 21, 0.12)" }}
+            className="shrink-0 z-10 flex items-center justify-center rounded-full bg-surface hover:bg-accent hover:text-ink-inverse transition-colors duration-200 w-10 h-10 sm:w-11 sm:h-11"
+            style={{ boxShadow: "0 4px 16px rgba(26, 23, 21, 0.12)" }}
             aria-label={t("skinBeauty.carousel.prev")}
           >
             <svg viewBox="0 0 20 20" fill="none" style={{ width: "1rem", height: "1rem" }}>
@@ -172,8 +171,8 @@ export default function EquipmentCarousel() {
           <button
             type="button"
             onClick={() => goTo(nextIdx)}
-            className="absolute right-0 sm:static shrink-0 z-10 flex items-center justify-center rounded-full bg-surface hover:bg-accent hover:text-ink-inverse transition-colors duration-200"
-            style={{ width: "2.75rem", height: "2.75rem", boxShadow: "0 4px 16px rgba(26, 23, 21, 0.12)" }}
+            className="shrink-0 z-10 flex items-center justify-center rounded-full bg-surface hover:bg-accent hover:text-ink-inverse transition-colors duration-200 w-10 h-10 sm:w-11 sm:h-11"
+            style={{ boxShadow: "0 4px 16px rgba(26, 23, 21, 0.12)" }}
             aria-label={t("skinBeauty.carousel.next")}
           >
             <svg viewBox="0 0 20 20" fill="none" style={{ width: "1rem", height: "1rem" }}>

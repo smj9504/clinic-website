@@ -1,10 +1,10 @@
 import { getServiceClient } from "@/lib/supabase";
-import { clinicInfo as defaultClinicInfo } from "@/lib/data";
+import { clinicInfoShape } from "@/lib/data";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gowoonbit-kmc.com";
 
-/** admin에서 저장한 실제 진료 시간(clinicInfo.hours)을 읽어온다. 실패 시 기본값으로 폴백. */
-async function getClinicHours(): Promise<typeof defaultClinicInfo.hours> {
+/** admin에서 저장한 실제 진료 시간(clinicInfo.hours)을 읽어온다. 실패 시 빈 값으로 폴백. */
+async function getClinicHours(): Promise<typeof clinicInfoShape.hours> {
   try {
     const supabase = getServiceClient();
     const { data } = await supabase
@@ -12,9 +12,9 @@ async function getClinicHours(): Promise<typeof defaultClinicInfo.hours> {
       .select("data")
       .eq("locale", "ko")
       .single();
-    return data?.data?.clinicInfo?.hours ?? defaultClinicInfo.hours;
+    return data?.data?.clinicInfo?.hours ?? clinicInfoShape.hours;
   } catch {
-    return defaultClinicInfo.hours;
+    return clinicInfoShape.hours;
   }
 }
 
@@ -25,7 +25,7 @@ function parseHoursRange(text: string): { opens: string; closes: string } | null
   return { opens: matches[0], closes: matches[1] };
 }
 
-function buildOpeningHours(hours: typeof defaultClinicInfo.hours) {
+function buildOpeningHours(hours: typeof clinicInfoShape.hours) {
   const weekday = parseHoursRange(hours.weekday);
   const saturday = parseHoursRange(hours.saturday);
   return [
@@ -44,7 +44,7 @@ function buildOpeningHours(hours: typeof defaultClinicInfo.hours) {
   ].filter((v): v is NonNullable<typeof v> => Boolean(v));
 }
 
-function buildLocalBusinessSchema(hours: typeof defaultClinicInfo.hours) {
+function buildLocalBusinessSchema(hours: typeof clinicInfoShape.hours) {
   return {
     "@context": "https://schema.org",
     "@type": "MedicalClinic",

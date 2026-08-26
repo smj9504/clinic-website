@@ -29,7 +29,7 @@ function EquipmentTabs({
 }) {
   return (
     <div
-      className="flex flex-wrap items-center justify-center gap-x-12 gap-y-5 md:gap-x-16"
+      className="flex flex-wrap items-center justify-center gap-x-6 gap-y-4 sm:gap-x-12 sm:gap-y-5 md:gap-x-16"
       onMouseLeave={() => onHover(null)}
     >
       {items.map((eq) => {

@@ -65,7 +65,9 @@ export function computePrice(price: ServicePrice): PriceResult {
 
   // 내림. 참고 사이트들도 내림으로 표기하며(실측 8건 전부 일치),
   // 실제 할인율보다 크게 광고하지 않는 쪽이 안전하다.
-  const rate = original > 0 ? Math.floor((1 - final / original) * 100) : 0;
+  // 1e-9를 더해 부동소수점 오차(예: 20% → 19.999999999999996)로
+  // 내림 값이 1 작게 나오는 것을 방지한다.
+  const rate = original > 0 ? Math.floor((1 - final / original) * 100 + 1e-9) : 0;
   return { final, rate, hasDiscount: true };
 }
 

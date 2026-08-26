@@ -15,8 +15,8 @@ import {
   type ProseTabGroup,
 } from "@/lib/proseCards";
 import ChecklistHero from "@/components/subpages/ChecklistHero";
-import TreatmentAreaMap, { type TreatmentArea } from "@/components/subpages/TreatmentAreaMap";
-import BodyAreaMap, { type BodyArea } from "@/components/subpages/BodyAreaMap";
+import TreatmentAreaMap from "@/components/subpages/TreatmentAreaMap";
+import BodyAreaMap from "@/components/subpages/BodyAreaMap";
 import StepProcess from "@/components/subpages/StepProcess";
 import SequentialChecklist from "@/components/subpages/SequentialChecklist";
 
@@ -58,111 +58,6 @@ const SEQUENTIAL_CHECKLIST_HEADINGS: Record<string, string> = {
   "이런 분들께 추천합니다": "herbal-clinic",
   "Recommended For": "herbal-clinic",
 };
-
-/**
- * 리프팅 페이지 전용 시술 가능 부위 맵. body richtext 안에는 부위별 좌표를
- * 표현할 수 없어(자유 텍스트일 뿐 이미지 위 좌표 데이터가 아님) prose 파싱
- * 파이프라인 밖에 별도 데이터로 둔다. 좌표는 public/lifting-face.jpg(1400x933,
- * 3:2)의 실제 얼굴 위치를 격자 오버레이로 측정해 얻었다 — TreatmentAreaMap의
- * 컨테이너도 같은 3:2 비율(aspect-[3/2])이라 object-cover로 잘리는 부분 없이
- * 원본 그대로 표시되므로 이 퍼센트 값이 화면에 그대로 대응한다. 사진을
- * 교체하면 이 좌표도 함께 다시 측정해야 한다.
- */
-const TREATMENT_AREA_IMAGE = "/lifting-face.jpg";
-
-const LIFTING_TREATMENT_AREAS: TreatmentArea[] = [
-  {
-    id: "forehead",
-    x: 50,
-    y: 21,
-    label: "이마",
-    description: "가로 주름과 처짐으로 인상이 무거워 보이는 부위입니다. 탄력을 끌어올려 이마 라인을 매끄럽게 정리합니다.",
-  },
-  {
-    id: "eye",
-    x: 60,
-    y: 40,
-    label: "눈가",
-    description: "피부가 얇아 탄력 저하가 가장 먼저 드러나는 부위입니다. 잔주름과 처짐을 함께 개선합니다.",
-  },
-  {
-    id: "cheek",
-    x: 39,
-    y: 49,
-    label: "볼",
-    description: "볼륨이 아래로 이동하며 얼굴 라인이 흐려지는 부위입니다. 처진 볼륨을 끌어올려 갸름한 인상을 만듭니다.",
-  },
-  {
-    id: "nasolabial",
-    x: 61,
-    y: 57,
-    label: "팔자주름",
-    description: "볼 처짐과 함께 깊어지는 팔자 라인입니다. 주변 조직을 탄탄하게 잡아주어 주름을 완화합니다.",
-  },
-  {
-    id: "jawline",
-    x: 40,
-    y: 65,
-    label: "턱",
-    description: "턱선이 무너지며 얼굴형이 흐트러지는 부위입니다. 턱 라인을 선명하게 잡아 윤곽을 살립니다.",
-  },
-  {
-    id: "double-chin",
-    x: 56,
-    y: 71,
-    label: "이중턱",
-    description: "지방과 처짐이 함께 작용해 이중턱으로 이어지는 부위입니다. 턱 아래 라인을 정리해 옆모습을 매끈하게 만듭니다.",
-  },
-];
-
-/**
- * 통증치료 페이지 전용 통증 부위 맵. body richtext의 "이런 통증으로 고민하고
- * 계신가요" 체크리스트(h2+ul, 7개 항목) 중 특정 신체 부위로 지목되는 4개만
- * 핫스팟으로 옮기고, 부위가 아닌 나머지 3개(운동·부상 회복, 수술 후 재활,
- * 골절 후 회복 — 상황이지 위치가 아님)는 맵 아래 footnote로 내린다. 원본
- * 체크리스트는 .prose h2+ul로 계속 렌더링되므로 내용이 사라지지 않고
- * 두 번 보이는 형태다: 위에서 시각적으로 훑고, 아래에서 다시 텍스트로 확인.
- * PAIN_AREA_IMAGE는 리프팅 페이지와 같은 이유로 실제 전신 사진이 등록되기
- * 전까지 비워 둔다.
- */
-const PAIN_AREA_IMAGE: string | null = null;
-
-const PAIN_TREATMENT_AREAS: BodyArea[] = [
-  {
-    id: "neck-shoulder",
-    x: 50,
-    y: 18,
-    label: "목·어깨",
-    description: "목과 어깨가 자주 결리고 뻣뻣한 느낌이 지속되거나, 일자목·거북목 등 체형 불균형이 신경 쓰이는 부위입니다.",
-  },
-  {
-    id: "lower-back",
-    x: 50,
-    y: 45,
-    label: "허리",
-    description: "앉아있거나 움직일 때 통증과 불편함이 느껴지는 부위입니다. 정렬 불균형이나 근육 긴장이 원인일 수 있습니다.",
-  },
-  {
-    id: "knee",
-    x: 38,
-    y: 72,
-    label: "무릎",
-    description: "무릎 관절 부위에 통증이 있거나, 운동·활동 중 부상 이후 회복이 필요한 부위입니다.",
-  },
-  {
-    id: "ankle",
-    x: 55,
-    y: 93,
-    label: "발목",
-    description: "발목 관절 부위의 통증이나 부상 후 회복 관리가 필요한 부위입니다.",
-  },
-];
-
-const PAIN_TREATMENT_FOOTNOTE = [
-  "운동·활동 중 부상 회복",
-  "척추·관절 수술 후 재활 관리",
-  "골절 후 회복 과정 관리",
-];
 
 /**
  * "이런 분들께 추천합니다" 체크리스트와 달리, h2 섹션 안에 h3+p가 3개 이상
@@ -276,12 +171,21 @@ function TabbedPoints({ group }: { group: ProseTabGroup }) {
 
         <div>
           {active.tags.length > 0 && (
-            <p
-              className="text-accent font-medium mb-2"
-              style={{ fontSize: "0.95rem", letterSpacing: "-0.01em" }}
-            >
-              {active.tags.map((tag) => `#${tag}`).join(" ")}
-            </p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {active.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-accent-soft/12 text-accent-soft font-medium"
+                  style={{
+                    fontSize: "0.8rem",
+                    letterSpacing: "-0.01em",
+                    padding: "0.3rem 0.75rem",
+                  }}
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
           )}
           <h3
             className="font-display mb-6"
@@ -297,31 +201,34 @@ function TabbedPoints({ group }: { group: ProseTabGroup }) {
           </p>
 
           {active.benefits.length > 0 && (
-            <>
-              <h4
-                className="font-display mb-4"
-                style={{ fontSize: "1.05rem", fontWeight: 700, letterSpacing: "-0.02em" }}
-              >
-                장점
-              </h4>
-              <ul className="space-y-3">
-                {active.benefits.map((benefit, i) => (
-                  <li key={i} className="flex items-start gap-2.5">
-                    <span
-                      className="shrink-0 bg-accent"
-                      style={{ width: "5px", height: "5px", marginTop: "0.55em" }}
-                      aria-hidden="true"
+            <ul className="space-y-3.5 border-t border-line pt-7">
+              {active.benefits.map((benefit, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    className="shrink-0 text-accent"
+                    style={{ width: "1.15rem", height: "1.15rem", marginTop: "0.05em" }}
+                    aria-hidden="true"
+                  >
+                    <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.3" opacity="0.35" />
+                    <path
+                      d="M6.5 10.3l2.3 2.3 4.7-5.2"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
-                    <span
-                      className="flex-1 text-ink-soft"
-                      style={{ fontSize: "0.95rem", lineHeight: 1.7, letterSpacing: "-0.01em" }}
-                    >
-                      {benefit}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
+                  </svg>
+                  <span
+                    className="flex-1 text-ink-soft"
+                    style={{ fontSize: "0.95rem", lineHeight: 1.7, letterSpacing: "-0.01em" }}
+                  >
+                    {benefit}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>
@@ -501,24 +408,24 @@ export default function SubPageDetail() {
               />
             )}
 
-            {page.slug === "lifting" && (
+            {page.areaMap?.enabled && page.areaMap.kind === "face" && (
               <TreatmentAreaMap
-                title="리프팅"
-                highlight="시술 가능 부위"
-                imageSrc={TREATMENT_AREA_IMAGE}
-                imageAlt="리프팅 시술 가능 부위를 표시한 얼굴 정면 사진"
-                areas={LIFTING_TREATMENT_AREAS}
+                title={page.areaMap.title}
+                highlight={page.areaMap.highlight}
+                imageSrc={page.areaMap.image}
+                imageAlt={page.areaMap.imageAlt}
+                areas={page.areaMap.areas}
               />
             )}
 
-            {page.slug === "pain-treatment" && (
+            {page.areaMap?.enabled && page.areaMap.kind === "body" && (
               <BodyAreaMap
-                title="통증이 자주 느껴지는"
-                highlight="부위"
-                imageSrc={PAIN_AREA_IMAGE}
-                imageAlt="통증 부위를 표시한 전신 정면 사진"
-                areas={PAIN_TREATMENT_AREAS}
-                footnote={PAIN_TREATMENT_FOOTNOTE}
+                title={page.areaMap.title}
+                highlight={page.areaMap.highlight}
+                imageSrc={page.areaMap.image}
+                imageAlt={page.areaMap.imageAlt}
+                areas={page.areaMap.areas}
+                footnote={page.areaMap.footnote}
               />
             )}
 

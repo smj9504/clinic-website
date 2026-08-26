@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
   const firstError = catRes.error || subRes.error || svcRes.error;
   if (firstError) {
-    // supabase-services.sql을 아직 실행하지 않은 상태. 공개 사이트를 깨뜨리는 대신
+    // supabase-schema.sql을 아직 실행하지 않은 상태. 공개 사이트를 깨뜨리는 대신
     // 빈 카탈로그를 돌려주고, 관리자 화면이 안내를 띄울 수 있도록 플래그를 준다.
     if (isMissingTableError(firstError)) {
       return NextResponse.json({ ...EMPTY_CATALOG, setupRequired: true });

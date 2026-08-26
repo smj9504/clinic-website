@@ -67,6 +67,10 @@ export default function TreatmentAreaMap({
 
         {areas.map((area) => {
           const isActive = area.id === activeId;
+          // 라벨이 이미지 가장자리 쪽으로 자라면 overflow-hidden 컨테이너에 잘릴 수 있어
+          // 항상 이미지 중심 방향으로 자라도록 좌/우 절반에 따라 라벨 위치를 뒤집는다.
+          // 아이콘은 항상 (x%, y%)에 정확히 고정하고, 라벨만 아이콘 기준 좌/우로 붙인다.
+          const growsLeft = area.x > 50;
           return (
             <button
               key={area.id}
@@ -74,13 +78,13 @@ export default function TreatmentAreaMap({
               onMouseEnter={() => setActiveId(area.id)}
               onFocus={() => setActiveId(area.id)}
               onClick={() => setActiveId(isActive ? null : area.id)}
-              className="absolute flex items-center gap-2 -translate-x-1/2 -translate-y-1/2"
+              className="absolute flex items-center -translate-x-1/2 -translate-y-1/2"
               style={{ left: `${area.x}%`, top: `${area.y}%` }}
               aria-pressed={isActive}
               aria-label={area.label}
             >
               <span
-                className="shrink-0 rounded-full flex items-center justify-center transition-colors duration-200"
+                className={"shrink-0 rounded-full flex items-center justify-center transition-colors duration-200" + (growsLeft ? " order-2" : " order-1")}
                 style={{
                   width: "1.75rem",
                   height: "1.75rem",
@@ -98,7 +102,14 @@ export default function TreatmentAreaMap({
                 </svg>
               </span>
               <span
-                className="rounded-full px-3.5 py-1.5 text-sm font-semibold whitespace-nowrap transition-colors duration-200"
+                className={
+                  "rounded-full px-2.5 py-1 text-xs sm:px-3.5 sm:py-1.5 sm:text-sm font-semibold whitespace-nowrap transition-colors duration-200" +
+                  (growsLeft ? " order-1 mr-2" : " order-2 ml-2") +
+                  // 모바일은 핫스팟 6개가 좁은 얼굴 사진 위에 조밀하게 몰려 있어, 라벨을
+                  // 항상 노출하면 서로 겹친다. 활성 상태일 때만 보이게 하고 나머지는
+                  // 아이콘 점만 남긴다 — sm 이상(더 넓은 이미지)에서는 기존처럼 항상 노출.
+                  (isActive ? "" : " hidden sm:inline-block")
+                }
                 style={{
                   background: isActive ? "var(--color-accent)" : "var(--color-surface)",
                   color: isActive ? "var(--color-ink-inverse)" : "var(--color-ink)",

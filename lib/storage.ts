@@ -9,31 +9,37 @@
  */
 
 import {
-  events as defaultEvents,
-  eventsEn as defaultEventsEn,
-  treatments as defaultTreatments,
-  treatmentsEn as defaultTreatmentsEn,
-  director as defaultDirector,
-  directorEn as defaultDirectorEn,
-  notices as defaultNotices,
-  noticesEn as defaultNoticesEn,
-  heroSlides as defaultHeroSlides,
-  heroSlidesEn as defaultHeroSlidesEn,
-  clinicInfo as defaultClinicInfo,
-  clinicInfoEn as defaultClinicInfoEn,
-  subPages as defaultSubPages,
-  subPagesEn as defaultSubPagesEn,
-  equipment as defaultEquipment,
-  equipmentEn as defaultEquipmentEn,
-  sampleImages,
+  clinicInfoShape,
   type Event,
   type Treatment,
   type Director,
   type Notice,
   type HeroSlide,
   type SubPage,
+  type SubPageAreaMap,
   type Equipment,
+  type ClinicInfo,
+  type HomeSectionConfig,
 } from "./data";
+
+/** 메인페이지 섹션 기본 순서 (Hero는 항상 최상단 고정이라 목록에서 제외) */
+export const defaultHomeSections: HomeSectionConfig[] = [
+  { id: "stats", isHidden: false, sortOrder: 0 },
+  { id: "treatments", isHidden: false, sortOrder: 1 },
+  { id: "signature", isHidden: false, sortOrder: 2 },
+  { id: "events", isHidden: false, sortOrder: 3 },
+  { id: "director", isHidden: false, sortOrder: 4 },
+  { id: "notice", isHidden: false, sortOrder: 5 },
+];
+
+const emptyEvents: Event[] = [];
+const emptyTreatments: Treatment[] = [];
+const emptyDirector: Director = { name: "", nameEn: "", title: "", quote: "", bio: [], image: "" };
+const emptyNotices: Notice[] = [];
+const emptyHeroSlides: HeroSlide[] = [];
+const emptySubPages: SubPage[] = [];
+const emptyEquipment: Equipment[] = [];
+const emptyClinicInfo: ClinicInfo = clinicInfoShape;
 
 import type { Locale } from "./i18n";
 
@@ -177,6 +183,70 @@ export function migrateMenus(menus: MenuItem[], locale: Locale): MenuItem[] {
   });
 }
 
+/**
+ * lifting/pain-treatment 서브페이지는 areaMap 필드가 생기기 전부터 부위별
+ * 인터랙티브 맵이 컴포넌트에 하드코딩된 데이터로 렌더링되고 있었다. 기존
+ * site_data엔 이 필드가 없으므로 배포 후 최초 로드 시 이전 하드코딩 값을
+ * areaMap 기본값으로 시딩해 화면이 갑자기 비지 않게 한다. 이미 값이
+ * 있으면(관리자 편집 또는 이미 마이그레이션됨) 절대 덮어쓰지 않는다.
+ */
+const LEGACY_AREA_MAP_SEEDS: Record<string, SubPageAreaMap> = {
+  lifting: {
+    enabled: true,
+    kind: "face",
+    title: "리프팅",
+    highlight: "시술 가능 부위",
+    image: "/lifting-face.jpg",
+    imageAlt: "리프팅 시술 가능 부위를 표시한 얼굴 정면 사진",
+    areas: [
+      { id: "forehead", x: 50, y: 21, label: "이마", description: "가로 주름과 처짐으로 인상이 무거워 보이는 부위입니다. 탄력을 끌어올려 이마 라인을 매끄럽게 정리합니다." },
+      { id: "eye", x: 60, y: 40, label: "눈가", description: "피부가 얇아 탄력 저하가 가장 먼저 드러나는 부위입니다. 잔주름과 처짐을 함께 개선합니다." },
+      { id: "cheek", x: 39, y: 49, label: "볼", description: "볼륨이 아래로 이동하며 얼굴 라인이 흐려지는 부위입니다. 처진 볼륨을 끌어올려 갸름한 인상을 만듭니다." },
+      { id: "nasolabial", x: 61, y: 57, label: "팔자주름", description: "볼 처짐과 함께 깊어지는 팔자 라인입니다. 주변 조직을 탄탄하게 잡아주어 주름을 완화합니다." },
+      { id: "jawline", x: 40, y: 65, label: "턱", description: "턱선이 무너지며 얼굴형이 흐트러지는 부위입니다. 턱 라인을 선명하게 잡아 윤곽을 살립니다." },
+      { id: "double-chin", x: 56, y: 71, label: "이중턱", description: "지방과 처짐이 함께 작용해 이중턱으로 이어지는 부위입니다. 턱 아래 라인을 정리해 옆모습을 매끈하게 만듭니다." },
+    ],
+  },
+  "pain-treatment": {
+    enabled: true,
+    kind: "body",
+    title: "통증이 자주 느껴지는",
+    highlight: "부위",
+    image: null,
+    imageAlt: "통증 부위를 표시한 전신 정면 사진",
+    areas: [
+      { id: "neck-shoulder", x: 50, y: 18, label: "목·어깨", description: "목과 어깨가 자주 결리고 뻣뻣한 느낌이 지속되거나, 일자목·거북목 등 체형 불균형이 신경 쓰이는 부위입니다." },
+      { id: "lower-back", x: 50, y: 45, label: "허리", description: "앉아있거나 움직일 때 통증과 불편함이 느껴지는 부위입니다. 정렬 불균형이나 근육 긴장이 원인일 수 있습니다." },
+      { id: "knee", x: 38, y: 72, label: "무릎", description: "무릎 관절 부위에 통증이 있거나, 운동·활동 중 부상 이후 회복이 필요한 부위입니다." },
+      { id: "ankle", x: 55, y: 93, label: "발목", description: "발목 관절 부위의 통증이나 부상 후 회복 관리가 필요한 부위입니다." },
+    ],
+    footnote: ["운동·활동 중 부상 회복", "척추·관절 수술 후 재활 관리", "골절 후 회복 과정 관리"],
+  },
+};
+
+export function migrateAreaMaps(subPages: SubPage[]): SubPage[] {
+  return subPages.map((sp) => {
+    if (sp.areaMap) return sp;
+    const seed = LEGACY_AREA_MAP_SEEDS[sp.slug];
+    if (!seed) return sp;
+    return { ...sp, areaMap: seed };
+  });
+}
+
+/**
+ * homeSections 필드가 생기기 전 저장된 site_data를 위한 마이그레이션.
+ * 기존 데이터엔 이 필드가 없으므로 기본 순서로 시딩한다. 새로 추가되는
+ * 섹션 id(예: 이후 도입될 섹션)는 기존 목록에 없으면 기본값에서 이어붙인다.
+ */
+export function migrateHomeSections(sections: HomeSectionConfig[] | undefined): HomeSectionConfig[] {
+  if (!sections || sections.length === 0) return defaultHomeSections;
+  const existingIds = new Set(sections.map((s) => s.id));
+  const missing = defaultHomeSections.filter((d) => !existingIds.has(d.id));
+  if (missing.length === 0) return sections;
+  const maxOrder = Math.max(-1, ...sections.map((s) => s.sortOrder));
+  return [...sections, ...missing.map((m, i) => ({ ...m, sortOrder: maxOrder + 1 + i }))];
+}
+
 // ─── FAQ 타입 ───
 export type FaqItem = {
   id: string;
@@ -186,75 +256,9 @@ export type FaqItem = {
   sortOrder: number;
 };
 
-export const defaultFaqs: FaqItem[] = [
-  {
-    id: "f1",
-    category: "진료",
-    question: "진료 시간이 어떻게 되나요?",
-    answer:
-      "평일은 오전 9시부터 오후 7시까지, 토요일은 오전 9시부터 오후 2시까지 진료합니다. 일요일과 공휴일은 휴진입니다.",
-    sortOrder: 0,
-  },
-  {
-    id: "f2",
-    category: "예약",
-    question: "예약 없이 방문해도 진료가 가능한가요?",
-    answer:
-      "예약 환자분을 우선으로 진료하지만, 시간이 비는 경우 워크인 환자분도 진료가 가능합니다. 가능하면 네이버 예약을 통해 미리 예약하시기를 권장드립니다.",
-    sortOrder: 1,
-  },
-  {
-    id: "f3",
-    category: "이용",
-    question: "주차 시설이 있나요?",
-    answer:
-      "건물 지하에 무료 주차 공간이 있습니다. 진료 환자분께는 2시간 무료 주차를 지원합니다.",
-    sortOrder: 2,
-  },
-  {
-    id: "f4",
-    category: "보험",
-    question: "자동차보험 진료가 가능한가요?",
-    answer:
-      "네, 가능합니다. 교통사고 후 통증·후유증 치료에 대해 자동차보험 적용이 가능하며, 보험사를 통한 진료비 청구를 도와드립니다.",
-    sortOrder: 3,
-  },
-];
+export const defaultFaqs: FaqItem[] = [];
 
-export const defaultFaqsEn: FaqItem[] = [
-  {
-    id: "f1",
-    category: "Treatment",
-    question: "What are your office hours?",
-    answer:
-      "We are open weekdays from 9 AM to 7 PM, and Saturdays from 9 AM to 2 PM. We are closed on Sundays and public holidays.",
-    sortOrder: 0,
-  },
-  {
-    id: "f2",
-    category: "Reservation",
-    question: "Can I visit without a reservation?",
-    answer:
-      "Walk-in patients are welcome when time permits, but we prioritize patients with reservations. We recommend booking in advance through Naver Reservation.",
-    sortOrder: 1,
-  },
-  {
-    id: "f3",
-    category: "Facility",
-    question: "Is parking available?",
-    answer:
-      "Free parking is available in the building basement. Patients receive 2 hours of complimentary parking.",
-    sortOrder: 2,
-  },
-  {
-    id: "f4",
-    category: "Insurance",
-    question: "Do you accept auto insurance?",
-    answer:
-      "Yes. We provide treatment for post-accident pain and aftereffects covered by auto insurance, and assist with insurance claims.",
-    sortOrder: 3,
-  },
-];
+export const defaultFaqsEn: FaqItem[] = [];
 
 // ─── Popup ───
 export type PopupItem = {
@@ -335,17 +339,15 @@ export type AboutContent = {
 };
 
 export const defaultAbout: AboutContent = {
-  philosophyTitle: "진료 철학",
-  philosophyBody:
-    "우리 한의원은 단순히 증상을 가라앉히는 치료가 아닌, 환자분의 체질과 생활 습관을 깊이 이해하고 근본 원인을 살피는 진료를 추구합니다. 전통 한의학의 지혜와 현대 의학의 정밀함을 함께 담아, 당신의 일상을 회복하는 처방을 드립니다.",
-  facilityImages: [sampleImages.facility, sampleImages.facility2, sampleImages.facility3],
+  philosophyTitle: "",
+  philosophyBody: "",
+  facilityImages: [],
 };
 
 export const defaultAboutEn: AboutContent = {
-  philosophyTitle: "Our Philosophy",
-  philosophyBody:
-    "Our clinic pursues treatment that goes beyond merely alleviating symptoms — we deeply understand each patient's constitution and lifestyle to address root causes. Combining the wisdom of traditional Korean medicine with modern medical precision, we prescribe recovery for your daily life.",
-  facilityImages: [sampleImages.facility, sampleImages.facility2, sampleImages.facility3],
+  philosophyTitle: "",
+  philosophyBody: "",
+  facilityImages: [],
 };
 
 // ─── 통합 사이트 데이터 ───
@@ -371,7 +373,7 @@ export type SiteData = {
   schedulePopup: SchedulePopup;
   showStats: boolean;
   stats?: StatItem[];
-  clinicInfo: typeof defaultClinicInfo;
+  clinicInfo: ClinicInfo;
   /** 종료된 이벤트 숨김: "immediately" = 종료 즉시, 숫자 = 종료 후 N일 뒤 숨김 */
   eventEndedHide?: EndedVisibility;
   /** 종료된 공지사항 숨김: "immediately" = 종료 즉시, 숫자 = 종료 후 N일 뒤 숨김 */
@@ -380,52 +382,46 @@ export type SiteData = {
   subPages?: SubPage[];
   /** 장비소개 카탈로그 */
   equipment?: Equipment[];
+  /** 메인페이지 섹션 표시 순서/숨김 (Hero 제외) */
+  homeSections?: HomeSectionConfig[];
 };
 
 const defaultSiteDataByLocale: Record<Locale, SiteData> = {
   ko: {
     menus: defaultMenus,
-    heroSlides: defaultHeroSlides,
-    events: defaultEvents,
-    treatments: defaultTreatments,
-    director: defaultDirector,
+    heroSlides: emptyHeroSlides,
+    events: emptyEvents,
+    treatments: emptyTreatments,
+    director: emptyDirector,
     about: defaultAbout,
-    notices: defaultNotices,
+    notices: emptyNotices,
     faqs: defaultFaqs,
     popup: defaultPopup,
     schedulePopup: defaultSchedulePopup,
     showStats: false,
-    stats: [
-      { label: "진료 경력", value: 15, suffix: "년" },
-      { label: "누적 환자", value: 30000, suffix: "명+" },
-      { label: "환자 만족도", value: 98, suffix: "%" },
-      { label: "진료 분야", value: 5, suffix: "개" },
-    ],
-    clinicInfo: defaultClinicInfo,
-    subPages: defaultSubPages,
-    equipment: defaultEquipment,
+    stats: [],
+    clinicInfo: emptyClinicInfo,
+    subPages: emptySubPages,
+    equipment: emptyEquipment,
+    homeSections: defaultHomeSections,
   },
   en: {
     menus: defaultMenusEn,
-    heroSlides: defaultHeroSlidesEn,
-    events: defaultEventsEn,
-    treatments: defaultTreatmentsEn,
-    director: defaultDirectorEn,
+    heroSlides: emptyHeroSlides,
+    events: emptyEvents,
+    treatments: emptyTreatments,
+    director: emptyDirector,
     about: defaultAboutEn,
-    notices: defaultNoticesEn,
+    notices: emptyNotices,
     faqs: defaultFaqsEn,
     popup: defaultPopupEn,
     schedulePopup: defaultSchedulePopupEn,
     showStats: false,
-    stats: [
-      { label: "Years of Practice", value: 15, suffix: "yr" },
-      { label: "Patients Served", value: 30000, suffix: "+" },
-      { label: "Satisfaction Rate", value: 98, suffix: "%" },
-      { label: "Specialties", value: 5, suffix: "" },
-    ],
-    clinicInfo: defaultClinicInfoEn,
-    subPages: defaultSubPagesEn,
-    equipment: defaultEquipmentEn,
+    stats: [],
+    clinicInfo: emptyClinicInfo,
+    subPages: emptySubPages,
+    equipment: emptyEquipment,
+    homeSections: defaultHomeSections,
   },
 };
 
@@ -465,6 +461,9 @@ function stripBase64Images(data: SiteData): SiteData {
       ...sp,
       image: strip(sp.image ?? ""),
       fullBleedImage: strip(sp.fullBleedImage ?? ""),
+      areaMap: sp.areaMap
+        ? { ...sp.areaMap, image: sp.areaMap.image ? strip(sp.areaMap.image) : sp.areaMap.image }
+        : sp.areaMap,
     })),
     equipment: (data.equipment ?? []).map((eq) => ({ ...eq, image: strip(eq.image ?? "") })),
   };
@@ -480,6 +479,8 @@ export function getSiteData(locale: Locale = "ko"): SiteData {
     const parsed = JSON.parse(raw);
     const merged: SiteData = { ...getDefaultSiteData(locale), ...parsed };
     merged.menus = migrateMenus(merged.menus, locale);
+    merged.subPages = migrateAreaMaps(merged.subPages ?? []);
+    merged.homeSections = migrateHomeSections(merged.homeSections);
     return merged;
   } catch {
     return getDefaultSiteData(locale);
@@ -494,6 +495,8 @@ export async function fetchSiteData(locale: Locale = "ko"): Promise<SiteData> {
     if (json.data) {
       const merged: SiteData = { ...getDefaultSiteData(locale), ...json.data };
       merged.menus = migrateMenus(merged.menus, locale);
+      merged.subPages = migrateAreaMaps(merged.subPages ?? []);
+      merged.homeSections = migrateHomeSections(merged.homeSections);
       _memCache[locale] = merged;
       try {
         localStorage.setItem(storageKey(locale), JSON.stringify(stripBase64Images(merged)));
@@ -601,6 +604,9 @@ export async function syncImages(locale: Locale) {
         ...sp,
         image: cur?.image ?? sp.image,
         fullBleedImage: cur?.fullBleedImage ?? sp.fullBleedImage,
+        areaMap: sp.areaMap
+          ? { ...sp.areaMap, image: cur?.areaMap?.image !== undefined ? cur.areaMap.image : sp.areaMap.image }
+          : sp.areaMap,
       };
     }),
     equipment: (other.equipment ?? []).map((eq) => {
@@ -705,7 +711,28 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
   // Stats
   (koData.stats ?? []).forEach((s) => { pushText(s.label); pushText(s.suffix); });
   // SubPages
-  (koData.subPages ?? []).forEach((sp) => { pushText(sp.title); pushText(sp.intro ?? ""); pushText(sp.body); });
+  (koData.subPages ?? []).forEach((sp) => {
+    pushText(sp.title);
+    pushText(sp.intro ?? "");
+    pushText(sp.body);
+    // 부위 안내 맵 텍스트 — sp.areaMap이 존재하면 push (enabled 여부 무관: enabled:false여도
+    // 콘텐츠는 남아있고 다시 켰을 때 기존 번역이 보존돼야 하므로 토글로 커버리지를 가르지 않는다).
+    // 아래 조건(`if (sp.areaMap)`)은 pull 섹션(subPages 매핑 안)의 동일 조건과 텍스트 그대로
+    // 일치해야 한다 — 하나만 바뀌면 그 이후 모든 subPage/필드가 밀려서 잘못된 번역이 매칭된다.
+    // 수정 시 두 곳을 함께 바꿀 것.
+    if (sp.areaMap) {
+      pushText(sp.areaMap.title);
+      pushText(sp.areaMap.highlight);
+      pushText(sp.areaMap.imageAlt);
+      sp.areaMap.areas.forEach((area) => {
+        pushText(area.label);
+        pushText(area.description);
+      });
+      if (sp.areaMap.kind === "body") {
+        (sp.areaMap.footnote ?? []).forEach((line) => pushText(line));
+      }
+    }
+  });
   // Equipment
   (koData.equipment ?? []).forEach((eq) => {
     pushText(eq.title);
@@ -844,19 +871,50 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
       clinicInfo: enData.clinicInfo,
       eventEndedHide: koData.eventEndedHide,
       noticeEndedHide: koData.noticeEndedHide,
-      subPages: (koData.subPages ?? []).map((sp, i) => ({
-        ...((enData.subPages ?? [])[i] || sp),
-        id: sp.id,
-        slug: sp.slug,
-        parentMenuId: sp.parentMenuId,
-        title: next(),
-        intro: next() || undefined,
-        body: next(),
-        image: sp.image,
-        fullBleedImage: sp.fullBleedImage,
-        isHidden: sp.isHidden,
-        sortOrder: sp.sortOrder,
-      })),
+      subPages: (koData.subPages ?? []).map((sp, i) => {
+        const enSp = (enData.subPages ?? [])[i];
+        return {
+          ...(enSp || sp),
+          id: sp.id,
+          slug: sp.slug,
+          parentMenuId: sp.parentMenuId,
+          title: next(),
+          intro: next() || undefined,
+          body: next(),
+          image: sp.image,
+          fullBleedImage: sp.fullBleedImage,
+          isHidden: sp.isHidden,
+          sortOrder: sp.sortOrder,
+          // push 섹션의 동일 조건(`if (sp.areaMap)`)과 텍스트 그대로 일치해야 한다.
+          // sp.areaMap이 없으면 push 때 아무 것도 넣지 않았으므로 여기서도 next()를 호출하지
+          // 않고, en 쪽에 값이 없어도 이 함수가 임의로 areaMap을 새로 만들지 않는다.
+          areaMap: sp.areaMap
+            ? {
+                kind: sp.areaMap.kind,
+                enabled: sp.areaMap.enabled,
+                title: next(),
+                highlight: next(),
+                image: sp.areaMap.image,
+                imageAlt: next(),
+                areas: sp.areaMap.areas.map((koArea) => {
+                  const enArea = enSp?.areaMap?.areas?.find((a) => a.id === koArea.id);
+                  return {
+                    ...(enArea || koArea),
+                    id: koArea.id,
+                    x: koArea.x,
+                    y: koArea.y,
+                    label: next(),
+                    description: next(),
+                  };
+                }),
+                footnote:
+                  sp.areaMap.kind === "body" && sp.areaMap.footnote && sp.areaMap.footnote.length > 0
+                    ? sp.areaMap.footnote.map(() => next())
+                    : undefined,
+              }
+            : sp.areaMap,
+        };
+      }),
       equipment: (koData.equipment ?? []).map((eq, i) => ({
         ...((enData.equipment ?? [])[i] || eq),
         id: eq.id,

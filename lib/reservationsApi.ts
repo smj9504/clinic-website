@@ -53,14 +53,20 @@ export async function fetchReservationRequests(): Promise<{
   return request("/api/reservation-requests", "GET");
 }
 
+/**
+ * @param reservationDt "confirmed"로 바꿀 때 필수 — 시그마(한의원 내부 예약
+ *   시스템)에 등록할 정확한 예약 일시("YYYY-MM-DD HH:MM"). 그 외 상태
+ *   전환에는 쓰이지 않는다.
+ */
 export async function updateReservationStatus(
   id: string,
-  status: ReservationStatus
+  status: ReservationStatus,
+  reservationDt?: string
 ): Promise<ReservationRequest | null> {
   const res = await request<{ reservation: ReservationRequest }>(
     `/api/reservation-requests/${encodeURIComponent(id)}`,
     "PATCH",
-    { status }
+    reservationDt !== undefined ? { status, reservationDt } : { status }
   );
   return res?.reservation ?? null;
 }

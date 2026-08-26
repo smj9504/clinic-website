@@ -1,4 +1,7 @@
 const ko = {
+  // Common
+  "common.close": "닫기",
+
   // Nav
   "nav.reservation": "예약하기",
   "nav.reservationRequest": "상담 신청",
@@ -19,6 +22,14 @@ const ko = {
   "section.notices": "공지사항",
   "section.more": "더 보기 →",
   "section.detail": "자세히",
+
+  // Signature services
+  "signature.label": "Signature",
+  "signature.title": "시그니처 시술",
+  "signature.subtitle": "토닝 · 리프팅 · 관리를 하나로 묶어,\n가장 합리적인 가격에 만나보세요",
+  "signature.cta": "시그니처 시술 예약하기",
+  "signature.compose": "구성",
+  "signature.priceFrom": "패키지가",
 
   // Badges
   "badge.event": "이벤트",
@@ -81,7 +92,7 @@ const ko = {
   "equipment.title": "장비소개",
   "equipment.intro": "고운빛한의원의 시술 장비를 안내드립니다.",
   "equipment.empty": "등록된 장비가 없습니다.",
-  "equipment.linkedServicesTitle": "연결된 시술",
+  "equipment.linkedServicesTitle": "가능한 시술",
   "equipment.closeModal": "닫기",
 
   // SubPage detail
@@ -115,9 +126,15 @@ const ko = {
   "services.note": "비고",
   "services.priceNotice": "표시된 금액은 부가세 포함 여부·시술 부위에 따라 달라질 수 있습니다. 자세한 사항은 내원 상담 시 안내해 드립니다.",
   "services.related": "같은 분류의 다른 시술",
+  "services.otherInCategorySuffix": "의 다른 시술",
   "services.notFound": "시술을 찾을 수 없습니다.",
   "services.backToList": "시술 목록",
   "services.reserve": "예약 상담하기",
+  "services.generalTreatment": "일반 시술",
+  "services.estimatedAmount": "예상금액 (부가세 별도)",
+  "services.vatSeparate": "부가세 별도",
+  "services.reserveSelected": "선택한 시술 예약하기",
+  "services.selectedCount": "개 선택됨",
 
   // Popup
   "popup.label": "이 달의 이벤트",
@@ -155,6 +172,9 @@ const ko = {
 } as const;
 
 const en: Record<keyof typeof ko, string> = {
+  // Common
+  "common.close": "Close",
+
   // Nav
   "nav.reservation": "Book Now",
   "nav.reservationRequest": "Request",
@@ -175,6 +195,14 @@ const en: Record<keyof typeof ko, string> = {
   "section.notices": "Notices",
   "section.more": "See More →",
   "section.detail": "Details",
+
+  // Signature services
+  "signature.label": "Signature",
+  "signature.title": "Signature Treatments",
+  "signature.subtitle": "Toning, lifting, and care in one package —\nat our most reasonable price",
+  "signature.cta": "Book a Signature Treatment",
+  "signature.compose": "Included",
+  "signature.priceFrom": "Package price",
 
   // Badges
   "badge.event": "Event",
@@ -237,7 +265,7 @@ const en: Record<keyof typeof ko, string> = {
   "equipment.title": "Equipment",
   "equipment.intro": "Introducing Gowoonbit Korean Medicine Clinic's treatment equipment.",
   "equipment.empty": "No equipment has been added yet.",
-  "equipment.linkedServicesTitle": "Related Treatments",
+  "equipment.linkedServicesTitle": "Available Treatments",
   "equipment.closeModal": "Close",
 
   // SubPage detail
@@ -271,9 +299,15 @@ const en: Record<keyof typeof ko, string> = {
   "services.note": "Note",
   "services.priceNotice": "Prices may vary depending on treatment area and whether VAT is included. Details are provided during your consultation.",
   "services.related": "Other treatments in this category",
+  "services.otherInCategorySuffix": " — more treatments",
   "services.notFound": "Treatment not found.",
   "services.backToList": "All treatments",
   "services.reserve": "Book a consultation",
+  "services.generalTreatment": "General Treatments",
+  "services.estimatedAmount": "Estimated Total (VAT excluded)",
+  "services.vatSeparate": "VAT excluded",
+  "services.reserveSelected": "Book Selected Treatments",
+  "services.selectedCount": " selected",
 
   // Popup
   "popup.label": "Monthly Event",

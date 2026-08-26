@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { LocaleProvider } from "@/lib/i18n";
+import { CartProvider } from "@/lib/cart";
 import { useSiteData } from "@/lib/useSiteData";
 import Nav from "./Nav";
 import Footer from "./Footer";
@@ -37,7 +38,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
 
   return (
     <LocaleProvider>
-      {isAdmin ? <>{children}</> : <PublicSite>{children}</PublicSite>}
+      <CartProvider>
+        {isAdmin ? <>{children}</> : <PublicSite>{children}</PublicSite>}
+      </CartProvider>
     </LocaleProvider>
   );
 }

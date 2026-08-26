@@ -3,21 +3,31 @@
 import { useState } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+import { useCart } from "@/lib/cart";
+import { formatKRW } from "@/lib/price";
 import { submitReservationRequest } from "@/lib/reservationsApi";
-import { todayKST } from "@/lib/date";
+import DatePicker from "@/components/reservation/DatePicker";
+import TimeSelect from "@/components/reservation/TimeSelect";
+import PhoneVerification from "@/components/reservation/PhoneVerification";
 
 export default function ReservationPage() {
   const { clinicInfo } = useSiteData();
   const t = useT();
+  const { items: cartItems, removeItem: removeCartItem, clear: clearCart } = useCart();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [desiredDate, setDesiredDate] = useState("");
   const [desiredTime, setDesiredTime] = useState("");
+  // 선택 시술은 위쪽 리스트로 이미 명확히 보이므로, memo에는 중복 삽입하지 않는다.
+  // 선택 목록은 제출 시 selectedServices로 별도 전송된다.
   const [memo, setMemo] = useState("");
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  const hasCartItems = cartItems.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +35,10 @@ export default function ReservationPage() {
 
     if (!name.trim() || !phone.trim() || !desiredDate) {
       setError("이름, 연락처, 희망 날짜는 필수 입력입니다.");
+      return;
+    }
+    if (!verificationToken) {
+      setError("휴대폰 본인인증을 먼저 완료해 주세요.");
       return;
     }
 
@@ -35,6 +49,15 @@ export default function ReservationPage() {
       desiredDate,
       desiredTime,
       memo,
+      verificationToken,
+      selectedServices: cartItems.map((i) => ({
+        serviceId: i.serviceId,
+        priceId: i.priceId,
+        serviceName: i.serviceName,
+        priceLabel: i.priceLabel,
+        originalPrice: i.originalPrice,
+        finalPrice: i.finalPrice,
+      })),
     });
     setSubmitting(false);
 
@@ -42,8 +65,11 @@ export default function ReservationPage() {
       setError(result.error);
       return;
     }
+    clearCart();
     setDone(true);
   };
+
+  const canSubmit = !submitting && verificationToken !== null;
 
   if (done) {
     return (
@@ -123,6 +149,62 @@ export default function ReservationPage() {
 
       <section className="py-16 md:py-24">
         <div className="container-default max-w-xl">
+          {hasCartItems && (
+            <div className="mb-8 border border-line rounded-lg overflow-hidden">
+              <div className="px-5 py-3.5 bg-bg-alt border-b border-line flex items-baseline justify-between gap-3">
+                <h2 className="text-sm font-semibold" style={{ letterSpacing: "-0.02em" }}>
+                  {t("services.reserveSelected").replace(/예약하기$/, "").trim() || "선택한 시술"}
+                </h2>
+                <span className="text-xs text-ink-muted shrink-0">
+                  {cartItems.length}
+                  {t("services.selectedCount")}
+                </span>
+              </div>
+              <ul className="divide-y divide-line">
+                {cartItems.map((item) => (
+                  <li
+                    key={`${item.serviceId}_${item.priceId}`}
+                    className="px-5 py-3.5 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ letterSpacing: "-0.01em" }}>
+                        {item.serviceName}
+                        {item.priceLabel && (
+                          <span className="text-ink-muted font-normal"> · {item.priceLabel}</span>
+                        )}
+                      </p>
+                      <p
+                        className="text-sm font-bold mt-0.5"
+                        style={{ fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}
+                      >
+                        {formatKRW(item.finalPrice)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeCartItem(item.serviceId, item.priceId)}
+                      aria-label={`${item.serviceName} 삭제`}
+                      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-ink-muted hover:bg-bg-alt hover:text-ink transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                      </svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="px-5 py-3.5 bg-bg-alt border-t border-line flex items-center justify-between">
+                <span className="text-xs text-ink-muted">{t("services.estimatedAmount")}</span>
+                <span
+                  className="text-base font-bold"
+                  style={{ fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}
+                >
+                  {formatKRW(cartItems.reduce((sum, i) => sum + i.finalPrice, 0))}
+                </span>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-6">
               <label
@@ -144,7 +226,7 @@ export default function ReservationPage() {
               />
             </div>
 
-            <div className="mb-6">
+            <div className="mb-4">
               <label
                 htmlFor="phone"
                 className="block text-sm font-semibold mb-2"
@@ -164,6 +246,14 @@ export default function ReservationPage() {
               />
             </div>
 
+            <div className="mb-6">
+              <PhoneVerification
+                phone={phone}
+                onVerified={setVerificationToken}
+                onInvalidate={() => setVerificationToken(null)}
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <label
@@ -173,14 +263,11 @@ export default function ReservationPage() {
                 >
                   희망 날짜 <span className="text-accent">*</span>
                 </label>
-                <input
+                <DatePicker
                   id="desiredDate"
-                  type="date"
                   required
-                  min={todayKST()}
                   value={desiredDate}
-                  onChange={(e) => setDesiredDate(e.target.value)}
-                  className="w-full px-4 py-3.5 border border-line rounded text-base outline-none focus:border-accent transition-colors"
+                  onChange={setDesiredDate}
                 />
               </div>
               <div>
@@ -191,17 +278,7 @@ export default function ReservationPage() {
                 >
                   희망 시간대
                 </label>
-                <select
-                  id="desiredTime"
-                  value={desiredTime}
-                  onChange={(e) => setDesiredTime(e.target.value)}
-                  className="w-full px-4 py-3.5 border border-line rounded text-base outline-none focus:border-accent transition-colors bg-bg"
-                  style={{ letterSpacing: "-0.01em" }}
-                >
-                  <option value="">상관없음</option>
-                  <option value="오전">오전</option>
-                  <option value="오후">오후</option>
-                </select>
+                <TimeSelect id="desiredTime" value={desiredTime} onChange={setDesiredTime} />
               </div>
             </div>
 
@@ -232,7 +309,7 @@ export default function ReservationPage() {
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={!canSubmit}
               className="w-full py-4 rounded-full text-base font-semibold bg-accent text-ink-inverse hover:bg-accent-soft transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ letterSpacing: "-0.02em" }}
             >
