@@ -2,30 +2,34 @@
 
 import Image from "next/image";
 import { useScrollReveal } from "@/lib/useScrollReveal";
-import type { ProseStepGroup } from "@/lib/proseCards";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
 
 type StepProcessProps = {
-  group: ProseStepGroup;
+  title: string;
+  intro?: string;
+  /** 스텝마다 다른 사진을 줄 수 있다 — 개별 image가 없는 스텝은 fallbackImage(공용 1장)로 대체 */
+  steps: { text: string; image: string | null }[];
+  fallbackImage?: string | null;
+  imageAlt?: string;
+  /** 스텝 목록 아래에 표시되는 자유 서식 보충 설명 (richtext HTML, 선택 사항) */
+  note?: string;
 };
 
 /**
- * 진행 순서를 나타내는 h2>img>p>ol 구간(lib/proseCards.ts의 splitProseIntoSegments,
- * "steps" 세그먼트) 전용 좌우 교차(zig-zag) 레이아웃. 약침치료/추나치료처럼
- * "이렇게 진행됩니다" 류의 순서 안내에 쓰이며, 같은 패턴이 나타나는 어떤
- * 서브페이지에도 화이트리스트 없이 자동 적용된다(ChecklistHero와 달리 slug로
- * 좁히지 않음 — lib/proseCards.ts 주석 참고).
+ * 진행 순서를 좌우 교차(zig-zag) 레이아웃으로 보여준다. 약침치료/추나치료처럼
+ * "이렇게 진행됩니다" 류의 순서 안내에 쓰인다.
  *
- * 참고 이미지는 스텝마다 다른 사진을 쓰지만, 실제 body richtext에는 h2 섹션당
- * 이미지가 한 장뿐이라 그 한 장을 모든 스텝에서 재사용한다. 나중에 스텝별
- * 사진을 admin에서 따로 넣고 싶다면 이 컴포넌트의 props를 image: string[]로
- * 바꾸는 정도로 확장 가능하지만, 지금은 콘텐츠 소스 자체가 이미지 1장뿐이라
- * subPages 스키마는 건드리지 않았다.
+ * 두 가지 소스에서 렌더링된다: (1) admin의 구조화 필드(subPages.stepProcess) —
+ * 스텝마다 개별 사진 지정 가능, (2) 리치에디터 본문의 h2>img>p>ol 자동 감지
+ * (lib/proseCards.ts) — 폴백 경로로, 이 경우 h2 섹션 공용 이미지 1장을
+ * fallbackImage로 모든 스텝이 공유한다. 두 경로 모두 이 컴포넌트로 수렴하도록
+ * props를 group 객체 대신 평면화했다.
  */
-export default function StepProcess({ group }: StepProcessProps) {
+export default function StepProcess({ title, intro, steps, fallbackImage, imageAlt = "", note }: StepProcessProps) {
   const headingRef = useScrollReveal<HTMLDivElement>({ threshold: 0.3 });
+  const noteRef = useScrollReveal<HTMLDivElement>({ threshold: 0.2 });
 
   return (
     <div className="my-12 md:my-16">
@@ -34,23 +38,38 @@ export default function StepProcess({ group }: StepProcessProps) {
           className="font-display"
           style={{ fontSize: "clamp(1.5rem, 3.2vw, 2.25rem)", fontWeight: 700, letterSpacing: "-0.03em" }}
         >
-          {group.title}
+          {title}
         </h2>
-        {group.intro && (
+        {intro && (
           <p
             className="mt-3 text-ink-soft"
             style={{ fontSize: "1rem", lineHeight: 1.8, letterSpacing: "-0.01em" }}
           >
-            {group.intro}
+            {intro}
           </p>
         )}
       </div>
 
       <div>
-        {group.steps.map((step, i) => (
-          <StepRow key={i} index={i} text={step} image={group.image} imageAlt={group.imageAlt} />
+        {steps.map((step, i) => (
+          <StepRow
+            key={i}
+            index={i}
+            text={step.text}
+            image={step.image ?? fallbackImage ?? null}
+            imageAlt={imageAlt}
+          />
         ))}
       </div>
+
+      {note && (
+        <div
+          ref={noteRef}
+          className="reveal-fade-up prose prose-neutral max-w-none text-ink-soft mt-10 pt-8"
+          style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em", borderTop: "1px solid var(--color-line)" }}
+          dangerouslySetInnerHTML={{ __html: note }}
+        />
+      )}
     </div>
   );
 }

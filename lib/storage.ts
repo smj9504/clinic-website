@@ -18,6 +18,7 @@ import {
   type SubPage,
   type SubPageAreaMap,
   type Equipment,
+  type SkinBeautyEquipmentSections,
   type ClinicInfo,
   type HomeSectionConfig,
 } from "./data";
@@ -382,6 +383,8 @@ export type SiteData = {
   subPages?: SubPage[];
   /** 장비소개 카탈로그 */
   equipment?: Equipment[];
+  /** /skin-beauty 페이지의 두 장비소개 섹션이 각각 보여줄 장비 구성 (선택 사항) */
+  skinBeautyEquipmentSections?: SkinBeautyEquipmentSections;
   /** 메인페이지 섹션 표시 순서/숨김 (Hero 제외) */
   homeSections?: HomeSectionConfig[];
 };

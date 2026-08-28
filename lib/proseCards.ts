@@ -13,6 +13,9 @@
 export type ProsePoint = { title: string; body: string };
 
 export type ProseCardGroup = {
+  /** 클러스터 바로 앞에 h2+안내문이 붙어 있었을 때만 채워진다 (섹션 자체 제목이 없는 경우 빈 문자열) */
+  title: string;
+  intro: string;
   image: string | null;
   imageAlt: string;
   points: ProsePoint[];
@@ -24,6 +27,8 @@ export type ProseTabPoint = ProsePoint & {
 };
 
 export type ProseTabGroup = {
+  title: string;
+  intro: string;
   image: string | null;
   imageAlt: string;
   points: ProseTabPoint[];
@@ -179,6 +184,45 @@ export function splitProseIntoSegments(html: string): ProseSegment[] {
     htmlBuffer = [];
   };
 
+  /**
+   * cards/tabs 클러스터가 확정된 시점에 호출한다. 기존 동작(이미지만 버퍼에서
+   * 제거)은 항상 수행하고, 추가로 그 이미지 바로 앞이 h2이며 이미지와 첫 h3
+   * 사이에 안내 문단(p) 정확히 하나(또는 0개)만 있으면 "이 h2 섹션 전체가
+   * 카드 클러스터다"로 보고 h2+안내문까지 버퍼에서 함께 제거한다 — 그러지
+   * 않으면 admin에서 이 카드를 구조화 필드로 옮겨 렌더링을 건너뛸 때
+   * (page.pointCards 등) 섹션 제목과 안내문만 본문에 고아처럼 남는다.
+   * h2+안내문 조건에 맞지 않으면(h2가 없거나, p가 둘 이상 끼어 있는 등)
+   * title/intro는 빈 문자열로 반환하고 이미지 제거만 수행한다 — 다른
+   * 정상 케이스(카드 앞에 h2가 없는 body 등)를 깨지 않기 위해서다.
+   */
+  const extractClusterHeading = (clusterStartIndex: number): { title: string; intro: string } => {
+    if (lastImageIndex < 0 || htmlBuffer[lastImageIndex] !== lastImage) return { title: "", intro: "" };
+
+    const imgPos = nodes.indexOf(lastImage as ChildNode);
+    let h2: Element | null = null;
+    let introP: ChildNode | undefined;
+    if (imgPos >= 1) {
+      const candidate = nodes[imgPos - 1];
+      if (candidate instanceof Element && candidate.tagName === "H2") {
+        const between = nodes.slice(imgPos + 1, clusterStartIndex);
+        const onlyIntro = between.length <= 1 && (between.length === 0 || (between[0] instanceof Element && (between[0] as Element).tagName === "P"));
+        if (onlyIntro) {
+          h2 = candidate;
+          introP = between[0];
+        }
+      }
+    }
+
+    if (h2) htmlBuffer.splice(htmlBuffer.indexOf(h2 as ChildNode), 1);
+    htmlBuffer.splice(htmlBuffer.indexOf(lastImage as ChildNode), 1); // 기존 동작: 이미지는 항상 제거
+    if (introP) htmlBuffer.splice(htmlBuffer.indexOf(introP), 1);
+
+    return {
+      title: h2?.textContent?.trim() ?? "",
+      intro: introP ? (introP.textContent?.trim() ?? "") : "",
+    };
+  };
+
   // "img 바로 다음이 h3다"라고 가정하면 img와 첫 h3 사이에 안내 문단이
   // 끼어 있는 실제 콘텐츠(예: "고운빛한의원의 교통사고 후유증 치료" 섹션처럼
   // img 다음에 소개 p가 오고 그 다음에야 h3+p...가 시작하는 경우)에서
@@ -272,13 +316,13 @@ export function splitProseIntoSegments(html: string): ProseSegment[] {
       }
 
       if (tabPoints.length >= MIN_POINTS) {
-        if (lastImageIndex >= 0 && htmlBuffer[lastImageIndex] === lastImage) {
-          htmlBuffer.splice(lastImageIndex, 1);
-        }
+        const heading = extractClusterHeading(i);
         flushHtml();
         segments.push({
           type: "tabs",
           group: {
+            title: heading.title,
+            intro: heading.intro,
             image: lastImage?.getAttribute("src") ?? null,
             imageAlt: lastImage?.getAttribute("alt") ?? "",
             points: tabPoints,
@@ -304,13 +348,13 @@ export function splitProseIntoSegments(html: string): ProseSegment[] {
       }
 
       if (points.length >= MIN_POINTS) {
-        if (lastImageIndex >= 0 && htmlBuffer[lastImageIndex] === lastImage) {
-          htmlBuffer.splice(lastImageIndex, 1);
-        }
+        const heading = extractClusterHeading(i);
         flushHtml();
         segments.push({
           type: "cards",
           group: {
+            title: heading.title,
+            intro: heading.intro,
             image: lastImage?.getAttribute("src") ?? null,
             imageAlt: lastImage?.getAttribute("alt") ?? "",
             points,

@@ -3,76 +3,109 @@
 import Image from "next/image";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 import type { ChecklistHeroItem } from "@/lib/proseCards";
+import type { SubPageChecklistHeroPosition } from "@/lib/data";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
+
+type HeroCardItem = ChecklistHeroItem & { position?: SubPageChecklistHeroPosition; x?: number; y?: number };
 
 type ChecklistHeroProps = {
   /** 작은 라벨 텍스트 — Hero/장비 페이지의 uppercase 라벨 관성을 따름 */
   eyebrow: string;
   title: string;
   subtext?: string;
-  items: ChecklistHeroItem[];
+  items: HeroCardItem[];
   imageSrc: string | null;
   imageAlt: string;
 };
 
 /**
- * 데스크톱 방사형 배치에서 각 버블의 위치를 잡는 좌표.
- * 원형 사진(정중앙, 지름 약 42%)을 기준으로 4개 버블을 사방으로 흩어 놓는다.
- * 참고 이미지처럼 정확히 대칭인 상/하/좌/우가 아니라 살짝 어긋난 시계 방향
- * 배치로 "떠 있는" 느낌을 준다 — items는 항상 4개(label 4종 고정 소스)이므로
- * 인덱스별 좌표를 직접 하드코딩해도 데이터 변화에 깨지지 않는다.
+ * 데스크톱에서 카드가 사진 위 사방에 흩어지는 4가지 프리셋 좌표.
+ * SubPageChecklistHeroPosition의 값과 키가 정확히 대응하며, admin에서
+ * 관리자가 항목마다 이 중 하나를 선택한다. richtext 자동 감지 폴백
+ * 경로(position 없음)에서는 인덱스 순서(top-left → right-mid → bottom-left
+ * → bottom-right)로 순환 배정해 기존 레이아웃을 그대로 유지한다.
+ * 정확히 대칭인 그리드가 아니라 카드마다 폭과 위치를 살짝 어긋나게 해
+ * "떠다니는" 느낌을 낸다.
  */
-const BUBBLE_POSITIONS = [
-  { top: "4%", left: "50%", translate: "translate(-50%, 0)" }, // 상단 중앙
-  { top: "50%", left: "94%", translate: "translate(-100%, -50%)" }, // 우측 중앙
-  { top: "96%", left: "50%", translate: "translate(-50%, -100%)" }, // 하단 중앙
-  { top: "50%", left: "6%", translate: "translate(0, -50%)" }, // 좌측 중앙
-];
+const CARD_POSITION_STYLES: Record<
+  SubPageChecklistHeroPosition,
+  { top?: string; bottom?: string; left?: string; right?: string; width?: string }
+> = {
+  "top-left": { top: "6%", left: "4%", width: "16rem" },
+  "right-mid": { bottom: "32%", right: "5%", width: "15rem" },
+  "bottom-left": { bottom: "8%", left: "5.5%", width: "15.5rem" },
+  "bottom-right": { bottom: "6%", right: "5.5%", width: "15.5rem" },
+};
 
-function CheckIcon() {
-  return (
-    <span
-      className="shrink-0 rounded-full flex items-center justify-center"
-      style={{ width: "1.5rem", height: "1.5rem", background: "var(--color-accent)" }}
-      aria-hidden="true"
-    >
-      <svg viewBox="0 0 20 20" fill="none" style={{ width: "0.7rem", height: "0.7rem" }}>
-        <path
-          d="M4 10.5l3.5 3.5L16 6"
-          stroke="var(--color-ink-inverse)"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
-  );
-}
+const POSITION_CYCLE: SubPageChecklistHeroPosition[] = ["top-left", "right-mid", "bottom-left", "bottom-right"];
 
-function ChecklistBubble({ item }: { item: ChecklistHeroItem }) {
+/** 프리셋 위치별로 카드가 등장 시 밀려 들어올 방향 — 이름 그대로 그 방향에서 온다 */
+const PRESET_REVEAL_DIR: Record<SubPageChecklistHeroPosition, "top" | "bottom" | "left" | "right"> = {
+  "top-left": "top",
+  "right-mid": "right",
+  "bottom-left": "bottom",
+  "bottom-right": "bottom",
+};
+
+function ChecklistCard({
+  item,
+  position,
+}: {
+  item: HeroCardItem;
+  position?: SubPageChecklistHeroPosition;
+}) {
+  // x/y 자유 좌표(admin 드래그 배치)가 있으면 그걸 우선 쓰고, 없는 구버전
+  // 데이터만 4개 프리셋 좌표로 폴백한다. 카드는 폭이 고정이라 -translate로
+  // 중심을 좌표에 맞추되, 사진 가장자리 쪽으로 잘리지 않도록 gridArea 대신
+  // left/top 백분율 + transform 조합을 쓴다.
+  const hasFreePosition = typeof item.x === "number" && typeof item.y === "number";
+  const presetStyle = !hasFreePosition && position ? CARD_POSITION_STYLES[position] : undefined;
+  const freeStyle = hasFreePosition
+    ? { left: `${item.x}%`, top: `${item.y}%`, transform: "translate(-50%, -50%)", width: "15.5rem" }
+    : undefined;
+  const positionStyle = freeStyle ?? presetStyle;
+
+  // 자유 좌표는 화면 중심 기준 가까운 가장자리 방향에서 밀려오게 하고,
+  // 프리셋 위치는 이름이 곧 방향이다(좌상단 카드는 위에서, 우하단 카드는
+  // 아래에서 등). 사진과 카드가 하나의 장면처럼 조립되는 느낌을 준다.
+  const revealDir = hasFreePosition
+    ? Math.abs((item.y ?? 50) - 50) >= Math.abs((item.x ?? 50) - 50)
+      ? (item.y ?? 50) < 50 ? "top" : "bottom"
+      : (item.x ?? 50) < 50 ? "left" : "right"
+    : position
+    ? PRESET_REVEAL_DIR[position]
+    : "bottom";
+
   return (
     <div
       data-reveal-item
-      className="checklist-hero-bubble flex items-start gap-2.5 rounded-2xl"
+      className={`checklist-hero-card reveal-dir-${revealDir} rounded-xl${positionStyle ? " absolute" : ""}`}
       style={{
-        background: "var(--color-bg)",
-        boxShadow: "0 12px 32px rgba(26, 23, 21, 0.28), 0 2px 8px rgba(26, 23, 21, 0.16)",
-        padding: "0.85rem 1.1rem",
+        background: "rgba(26, 20, 16, 0.6)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        border: "1px solid rgba(251, 250, 247, 0.16)",
+        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
+        padding: "0.9rem 1.1rem",
+        ...positionStyle,
       }}
     >
-      <CheckIcon />
-      <span style={{ lineHeight: 1.4, letterSpacing: "-0.01em" }}>
-        <strong className="font-semibold block" style={{ color: "var(--color-accent)", fontSize: "0.92rem" }}>
-          {item.label}
-        </strong>
-        {item.detail && (
-          <span className="block mt-0.5" style={{ fontSize: "0.78rem", color: "var(--color-ink-soft)" }}>
-            {item.detail}
-          </span>
-        )}
-      </span>
+      <strong
+        className="font-semibold block text-ink-inverse"
+        style={{ fontSize: "0.92rem", lineHeight: 1.45, letterSpacing: "-0.01em" }}
+      >
+        {item.label}
+      </strong>
+      {item.detail && (
+        <span
+          className="block mt-0.5"
+          style={{ fontSize: "0.78rem", color: "rgba(251, 250, 247, 0.72)", lineHeight: 1.55, letterSpacing: "-0.01em" }}
+        >
+          {item.detail}
+        </span>
+      )}
     </div>
   );
 }
@@ -81,19 +114,27 @@ function ChecklistBubble({ item }: { item: ChecklistHeroItem }) {
  * "레이저로 다가가는 피부 고민" 체크리스트 전용 히어로 섹션.
  * body richtext 안의 h3+ul(그룹 A/B와는 다른, 별도 selector)을
  * lib/proseCards.ts의 extractChecklistHero로 뽑아낸 데이터를 받아
- * 중앙 원형 인물 사진 + 사방에 떠 있는 체크리스트 버블로 렌더링한다.
+ * 인물 사진 위에 제목과 체크리스트 카드가 겹쳐 떠 있는 히어로로 렌더링한다.
  * app/subpages/[slug]/page.tsx에서 slug==="laser" && 제목 매칭일 때만 쓰이며,
  * 다른 서브페이지의 체크리스트(.prose h3+ul/.prose h2~ul CSS)는 건드리지 않는다.
  *
  * 레이아웃 히스토리: 처음엔 좌측 사진 풀블리드 + 우측 다크 카드 2x2 그리드였으나,
  * 카드 배경이 rgba(251,250,247,0.08)로 다크 배경과 거의 구분되지 않아 카드
  * 자체의 형태가 흐려지고 그 위 흰 텍스트가 배경에 붕 뜬 것처럼 읽혀
- * "글씨가 안 보인다"는 피드백을 받았다(계산해보면 텍스트 자체의 WCAG 대비는
- * ≈9.3:1로 나쁘지 않았다 — 문제는 명암비가 아니라 카드-배경 경계의 소실이었다).
- * 참고 이미지(중앙 이미지 + 방사형 텍스트 버블)의 구조를 차용하되, 배경은
- * 사이트 다크 섹션 톤(#2C2620→#4A3A2E)을 유지하고 버블은 밝은 solid
- * var(--color-bg)로 채워 "어두운 배경 위 밝은 말풍선"의 대비 원리를 그대로
- * 이 팔레트로 옮겼다 — 결과 대비는 label(accent) 8.1:1, detail(ink-soft) 11.1:1.
+ * "글씨가 안 보인다"는 피드백을 받았다.
+ * 레이아웃 히스토리 2: 중앙 원형 사진 + 사방에 흩어진 카드로 바꿨으나, 정사각형
+ * 컨테이너 안에 사진을 44%만 채워 상하좌우에 큰 빈 공간이 남고 원형 프레임 +
+ * 반투명 테두리가 그 자체로 눈에 띄는 장식이 되어 "생성된 느낌"이라는
+ * 피드백을 받았다.
+ * 레이아웃 히스토리 3: "인물 사진은 배경을 포함한 이미지이고 그 위에 카드를
+ * 띄웠으면 한다"는 요청에 따라, 사진을 원형 크롭 없이 섹션 전체를 채우는
+ * 큰 사각형 풀블리드로 두고 체크리스트 카드 4개를 그 위 사방에 절대 위치로
+ * 흩어 놓았다. 방사형(히스토리 2)의 실패 원인이었던 "작은 원형 사진 + 빈
+ * 여백"을 피하기 위해 사진 자체는 여백 없이 섹션을 꽉 채우고, 카드는
+ * 반투명 유리 재질(backdrop-blur)로 사진 표면 위에 자연스럽게 얹히게 해
+ * 사진과 별개의 물체로 둥둥 뜨지 않게 했다. 데스크톱만 절대 위치 사방
+ * 배치를 쓰고, 카드 4개가 겹치기엔 세로 공간이 부족한 모바일에서는 사진
+ * 하단에 2열 그리드로 폴백한다.
  */
 export default function ChecklistHero({
   eyebrow,
@@ -104,155 +145,93 @@ export default function ChecklistHero({
   imageAlt,
 }: ChecklistHeroProps) {
   const textRef = useScrollReveal<HTMLDivElement>({ threshold: 0.2 });
-  // 데스크톱/모바일은 서로 다른 DOM 서브트리(하나는 항상 display:none)라
-  // 콜백 ref를 공유하면 두 번째로 마운트되는 쪽이 첫 번째 쪽의
-  // IntersectionObserver를 disconnect시켜버린다(useScrollReveal의 setRef가
-  // "이전 cleanup → 새 el에 옵저버 부착" 구조이기 때문). 두 트리를 위해
-  // 훅을 각각 별도로 호출해 완전히 독립된 옵저버 인스턴스를 갖게 한다.
-  const gridRefDesktop = useScrollRevealGroup<HTMLDivElement>();
-  const photoRefDesktop = useScrollReveal<HTMLDivElement>({ threshold: 0.2 });
-  const gridRefMobile = useScrollRevealGroup<HTMLDivElement>();
-  const photoRefMobile = useScrollReveal<HTMLDivElement>({ threshold: 0.2 });
-
-  // 방사형 배치는 정확히 4개 항목을 전제로 좌표를 하드코딩했다(BUBBLE_POSITIONS).
-  // extractChecklistHero가 4항목이 아닌 다른 개수를 반환하는 원본 데이터로
-  // 바뀌는 경우를 대비해, 4개를 넘는 항목은 방사형 자리표가 없으므로 데스크톱
-  // 배치에서 잘라내고(모바일 그리드에서는 전부 노출) 방어적으로 렌더링한다.
-  const radialItems = items.slice(0, BUBBLE_POSITIONS.length);
+  const photoRef = useScrollReveal<HTMLDivElement>({ threshold: 0.2 });
+  const cardsRefDesktop = useScrollRevealGroup<HTMLDivElement>({ staggerMs: 160 });
+  const cardsRefMobile = useScrollRevealGroup<HTMLDivElement>({ staggerMs: 120 });
+  // x/y 자유 좌표를 가진 카드는 admin에서 직접 배치한 개수 그대로 모두
+  // 보여준다. 좌표가 없는 구버전 데이터(position 프리셋 또는 richtext
+  // 자동 감지 폴백)만 프리셋 4자리로 제한한다.
+  const freeItems = items.filter((it) => typeof it.x === "number" && typeof it.y === "number");
+  const presetItems = items
+    .filter((it) => !(typeof it.x === "number" && typeof it.y === "number"))
+    .slice(0, POSITION_CYCLE.length);
+  const radialItems = freeItems.length > 0 ? freeItems : presetItems;
 
   return (
-    <section
-      className="checklist-hero relative my-16 md:my-24 rounded-2xl overflow-hidden"
-      style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
-    >
-      <div className="relative px-6 py-14 sm:px-10 md:px-12 md:py-20">
-        <div ref={textRef} className="reveal-fade-up text-center max-w-2xl mx-auto">
-          <span
-            className="text-xs font-semibold uppercase opacity-70 block text-ink-inverse"
-            style={{ letterSpacing: "0.2em" }}
-          >
-            {eyebrow}
-          </span>
-          <h2
-            className="font-display text-ink-inverse mt-4"
-            style={{
-              fontSize: "clamp(1.5rem, 3.2vw, 2.25rem)",
-              fontWeight: 600,
-              letterSpacing: "-0.04em",
-              lineHeight: 1.3,
-              textWrap: "balance",
-            }}
-          >
-            {title}
-          </h2>
-          {subtext && (
-            <p
-              className="mt-3 text-sm text-ink-inverse opacity-70"
-              style={{ letterSpacing: "-0.01em", lineHeight: 1.7 }}
-            >
-              {subtext}
-            </p>
-          )}
-        </div>
-
-        {/* 데스크톱: 원형 사진을 중심에 두고 버블 4개를 사방에 방사형으로 배치.
-            컨테이너에 정사각형에 가까운 높이를 줘 절대 위치 좌표(%)가 예측
-            가능하게 만든다. 모바일에서는 방사형이 비좁아지므로 아예 다른
-            트리 구조(사진 상단 + 버블 2열 그리드)로 폴백한다 — 두 레이아웃을
-            하나의 absolute 좌표계로 억지로 겸용하지 않는다.
-            gridRefDesktop을 이 바깥 컨테이너에 직접 건다 — 예전에는 사진과
-            버블들 사이에 `display: contents` 래퍼를 두고 거기에 옵저버를
-            달았는데, `display: contents`는 레이아웃 박스를 만들지 않아
-            IntersectionObserver가 교차 여부를 계산하지 못해 옵저버가 전혀
-            트리거되지 않는 문제가 있었다(버블이 opacity:0에 영구히 멈춤).
-            버블과 사진을 형제로 두고 실제 박스를 가진 이 relative 컨테이너를
-            관찰 대상으로 삼으면, querySelectorAll('[data-reveal-item]')이
-            하위 트리 전체에서 버블만 정확히 골라내므로 사진에는 영향이 없다. */}
+    <section className="checklist-hero relative my-16 md:my-24 rounded-2xl overflow-hidden bg-bg-alt">
+      <div className="relative aspect-[3/5] sm:aspect-[3/4] md:aspect-[16/10]">
+        {imageSrc && (
+          <div ref={photoRef} className="checklist-hero-photo absolute inset-0">
+            <Image
+              src={imageSrc}
+              alt={imageAlt}
+              fill
+              className="object-cover"
+              sizes="100vw"
+              quality={75}
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
+            />
+          </div>
+        )}
         <div
-          ref={gridRefDesktop}
-          className="hidden md:block relative mx-auto mt-14"
-          style={{ maxWidth: "40rem", aspectRatio: "1 / 1" }}
-        >
-          <div
-            ref={photoRefDesktop}
-            className="reveal-scale absolute rounded-full overflow-hidden bg-bg-alt"
-            style={{
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "44%",
-              aspectRatio: "1 / 1",
-              boxShadow: "0 24px 64px rgba(0, 0, 0, 0.35)",
-              border: "6px solid rgba(251, 250, 247, 0.1)",
-            }}
-          >
-            {imageSrc && (
-              <Image
-                src={imageSrc}
-                alt={imageAlt}
-                fill
-                className="object-cover"
-                sizes="20rem"
-                quality={75}
-                placeholder="blur"
-                blurDataURL={BLUR_PLACEHOLDER}
-              />
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(20,16,13,0.6) 0%, rgba(20,16,13,0.05) 26%, rgba(20,16,13,0.05) 74%, rgba(20,16,13,0.6) 100%)",
+          }}
+        />
+
+        <div className="absolute inset-x-0 top-0 px-6 pt-8 sm:px-10 sm:pt-10 md:px-12 md:pt-12">
+          <div ref={textRef} className="reveal-fade-up text-center max-w-xl mx-auto">
+            <span
+              className="text-xs font-semibold uppercase opacity-80 block text-ink-inverse"
+              style={{ letterSpacing: "0.2em" }}
+            >
+              {eyebrow}
+            </span>
+            <h2
+              className="font-display text-ink-inverse mt-3"
+              style={{
+                fontSize: "clamp(1.5rem, 3.2vw, 2.25rem)",
+                fontWeight: 600,
+                letterSpacing: "-0.04em",
+                lineHeight: 1.3,
+                textWrap: "balance",
+                textShadow: "0 2px 16px rgba(0,0,0,0.35)",
+              }}
+            >
+              {title}
+            </h2>
+            {subtext && (
+              <p
+                className="mt-2 text-sm text-ink-inverse opacity-85"
+                style={{ letterSpacing: "-0.01em", lineHeight: 1.7 }}
+              >
+                {subtext}
+              </p>
             )}
           </div>
-
-          {radialItems.map((item, i) => {
-            const pos = BUBBLE_POSITIONS[i];
-            return (
-              <div
-                key={i}
-                className="absolute"
-                style={{
-                  top: pos.top,
-                  left: pos.left,
-                  transform: pos.translate,
-                  width: "15rem",
-                }}
-              >
-                <ChecklistBubble item={item} />
-              </div>
-            );
-          })}
         </div>
 
-        {/* 모바일: 사진을 상단 중앙에 크게, 버블은 그 아래 2열 그리드로 —
-            StepProcess.tsx가 데스크톱 zig-zag를 모바일에서 단순 세로 스택으로
-            폴백하는 것과 같은 관성으로, 방사형 좌표를 억지로 축소하지 않고
-            아예 다른(더 단순한) 구조를 쓴다. */}
-        <div className="md:hidden mt-10">
-          <div
-            ref={photoRefMobile}
-            className="reveal-scale relative mx-auto rounded-full overflow-hidden bg-bg-alt"
-            style={{
-              width: "min(60vw, 14rem)",
-              aspectRatio: "1 / 1",
-              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.35)",
-              border: "5px solid rgba(251, 250, 247, 0.1)",
-            }}
-          >
-            {imageSrc && (
-              <Image
-                src={imageSrc}
-                alt={imageAlt}
-                fill
-                className="object-cover"
-                sizes="14rem"
-                quality={75}
-                placeholder="blur"
-                blurDataURL={BLUR_PLACEHOLDER}
-              />
-            )}
-          </div>
+        {/* 데스크톱: 카드 4개를 사진 위 사방에 절대 위치로 흩어 배치.
+            item.position(admin에서 지정)이 있으면 그걸 쓰고, 없으면(richtext
+            자동 감지 폴백) 인덱스 순서로 4개 프리셋을 순환 배정한다. */}
+        <div ref={cardsRefDesktop} className="hidden md:block absolute inset-0">
+          {radialItems.map((item, i) => (
+            <ChecklistCard key={i} item={item} position={item.position ?? POSITION_CYCLE[i]} />
+          ))}
+        </div>
 
-          <div ref={gridRefMobile} className="grid grid-cols-2 gap-2.5 mt-8">
-            {items.map((item, i) => (
-              <ChecklistBubble key={i} item={item} />
-            ))}
-          </div>
+        {/* 모바일: 사방 배치가 비좁으므로 사진 하단에 세로 스택으로 폴백.
+            2열 그리드는 카드 폭이 좁아져 라벨이 부자연스럽게 줄바꿈됐다. */}
+        <div
+          ref={cardsRefMobile}
+          className="md:hidden absolute inset-x-0 bottom-0 px-4 pb-5 sm:px-6 sm:pb-6 flex flex-col gap-2"
+        >
+          {items.map((item, i) => (
+            <ChecklistCard key={i} item={item} />
+          ))}
         </div>
       </div>
     </section>

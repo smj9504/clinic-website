@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader, Card, Button, TextArea, Field, TextInput } from "@/components/admin/ui";
 import {
   fetchReservationRequests,
@@ -34,12 +35,27 @@ const STATUS_CLASS: Record<ReservationStatus, string> = {
 };
 
 export default function ReservationsAdminPage() {
+  return (
+    <Suspense fallback={null}>
+      <ReservationsAdminPageInner />
+    </Suspense>
+  );
+}
+
+function ReservationsAdminPageInner() {
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("id");
   const [reservations, setReservations] = useState<ReservationRequest[] | null>(null);
   const [setupRequired, setSetupRequired] = useState(false);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
-  const [filter, setFilter] = useState<ReservationStatus | "all">("pending");
+  // 이메일 알림의 "이 예약 확정 처리하기" 링크(?id=...)로 들어온 경우, 목록
+  // 필터가 "확인 대기"로 좁혀져 있으면 해당 예약이 다른 상태(이미 처리됨)일 때
+  // 화면에서 사라져 보인다 — 그 링크로 들어온 세션에서만 필터를 "전체"로 넓힌다.
+  const [filter, setFilter] = useState<ReservationStatus | "all">(focusId ? "all" : "pending");
   const [monthFilter, setMonthFilter] = useState<string | "all">("all");
   const [noteOpenIds, setNoteOpenIds] = useState<Set<string>>(new Set());
+  const focusedRef = useRef<HTMLDivElement | null>(null);
+  const [didAutoFocus, setDidAutoFocus] = useState(false);
 
   // "확정 처리"는 시그마(한의원 내부 예약 시스템)에 정확한 예약 일시를
   // 전달해야 하므로, 클릭 즉시 PATCH하지 않고 그 카드 안에 일시 입력
@@ -82,6 +98,23 @@ export default function ReservationsAdminPage() {
     setConfirmingId(null);
     setConfirmError(null);
   };
+
+  // 이메일 알림의 "이 예약 확정 처리하기" 링크로 들어온 경우, 목록 로드가
+  // 끝나면 해당 카드로 스크롤하고 — 아직 대기 중이면 확정 일시 입력 UI까지
+  // 자동으로 펼쳐 관리자가 바로 확정 처리할 수 있게 한다. 한 세션에서 한
+  // 번만 수행한다(didAutoFocus) — 이후 목록이 갱신될 때마다 다시 스크롤·
+  // 재오픈되는 것을 막기 위함이다.
+  useEffect(() => {
+    if (!focusId || didAutoFocus || !reservations) return;
+    const target = reservations.find((r) => r.id === focusId);
+    if (!target) return;
+    setDidAutoFocus(true);
+    if (target.status === "pending") startConfirming(target);
+    requestAnimationFrame(() => {
+      focusedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId, didAutoFocus, reservations]);
 
   const submitConfirm = async (id: string) => {
     const reservationDt = (reservationDtDrafts[id] ?? "").trim();
@@ -196,9 +229,13 @@ export default function ReservationsAdminPage() {
         {filtered.map((r) => {
           const hasNote = !!(noteDrafts[r.id] ?? r.adminNote);
           const noteOpen = noteOpenIds.has(r.id) || hasNote;
+          const isFocused = focusId === r.id;
 
           return (
-            <Card key={r.id} className="p-5">
+            <div key={r.id} ref={isFocused ? focusedRef : undefined}>
+            <Card
+              className={`p-5 ${isFocused ? "ring-2 ring-accent" : ""}`}
+            >
               <div className="flex items-start justify-between gap-5 flex-wrap">
                 <div className="flex-1 min-w-[240px]">
                   <div className="flex items-center gap-2 mb-2.5 flex-wrap">
@@ -348,6 +385,7 @@ export default function ReservationsAdminPage() {
                 )}
               </div>
             </Card>
+            </div>
           );
         })}
 

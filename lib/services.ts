@@ -302,6 +302,25 @@ export function isVideoUrl(url: string): boolean {
   return VIDEO_EXT_RE.test(url);
 }
 
+const PLACEHOLDER_IMAGE_HOSTS = ["images.unsplash.com"];
+
+/**
+ * 초기 데모 시딩 단계에서 넣어둔 Unsplash 임의 사진인지 판별한다.
+ * 실제 업로드된 사진은 Supabase Storage(site-assets) URL을 갖는다 —
+ * "사진이 없으면 임의 사진 대신 폴백을 보여준다"는 원칙에 따라, 관리자가
+ * 아직 실사진으로 교체하지 않은 장비는 사진이 아예 없는 것과 동일하게
+ * 취급해 클리닉 로고로 대체한다.
+ */
+export function isPlaceholderImageUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return PLACEHOLDER_IMAGE_HOSTS.some((host) => url.includes(host));
+}
+
+/** 장비 이미지로 실제 표시해도 되는지 — 비어있지 않고 데모 placeholder가 아닌 경우 */
+export function hasRealEquipmentImage(image: string | null | undefined): image is string {
+  return Boolean(image) && !isPlaceholderImageUrl(image);
+}
+
 /**
  * 분류의 안정적인 키. 이름이 한글이면 남는 글자가 없으므로 임의 문자열로 떨어진다.
  * URL에는 uuid를 쓰므로 slug는 내부 식별용이고, 관리자가 나중에 고칠 수 있다.

@@ -1,16 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
 import type { Equipment } from "@/lib/data";
+import EquipmentImage from "@/components/EquipmentImage";
 
 const AUTO_ADVANCE_MS = 3000;
-
-const BLUR_PLACEHOLDER =
-  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNGM0VGRTgiLz48L3N2Zz4=";
 
 function EquipmentCircle({
   eq,
@@ -60,18 +57,7 @@ function EquipmentCircle({
           boxShadow: isCenter ? "0 20px 48px -16px rgba(26, 23, 21, 0.28)" : "none",
         }}
       >
-        {eq.image && (
-          <Image
-            src={eq.image}
-            alt={eq.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 60vw, 22rem"
-            quality={80}
-            placeholder="blur"
-            blurDataURL={BLUR_PLACEHOLDER}
-          />
-        )}
+        <EquipmentImage src={eq.image} alt={eq.title} sizes="(max-width: 640px) 60vw, 22rem" quality={80} />
       </span>
     </button>
   );
@@ -87,17 +73,16 @@ function EquipmentCircle({
  * 그 자체로 모션 민감 사용자에게 불편하기 때문이다.
  */
 export default function EquipmentCarousel() {
-  const { equipment } = useSiteData();
+  const { equipment, skinBeautyEquipmentSections } = useSiteData();
   const t = useT();
   const sectionRef = useScrollReveal<HTMLDivElement>();
 
-  const items = useMemo(
-    () =>
-      [...(equipment ?? [])]
-        .filter((eq) => !eq.isHidden)
-        .sort((a, b) => a.sortOrder - b.sortOrder),
-    [equipment]
-  );
+  // 장비소개(admin)가 관리하는 마스터 목록 전체를 표시 순서 그대로 보여준다 —
+  // 이 섹션 전용 하위 선택은 두지 않는다(장비소개와 중복 관리되는 문제).
+  const items = useMemo(() => {
+    const all = equipment ?? [];
+    return [...all].filter((eq) => !eq.isHidden).sort((a, b) => a.sortOrder - b.sortOrder);
+  }, [equipment]);
 
   const [index, setIndex] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -131,22 +116,36 @@ export default function EquipmentCarousel() {
   const nextIdx = (index + 1) % items.length;
   const active = items[index];
 
+  const carouselTitle = skinBeautyEquipmentSections?.carouselTitle ?? "";
+  const carouselTitleHighlight = skinBeautyEquipmentSections?.carouselTitleHighlight ?? "";
+  const carouselSubtitle = skinBeautyEquipmentSections?.carouselSubtitle ?? "";
+  const hasHeading = Boolean(carouselTitle || carouselTitleHighlight || carouselSubtitle);
+
   return (
     <section ref={sectionRef} className="reveal-fade-up py-20 md:py-28" style={{ background: "var(--color-bg-alt)" }}>
       <div className="container-default">
-        <h2
-          className="font-display text-center mb-4"
-          style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 700, letterSpacing: "-0.03em" }}
-        >
-          {t("skinBeauty.carousel.title")}{" "}
-          <span style={{ color: "var(--color-accent)" }}>{t("skinBeauty.carousel.titleHighlight")}</span>
-        </h2>
-        <p
-          className="text-ink-soft text-center mb-14 md:mb-16"
-          style={{ fontSize: "1rem", lineHeight: 1.85, letterSpacing: "-0.01em", whiteSpace: "pre-line" }}
-        >
-          {t("skinBeauty.carousel.subtitle")}
-        </p>
+        {hasHeading && (
+          <>
+            {(carouselTitle || carouselTitleHighlight) && (
+              <h2
+                className="font-display text-center mb-4"
+                style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 700, letterSpacing: "-0.03em" }}
+              >
+                {carouselTitle}
+                {carouselTitle && carouselTitleHighlight && " "}
+                <span style={{ color: "var(--color-accent)" }}>{carouselTitleHighlight}</span>
+              </h2>
+            )}
+            {carouselSubtitle && (
+              <p
+                className="text-ink-soft text-center mb-14 md:mb-16"
+                style={{ fontSize: "1rem", lineHeight: 1.85, letterSpacing: "-0.01em", whiteSpace: "pre-line" }}
+              >
+                {carouselSubtitle}
+              </p>
+            )}
+          </>
+        )}
 
         <div
           className="flex items-center justify-center"

@@ -272,6 +272,66 @@ export function Card({
   );
 }
 
+/**
+ * 편집 폼을 영역별로 나누는 탭. 각 탭 패널은 마운트된 채 숨김 처리된다(hidden
+ * 속성) — 리치에디터(RichEditor/TipTap) 같은 무거운 자식이 탭 전환마다
+ * 언마운트·재초기화되며 상태를 잃는 것을 막기 위해서다.
+ */
+export function Tabs({
+  tabs,
+  active,
+  onChange,
+}: {
+  tabs: { id: string; label: string; badge?: React.ReactNode }[];
+  active: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div role="tablist" className="flex gap-1 border-b border-line mb-6 overflow-x-auto">
+      {tabs.map((tab) => {
+        const isActive = tab.id === active;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(tab.id)}
+            className={`relative shrink-0 px-4 py-3 text-sm font-semibold transition-colors ${
+              isActive ? "text-ink" : "text-ink-muted hover:text-ink"
+            }`}
+            style={{ letterSpacing: "-0.02em" }}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              {tab.label}
+              {tab.badge}
+            </span>
+            {isActive && (
+              <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-ink rounded-full" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function TabPanel({
+  id,
+  active,
+  children,
+}: {
+  id: string;
+  active: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div role="tabpanel" hidden={id !== active}>
+      {children}
+    </div>
+  );
+}
+
 export function Toast({
   message,
   onClose,

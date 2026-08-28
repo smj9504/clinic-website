@@ -238,6 +238,34 @@ img { max-width: 100%; display: block; }
   transform: translateY(0) translateX(0);
 }
 
+/* ─── Checklist hero (사진 위에 겹쳐 뜨는 체크리스트) ─── */
+/* 사진이 섹션 진입 시 아주 느리게 확대되며 정지하는 켄번즈 효과. .checklist-hero
+   컨테이너가 .revealed를 받는 순간(useScrollReveal) 애니메이션이 시작하도록
+   opacity/transform 트랜지션이 아닌 animation을 쓴다 — 스크롤 재진입 시
+   되감기지 않게 forwards로 고정. */
+@keyframes checklistHeroKenBurns {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+.checklist-hero-photo {
+  transform: scale(1.08);
+}
+.checklist-hero-photo.revealed {
+  animation: checklistHeroKenBurns 6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 카드는 각자 사진 위 배치 방향에서 밀려 들어오게 해 방사형 배치가 실제로
+   "사방에서 떠서 모인다"는 느낌을 준다 — 전부 동일하게 아래에서 올라오는
+   기본 [data-reveal-item] 모션보다 배치 의도가 뚜렷하게 읽힌다. */
+.checklist-hero-card.reveal-dir-top { transform: translate(0, -28px); }
+.checklist-hero-card.reveal-dir-top.revealed { transform: translate(0, 0); }
+.checklist-hero-card.reveal-dir-bottom { transform: translate(0, 28px); }
+.checklist-hero-card.reveal-dir-bottom.revealed { transform: translate(0, 0); }
+.checklist-hero-card.reveal-dir-left { transform: translate(-28px, 0); }
+.checklist-hero-card.reveal-dir-left.revealed { transform: translate(0, 0); }
+.checklist-hero-card.reveal-dir-right { transform: translate(28px, 0); }
+.checklist-hero-card.reveal-dir-right.revealed { transform: translate(0, 0); }
+
 /* ─── Loading screen brand pulse ─── */
 @keyframes brandPulse {
   0%, 100% { transform: scale(1); opacity: 0.85; }
@@ -393,8 +421,12 @@ img { max-width: 100%; display: block; }
    admin/DB에 저장된 자유 텍스트 body 안에서 "이런 분들께 권해드립니다" 류의
    체크리스트가 h3 + ul 패턴으로 반복 등장한다. 박스나 카드 대신
    세리프 느낌의 굵은 인덱스 숫자(01, 02…) + 얇은 구분선만으로 스캔하기 쉽게 만든다.
-   숫자는 CSS counter로 생성해 스크린리더에 중복 텍스트 노이즈를 남기지 않는다. */
-.prose h3 + ul {
+   숫자는 CSS counter로 생성해 스크린리더에 중복 텍스트 노이즈를 남기지 않는다.
+   .checklist-block-list는 같은 시각 언어를 쓰는 admin 구조화 필드
+   (SubPage.checklistBlocks → components/subpages/ChecklistBlocks.tsx) 전용
+   클래스로, richtext h3+ul 자동 감지와 무관하게 동일 규칙을 공유한다. */
+.prose h3 + ul,
+.checklist-block-list {
   list-style: none;
   counter-reset: checklist;
   padding-left: 0;
@@ -403,7 +435,8 @@ img { max-width: 100%; display: block; }
   grid-template-columns: 1fr;
   border-top: 1px solid var(--color-line);
 }
-.prose h3 + ul > li {
+.prose h3 + ul > li,
+.checklist-block-list > li {
   counter-increment: checklist;
   position: relative;
   margin: 0;
@@ -411,7 +444,8 @@ img { max-width: 100%; display: block; }
   border-bottom: 1px solid var(--color-line);
   line-height: 1.6;
 }
-.prose h3 + ul > li::before {
+.prose h3 + ul > li::before,
+.checklist-block-list > li::before {
   content: counter(checklist, decimal-leading-zero);
   position: absolute;
   left: 0;
@@ -423,7 +457,8 @@ img { max-width: 100%; display: block; }
   color: var(--color-accent);
   transition: color 0.3s ease;
 }
-.prose h3 + ul > li:hover::before {
+.prose h3 + ul > li:hover::before,
+.checklist-block-list > li:hover::before {
   color: var(--color-accent-soft);
 }
 
@@ -432,23 +467,32 @@ img { max-width: 100%; display: block; }
    추가하지 않고 그 상태 전환에 편승한다. .revealed가 붙기 전까지 각 li는
    숨겨 두었다가, 붙는 순간 [data-reveal-item]과 동일한 모션(translateY(24px)→0,
    0.5s, cubic-bezier(0.16, 1, 0.3, 1))으로 nth-child 순서에 따라 순차 재생한다. */
-.prose h3 + ul > li {
+.prose h3 + ul > li,
+.checklist-block-list > li {
   opacity: 0;
   transform: translateY(24px);
 }
 .reveal-fade-up.revealed .prose h3 + ul > li,
-.prose.revealed h3 + ul > li {
+.prose.revealed h3 + ul > li,
+.reveal-fade-up.revealed .checklist-block-list > li {
   animation: heroTextUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-.prose h3 + ul > li:nth-child(1) { animation-delay: 0ms; }
-.prose h3 + ul > li:nth-child(2) { animation-delay: 80ms; }
-.prose h3 + ul > li:nth-child(3) { animation-delay: 160ms; }
-.prose h3 + ul > li:nth-child(4) { animation-delay: 240ms; }
-.prose h3 + ul > li:nth-child(5) { animation-delay: 320ms; }
-.prose h3 + ul > li:nth-child(n+6) { animation-delay: 400ms; }
+.prose h3 + ul > li:nth-child(1),
+.checklist-block-list > li:nth-child(1) { animation-delay: 0ms; }
+.prose h3 + ul > li:nth-child(2),
+.checklist-block-list > li:nth-child(2) { animation-delay: 80ms; }
+.prose h3 + ul > li:nth-child(3),
+.checklist-block-list > li:nth-child(3) { animation-delay: 160ms; }
+.prose h3 + ul > li:nth-child(4),
+.checklist-block-list > li:nth-child(4) { animation-delay: 240ms; }
+.prose h3 + ul > li:nth-child(5),
+.checklist-block-list > li:nth-child(5) { animation-delay: 320ms; }
+.prose h3 + ul > li:nth-child(n+6),
+.checklist-block-list > li:nth-child(n+6) { animation-delay: 400ms; }
 
 @media (min-width: 768px) {
-  .prose h3 + ul {
+  .prose h3 + ul,
+  .checklist-block-list {
     grid-template-columns: 1fr 1fr;
     column-gap: 2.5rem;
   }
@@ -456,7 +500,8 @@ img { max-width: 100%; display: block; }
      선이 남는다. 대신 그리드 컨테이너의 border-top/각 li의 border-bottom을
      유지하되, 마지막 행 판별이 순수 CSS로는 불완전하므로 border-top 방식을
      열마다 반복해 시각적으로는 촘촘한 라인 그리드로 보이게 한다. */
-  .prose h3 + ul > li {
+  .prose h3 + ul > li,
+  .checklist-block-list > li {
     padding-right: 1rem;
   }
 }
@@ -697,20 +742,26 @@ img { max-width: 100%; display: block; }
     opacity: 1 !important;
     transform: none !important;
   }
+  .checklist-hero-photo {
+    transform: none !important;
+    animation: none !important;
+  }
 }
 
 /* ─── Checklist hero (components/subpages/ChecklistHero.tsx) ───
-   다크 브라운 배경 위, 중앙 원형 사진을 둘러싼 밝은 solid 버블(pill/rounded-2xl)
-   섹션 전용 스타일. 기존 .prose h3+ul(그룹 A) / .prose h2~ul(그룹 B)와는 완전히
-   별개의 컴포넌트라 selector도 겹치지 않게 새로 둔다 — 저 두 블록은 여기서
-   손대지 않는다.
-   hover는 배경색을 바꾸지 않는다(이미 var(--color-bg) solid라 더 밝게 갈 여지가
-   거의 없고, 버블 배경을 어둡게 하면 방금 고친 대비가 다시 흔들린다) — 대신
-   살짝 떠오르는 그림자 강조만으로 상호작용 가능함을 알린다. */
-.checklist-hero-bubble {
-  transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+   사진 위에 겹쳐 뜨는 반투명 유리 카드. `transition` shorthand는 이전 규칙과
+   병합되지 않고 통째로 대체되므로, [data-reveal-item]의 opacity/transform
+   트랜지션을 여기서도 반드시 함께 명시해야 한다 — box-shadow만 추가하려고
+   shorthand를 새로 쓰면 opacity/transform 트랜지션 자체가 사라져 카드가
+   페이드 없이 즉시 나타나는 버그가 났었다.
+   hover는 배경색을 바꾸지 않는다(이미 어두운 solid에 가까운 값이라 더 밝게
+   갈 여지가 거의 없다) — 대신 살짝 떠오르는 그림자 강조만으로 상호작용
+   가능함을 알린다. */
+.checklist-hero-card {
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.checklist-hero-bubble:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 40px rgba(26, 23, 21, 0.32), 0 4px 12px rgba(26, 23, 21, 0.18) !important;
+.checklist-hero-card.revealed:hover {
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }

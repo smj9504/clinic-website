@@ -102,7 +102,7 @@ function buildHtmlBody(reservation: ReservationRequest, adminUrl: string | null)
   const linkHtml = adminUrl
     ? `<p style="margin:24px 0 0;">
          <a href="${escapeHtml(adminUrl)}" style="display:inline-block;padding:10px 18px;background:${BRAND_ACCENT};color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;">
-           관리자 페이지에서 확인하기
+           이 예약 확정 처리하기
          </a>
        </p>`
     : "";
@@ -192,7 +192,7 @@ function buildTextBody(reservation: ReservationRequest, adminUrl: string | null)
   lines.push(`접수 시각: ${createdAt}`);
 
   if (adminUrl) {
-    lines.push("", `관리자 페이지: ${adminUrl}`);
+    lines.push("", `이 예약 확정 처리하기: ${adminUrl}`);
   }
 
   return lines.join("\n");
@@ -213,7 +213,9 @@ export async function sendReservationNotificationEmail(
   const from = `"${BRAND_NAME}" <${process.env.GMAIL_USER}>`;
 
   const base = origin || process.env.NEXT_PUBLIC_SITE_URL || null;
-  const adminUrl = base ? `${base.replace(/\/$/, "")}/admin/reservations` : null;
+  const adminUrl = base
+    ? `${base.replace(/\/$/, "")}/admin/reservations?id=${encodeURIComponent(reservation.id)}`
+    : null;
 
   const transporter = getTransporter();
   await transporter.sendMail({

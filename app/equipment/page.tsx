@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
@@ -8,9 +7,7 @@ import { useServiceCatalog } from "@/lib/useServices";
 import { isServiceVisible, type Service } from "@/lib/services";
 import type { Equipment } from "@/lib/data";
 import EquipmentServicesModal from "@/components/equipment/EquipmentServicesModal";
-
-const BLUR_PLACEHOLDER =
-  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNFOEU0REYiLz48L3N2Zz4=";
+import EquipmentImage from "@/components/EquipmentImage";
 
 /** 장비에 연결된 시술 중, 지금 공개 화면에 노출 가능한 것만 골라낸다 */
 function resolveLinkedServices(eq: Equipment, services: Service[]): Service[] {
@@ -92,15 +89,12 @@ export default function EquipmentPage() {
                   }
                 >
                   <div className="relative aspect-[4/3] overflow-hidden bg-bg-alt mb-4">
-                    <Image
-                      src={eq.image || fallbackImage}
+                    <EquipmentImage
+                      src={eq.image}
                       alt={eq.title}
-                      fill
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.15]"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       quality={75}
-                      placeholder="blur"
-                      blurDataURL={BLUR_PLACEHOLDER}
                     />
                   </div>
                   <div className="px-1">

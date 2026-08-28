@@ -6,12 +6,11 @@ import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
-import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
+import { useScrollReveal } from "@/lib/useScrollReveal";
 import {
   splitProseIntoSegments,
   extractChecklistHero,
   extractH2Checklist,
-  type ProseCardGroup,
   type ProseTabGroup,
 } from "@/lib/proseCards";
 import ChecklistHero from "@/components/subpages/ChecklistHero";
@@ -19,6 +18,8 @@ import TreatmentAreaMap from "@/components/subpages/TreatmentAreaMap";
 import BodyAreaMap from "@/components/subpages/BodyAreaMap";
 import StepProcess from "@/components/subpages/StepProcess";
 import SequentialChecklist from "@/components/subpages/SequentialChecklist";
+import PointCards from "@/components/subpages/PointCards";
+import ChecklistBlocks from "@/components/subpages/ChecklistBlocks";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -58,61 +59,6 @@ const SEQUENTIAL_CHECKLIST_HEADINGS: Record<string, string> = {
   "이런 분들께 추천합니다": "herbal-clinic",
   "Recommended For": "herbal-clinic",
 };
-
-/**
- * "이런 분들께 추천합니다" 체크리스트와 달리, h2 섹션 안에 h3+p가 3개 이상
- * 연속되는 구간은 그 자체가 "포인트 여러 개를 나란히 비교하는" 콘텐츠라
- * 세로 목록보다 카드 3열이 스캔하기 쉽다. 카드용 이미지가 콘텐츠에 없어
- * 같은 h2 섹션의 공용 이미지를 그대로 재사용한다(splitProseIntoSegments 참고).
- */
-function PointCards({ group }: { group: ProseCardGroup }) {
-  const listRef = useScrollRevealGroup<HTMLDivElement>();
-
-  return (
-    <div ref={listRef} className="grid grid-cols-2 max-[400px]:grid-cols-1 xl:grid-cols-4 gap-6 my-10">
-      {group.points.map((point, i) => (
-        <div
-          key={i}
-          data-reveal-item
-          className="rounded-2xl border border-line overflow-hidden bg-surface"
-        >
-          {group.image && (
-            <div className="relative aspect-[4/3]">
-              <Image
-                src={group.image}
-                alt={group.imageAlt || point.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 400px) 100vw, (max-width: 1280px) 50vw, 25vw"
-                quality={75}
-              />
-            </div>
-          )}
-          <div className="p-6">
-            <span
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase bg-accent text-ink-inverse mb-1"
-              style={{ letterSpacing: "0.1em" }}
-            >
-              Point {String(i + 1).padStart(2, "0")}
-            </span>
-            <h3
-              className="font-display mb-4"
-              style={{ fontSize: "1.15rem", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.4 }}
-            >
-              {point.title}
-            </h3>
-            <p
-              className="text-ink-soft"
-              style={{ fontSize: "0.9rem", lineHeight: 1.75, letterSpacing: "-0.01em" }}
-            >
-              {point.body}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 /**
  * PointCards와 같은 h2>img>(h3+p) 뭉치지만, 각 항목 뒤에 ul이 두 개
@@ -252,14 +198,19 @@ export default function SubPageDetail() {
 
   // CHECKLIST_HERO_HEADINGS에 등록된 slug+제목 조합일 때만 매칭 시도 — 다른
   // 페이지는 extractChecklistHero를 아예 호출하지 않아 회귀 위험이 없다.
-  const checklistHero = useMemo(() => {
+  // admin 구조화 필드(page.checklistHero)가 있으면 그걸 최우선으로 쓴다 —
+  // 카드 라벨·설명·사방 위치를 admin에서 직접 지정할 수 있는 경로다. 없을
+  // 때만 CHECKLIST_HERO_HEADINGS 화이트리스트로 richtext에서 h3+ul을
+  // 파싱해 원본 body에서 제거한다.
+  const parsedChecklistHero = useMemo(() => {
+    if (page?.checklistHero) return null; // 구조화 필드가 있으면 richtext 파싱 자체를 건너뛴다
     if (!page?.body?.startsWith("<")) return null;
     const targetHeading = Object.keys(CHECKLIST_HERO_HEADINGS).find(
       (heading) => CHECKLIST_HERO_HEADINGS[heading] === page.slug
     );
     if (!targetHeading) return null;
     return extractChecklistHero(page.body, targetHeading);
-  }, [page?.body, page?.slug]);
+  }, [page?.body, page?.slug, page?.checklistHero]);
 
   // BODY_MAP_CHECKLIST_HEADINGS에 등록된 slug+제목 조합일 때만 원본 h2+ul을
   // body에서 제거한다 — BodyAreaMap이 같은 정보를 시각적으로 대체하므로
@@ -273,37 +224,42 @@ export default function SubPageDetail() {
     return extractH2Checklist(page.body, targetHeading);
   }, [page?.body, page?.slug]);
 
-  // SEQUENTIAL_CHECKLIST_HEADINGS에 등록된 slug+제목 조합일 때만 원본 h2+ul을
-  // body에서 제거한다 — SequentialChecklist가 같은 목록을 자동 순차 강조 +
-  // 우측 사진 전환으로 대체하므로 텍스트 체크리스트가 중복 노출되지 않게 한다.
-  const sequentialChecklist = useMemo(() => {
+  // admin 구조화 필드(page.sequentialChecklist)가 있으면 그걸 최우선으로
+  // 쓴다 — 항목별 개별 사진을 admin에서 직접 지정할 수 있는 경로다. 없을
+  // 때만 SEQUENTIAL_CHECKLIST_HEADINGS 화이트리스트로 richtext에서 h2+ul을
+  // 파싱해 원본 body에서 제거한다 — SequentialChecklist가 같은 목록을 자동
+  // 순차 강조 + 우측 사진 전환으로 대체하므로 텍스트 체크리스트가 중복
+  // 노출되지 않게 한다.
+  const parsedSequentialChecklist = useMemo(() => {
+    if (page?.sequentialChecklist) return null; // 구조화 필드가 있으면 richtext 파싱 자체를 건너뛴다
     if (!page?.body?.startsWith("<")) return null;
     const targetHeading = Object.keys(SEQUENTIAL_CHECKLIST_HEADINGS).find(
       (heading) => SEQUENTIAL_CHECKLIST_HEADINGS[heading] === page.slug
     );
     if (!targetHeading) return null;
     return extractH2Checklist(page.body, targetHeading);
-  }, [page?.body, page?.slug]);
+  }, [page?.body, page?.slug, page?.sequentialChecklist]);
 
-  // SequentialChecklist용 회전 이미지 소스. herbal-clinic 콘텐츠에는 항목별
-  // 전용 사진이 없어(체크리스트당 이미지 6장을 요구하지 않음), 이미 페이지에
-  // 존재하는 두 장(히어로 대표 이미지 + 본문 첫 이미지)만 재사용한다. 본문
-  // 첫 img는 구조화된 필드가 아니라 richtext 안에 있어 정규식으로 src만 뽑는다.
-  const sequentialChecklistImages = useMemo(() => {
-    if (!sequentialChecklist || !page) return [];
+  // SequentialChecklist용 회전 이미지 소스(richtext 폴백 경로 전용). herbal-clinic
+  // 콘텐츠에는 항목별 전용 사진이 없어(체크리스트당 이미지 6장을 요구하지
+  // 않음), 이미 페이지에 존재하는 두 장(히어로 대표 이미지 + 본문 첫 이미지)만
+  // 재사용한다. 본문 첫 img는 구조화된 필드가 아니라 richtext 안에 있어
+  // 정규식으로 src만 뽑는다.
+  const sequentialChecklistFallbackImages = useMemo(() => {
+    if (!parsedSequentialChecklist || !page) return [];
     const bodyImgSrc = page.body?.match(/<img[^>]+src="([^"]+)"/)?.[1] ?? null;
     return [
       page.image && { src: page.image, alt: page.title },
       bodyImgSrc && { src: bodyImgSrc, alt: page.title },
     ].filter((v): v is { src: string; alt: string } => Boolean(v));
-  }, [sequentialChecklist, page]);
+  }, [parsedSequentialChecklist, page]);
 
-  const bodyForSegments = checklistHero
-    ? checklistHero.remainingHtml
+  const bodyForSegments = parsedChecklistHero
+    ? parsedChecklistHero.remainingHtml
     : bodyMapChecklist
     ? bodyMapChecklist.remainingHtml
-    : sequentialChecklist
-    ? sequentialChecklist.remainingHtml
+    : parsedSequentialChecklist
+    ? parsedSequentialChecklist.remainingHtml
     : page?.body;
 
   const segments = useMemo(
@@ -398,14 +354,24 @@ export default function SubPageDetail() {
               </div>
             )}
 
-            {checklistHero && (
+            {page.checklistHero ? (
               <ChecklistHero
-                eyebrow="Check List"
-                title={checklistHero.title}
-                items={checklistHero.items}
-                imageSrc={page.fullBleedImage ?? page.image ?? null}
-                imageAlt={page.title}
+                eyebrow={page.checklistHero.eyebrow}
+                title={page.checklistHero.title}
+                items={page.checklistHero.items}
+                imageSrc={page.checklistHero.image ?? page.fullBleedImage ?? page.image ?? null}
+                imageAlt={page.checklistHero.imageAlt || page.title}
               />
+            ) : (
+              parsedChecklistHero && (
+                <ChecklistHero
+                  eyebrow="Check List"
+                  title={parsedChecklistHero.title}
+                  items={parsedChecklistHero.items}
+                  imageSrc={page.fullBleedImage ?? page.image ?? null}
+                  imageAlt={page.title}
+                />
+              )
             )}
 
             {page.areaMap?.enabled && page.areaMap.kind === "face" && (
@@ -429,11 +395,42 @@ export default function SubPageDetail() {
               />
             )}
 
-            {sequentialChecklist && (
+            {page.sequentialChecklist ? (
               <SequentialChecklist
-                title={sequentialChecklist.title}
-                items={sequentialChecklist.items}
-                images={sequentialChecklistImages}
+                title={page.sequentialChecklist.title}
+                items={page.sequentialChecklist.items.map((it) => it.text)}
+                itemImages={page.sequentialChecklist.items.map((it) => it.image)}
+                images={[]}
+                note={page.sequentialChecklist.note}
+              />
+            ) : (
+              parsedSequentialChecklist && (
+                <SequentialChecklist
+                  title={parsedSequentialChecklist.title}
+                  items={parsedSequentialChecklist.items}
+                  images={sequentialChecklistFallbackImages}
+                />
+              )
+            )}
+
+            {page.checklistBlocks && page.checklistBlocks.length > 0 && (
+              <ChecklistBlocks blocks={page.checklistBlocks} />
+            )}
+
+            {page.pointCards && (
+              <PointCards
+                title={page.pointCards.title}
+                points={page.pointCards.items.map((it) => ({ title: it.title, body: it.body, image: it.image }))}
+                note={page.pointCards.note}
+              />
+            )}
+
+            {page.stepProcess && (
+              <StepProcess
+                title={page.stepProcess.title}
+                intro={page.stepProcess.intro}
+                steps={page.stepProcess.items.map((it) => ({ text: it.text, image: it.image }))}
+                note={page.stepProcess.note}
               />
             )}
 
@@ -446,8 +443,34 @@ export default function SubPageDetail() {
                 >
                   {segments.map((segment, i) => {
                     if (segment.type === "tabs") return <TabbedPoints key={i} group={segment.group} />;
-                    if (segment.type === "cards") return <PointCards key={i} group={segment.group} />;
-                    if (segment.type === "steps") return <StepProcess key={i} group={segment.group} />;
+                    // page.pointCards/stepProcess가 있으면 위에서 이미 구조화 데이터로
+                    // 렌더링했으므로, 같은 body 안에 남아있는 richtext 자동 감지 결과는
+                    // (아직 마이그레이션되지 않았거나 편집 중인 과도기 상태가 아닌 한)
+                    // 중복 렌더링을 피하기 위해 건너뛴다.
+                    if (segment.type === "cards") {
+                      if (page.pointCards) return null;
+                      return (
+                        <PointCards
+                          key={i}
+                          points={segment.group.points}
+                          fallbackImage={segment.group.image}
+                          imageAlt={segment.group.imageAlt}
+                        />
+                      );
+                    }
+                    if (segment.type === "steps") {
+                      if (page.stepProcess) return null;
+                      return (
+                        <StepProcess
+                          key={i}
+                          title={segment.group.title}
+                          intro={segment.group.intro}
+                          steps={segment.group.steps.map((text) => ({ text, image: null }))}
+                          fallbackImage={segment.group.image}
+                          imageAlt={segment.group.imageAlt}
+                        />
+                      );
+                    }
                     return <div key={i} dangerouslySetInnerHTML={{ __html: segment.html }} />;
                   })}
                 </div>

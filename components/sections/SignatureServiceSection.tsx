@@ -95,7 +95,6 @@ export default function SignatureServiceSection() {
               service={service}
               locale={locale}
               t={t}
-              fallbackImage={clinicInfo.defaultImage || "/lifting-face.jpg"}
               emphasized={featured.length === 3 ? i === 1 : i === 0}
             />
           ))}
@@ -127,16 +126,15 @@ function SignatureCard({
   service,
   locale,
   t,
-  fallbackImage,
   emphasized,
 }: {
   service: Service;
   locale: Locale;
   t: (key: TranslationKey) => string;
-  fallbackImage: string;
   emphasized: boolean;
 }) {
   const { name, summary } = serviceText(service, locale);
+  const hasRealImage = Boolean(service.image) && !isVideoUrl(service.image);
   const price = service.prices[0];
   const computed = price ? computePrice(price) : null;
 
@@ -162,16 +160,24 @@ function SignatureCard({
       )}
 
       <div className="relative overflow-hidden bg-black/30" style={{ aspectRatio: "16 / 10" }}>
-        <Image
-          src={isVideoUrl(service.image) ? fallbackImage : service.image || fallbackImage}
-          alt={name}
-          fill
-          className="object-cover opacity-90 transition-transform duration-700 ease-out group-hover:scale-[1.06]"
-          sizes="(max-width: 768px) 100vw, 33vw"
-          quality={75}
-          placeholder="blur"
-          blurDataURL={BLUR_PLACEHOLDER}
-        />
+        {hasRealImage ? (
+          <Image
+            src={service.image}
+            alt={name}
+            fill
+            className="object-cover opacity-90 transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+            sizes="(max-width: 768px) 100vw, 33vw"
+            quality={75}
+            placeholder="blur"
+            blurDataURL={BLUR_PLACEHOLDER}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative w-1/3 h-1/3 opacity-30">
+              <Image src="/logo-color.jpg" alt="" fill className="object-contain" sizes="8rem" />
+            </div>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
         {service.tag && (
           <span

@@ -12,25 +12,39 @@ const BLUR_PLACEHOLDER =
 type SequentialChecklistProps = {
   title: string;
   items: string[];
-  /** 항목보다 적어도 무방 — 활성 항목 index를 이미지 개수로 wrap해서 매칭한다 */
+  /**
+   * 항목보다 적어도 무방 — 활성 항목 index를 이미지 개수로 wrap해서 매칭한다.
+   * itemImages가 주어지면(admin 구조화 편집 경로) 그 항목의 사진을 우선
+   * 쓰고, 없는 항목만 이 공용 목록을 순환 폴백으로 쓴다.
+   */
   images: { src: string; alt: string }[];
+  /** 항목별 개별 사진(admin에서 지정) — 인덱스가 items와 1:1 대응, 비어있는 항목은 null */
+  itemImages?: (string | null)[];
+  /** 체크리스트 아래에 표시되는 자유 서식 보충 설명 (richtext HTML, 선택 사항) */
+  note?: string;
 };
 
 /**
- * "이런 분들께 추천합니다" 류의 h2+ul 체크리스트를, 목록이 시간차를 두고
+ * "이런 분들께 추천합니다" 류의 체크리스트를, 목록이 시간차를 두고
  * 한 줄씩 스스로 강조되고 우측 사진이 함께 전환되는 형태로 승격한다.
- * 이미지가 항목 수(6개)보다 적을 수 있어(herbal-clinic은 실제 콘텐츠에 사진이
- * 2장뿐) 1:1 매칭을 강제하지 않고 활성 항목 index를 이미지 개수로 순환시켜
+ *
+ * 두 가지 소스에서 렌더링된다: (1) admin의 구조화 필드
+ * (subPages.sequentialChecklist) — 항목마다 개별 사진 지정 가능(itemImages),
+ * (2) 리치에디터 본문의 h2+ul 자동 감지(slug 화이트리스트) — 폴백 경로로,
+ * 이 경우 페이지 대표 이미지 + 본문 첫 이미지 2장을 images로 순환시킨다.
+ * itemImages 없이 사진이 항목 수보다 적을 수 있어(폴백 경로는 사진이 2장뿐)
+ * 1:1 매칭을 강제하지 않고 활성 항목 index를 이미지 개수로 순환시켜
  * 매칭한다 — "이 문장 = 이 사진"이라는 인과관계를 주장하지 않고, 자동으로
  * 살아있는 느낌만 준다.
  * hover/focus로 특정 줄 위에 머무르면 그 줄에서 고정되고, 벗어나면 자동
  * 진행을 재개한다 — EquipmentCarousel의 "사용자가 손대면 타이머 리셋" 원칙과
  * 같은 이유: 방금 읽던 줄이 답 없이 넘어가면 자동 재생이 방해로 느껴진다.
  */
-export default function SequentialChecklist({ title, items, images }: SequentialChecklistProps) {
+export default function SequentialChecklist({ title, items, images, itemImages, note }: SequentialChecklistProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const sectionRef = useScrollReveal<HTMLDivElement>();
+  const noteRef = useScrollReveal<HTMLDivElement>({ threshold: 0.2 });
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const restartTimer = useCallback(() => {
@@ -53,7 +67,17 @@ export default function SequentialChecklist({ title, items, images }: Sequential
 
   if (items.length === 0) return null;
 
-  const activeImage = images.length > 0 ? images[activeIndex % images.length] : null;
+  // 항목별 지정 사진(itemImages)이 있으면 그 항목 1:1로, 없는 항목은
+  // 공용 images 목록을 순환시켜 채운다. 최종적으로 items와 동일한 길이의
+  // 배열 하나로 정규화해 아래 렌더링을 단순하게 유지한다.
+  const resolvedImages: { src: string; alt: string }[] = items.map((item, i) => {
+    const own = itemImages?.[i];
+    if (own) return { src: own, alt: item };
+    if (images.length > 0) return images[i % images.length];
+    return { src: "", alt: item };
+  });
+  const hasAnyImage = resolvedImages.some((img) => img.src);
+  const activeImage = hasAnyImage ? resolvedImages[activeIndex] : null;
 
   return (
     <div ref={sectionRef} className="reveal-fade-up my-16 md:my-24">
@@ -120,31 +144,44 @@ export default function SequentialChecklist({ title, items, images }: Sequential
         </ul>
 
         <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-bg-alt">
-          {images.map((img, i) => (
-            <div
-              key={i}
-              className="absolute inset-0 transition-opacity duration-700 ease-out"
-              style={{ opacity: i === activeIndex % images.length ? 1 : 0 }}
-            >
-              <Image
-                src={img.src}
-                alt={img.alt}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                quality={80}
-                placeholder="blur"
-                blurDataURL={BLUR_PLACEHOLDER}
-              />
-            </div>
-          ))}
-          {activeImage === null && (
+          {hasAnyImage &&
+            resolvedImages.map(
+              (img, i) =>
+                img.src && (
+                  <div
+                    key={i}
+                    className="absolute inset-0 transition-opacity duration-700 ease-out"
+                    style={{ opacity: i === activeIndex ? 1 : 0 }}
+                  >
+                    <Image
+                      src={img.src}
+                      alt={img.alt}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      quality={80}
+                      placeholder="blur"
+                      blurDataURL={BLUR_PLACEHOLDER}
+                    />
+                  </div>
+                )
+            )}
+          {!activeImage?.src && (
             <div className="absolute inset-0 flex items-center justify-center text-ink-muted text-sm">
               {title}
             </div>
           )}
         </div>
       </div>
+
+      {note && (
+        <div
+          ref={noteRef}
+          className="reveal-fade-up prose prose-neutral max-w-none text-ink-soft mt-10 pt-8"
+          style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em", borderTop: "1px solid var(--color-line)" }}
+          dangerouslySetInnerHTML={{ __html: note }}
+        />
+      )}
     </div>
   );
 }
