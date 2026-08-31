@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { stripImagePosition, toObjectPosition, setImagePosition } from "@/lib/imagePosition";
+import ImagePositionModal from "@/components/admin/ImagePositionModal";
 
 export function PageHeader({
   title,
@@ -126,10 +128,10 @@ export function Button({
   );
 }
 
-const VIDEO_EXT_RE = /\.(mp4|webm|mov)(\?|$)/i;
+const VIDEO_EXT_RE = /\.(mp4|webm|mov)(\?|#|$)/i;
 
-/** URL 확장자로 동영상 여부를 판별한다 — DataURL(data:video/...)도 함께 잡는다 */
-function isVideoUrl(url: string): boolean {
+/** URL 확장자로 동영상 여부를 판별한다 — DataURL(data:video/...)도, #pos= 크롭 위치가 붙은 URL도 함께 잡는다 */
+export function isVideoUrl(url: string): boolean {
   return url.startsWith("data:video/") || VIDEO_EXT_RE.test(url);
 }
 
@@ -153,6 +155,7 @@ export function ImageInput({
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [positionModalOpen, setPositionModalOpen] = useState(false);
 
   const maxSize = allowVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
   const maxSizeLabel = allowVideo ? "이미지 10MB · 동영상 100MB" : "10MB";
@@ -185,6 +188,7 @@ export function ImageInput({
   };
 
   const preview = value && isVideoUrl(value);
+  const cleanValue = value ? stripImagePosition(value) : "";
 
   return (
     <div className="space-y-3">
@@ -195,15 +199,17 @@ export function ImageInput({
         >
           {preview ? (
             <video
-              src={value}
+              src={cleanValue}
               controls
               className="w-full h-full object-cover"
+              style={{ objectPosition: toObjectPosition(value) }}
             />
           ) : (
             <img
-              src={value}
+              src={cleanValue}
               alt="preview"
               className="w-full h-full object-cover"
+              style={{ objectPosition: toObjectPosition(value) }}
               onError={(e) => {
                 (e.target as HTMLImageElement).style.opacity = "0.3";
               }}
@@ -233,9 +239,14 @@ export function ImageInput({
           {uploading ? "업로드 중..." : "파일 선택"}
         </Button>
         {value && (
-          <Button type="button" variant="ghost" onClick={() => onChange("")}>
-            {preview ? "동영상 제거" : "이미지 제거"}
-          </Button>
+          <>
+            <Button type="button" variant="secondary" onClick={() => setPositionModalOpen(true)}>
+              크롭 위치 조정
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => onChange("")}>
+              {preview ? "동영상 제거" : "이미지 제거"}
+            </Button>
+          </>
         )}
       </div>
       <p className="text-xs text-ink-muted">
@@ -250,10 +261,23 @@ export function ImageInput({
         <TextInput
           type="url"
           placeholder="https://images.unsplash.com/..."
-          value={value.startsWith("data:") ? "" : value}
+          value={cleanValue.startsWith("data:") ? "" : cleanValue}
           onChange={(e) => onChange(e.target.value)}
         />
       </div>
+
+      {positionModalOpen && value && (
+        <ImagePositionModal
+          url={value}
+          aspectRatio={aspectRatio}
+          isVideo={Boolean(preview)}
+          onClose={() => setPositionModalOpen(false)}
+          onConfirm={(x, y) => {
+            onChange(setImagePosition(cleanValue, x, y));
+            setPositionModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

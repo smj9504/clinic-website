@@ -32,7 +32,7 @@ export default function EquipmentPage() {
   return (
     <>
       <section
-        className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden"
+        className="relative pt-32 pb-10 md:pt-44 md:pb-14 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
         <div className="container-default relative text-ink-inverse">
@@ -59,7 +59,7 @@ export default function EquipmentPage() {
         </div>
       </section>
 
-      <section className="py-20 md:py-32">
+      <section className="pt-10 pb-20 md:pt-16 md:pb-32">
         <div className="container-default">
           {items.length === 0 ? (
             <p className="text-center text-ink-muted py-12">{t("equipment.empty")}</p>
@@ -92,7 +92,7 @@ export default function EquipmentPage() {
                     <EquipmentImage
                       src={eq.image}
                       alt={eq.title}
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.15]"
+                      className="transition-transform duration-700 ease-out group-hover:scale-[1.15]"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       quality={75}
                     />

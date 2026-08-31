@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
+import { normalizeSectionOrder, type SubPageSectionId } from "@/lib/data";
 import {
   splitProseIntoSegments,
   extractChecklistHero,
@@ -20,6 +21,7 @@ import StepProcess from "@/components/subpages/StepProcess";
 import SequentialChecklist from "@/components/subpages/SequentialChecklist";
 import PointCards from "@/components/subpages/PointCards";
 import ChecklistBlocks from "@/components/subpages/ChecklistBlocks";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -105,10 +107,11 @@ function TabbedPoints({ group }: { group: ProseTabGroup }) {
         <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-line">
           {group.image && (
             <Image
-              src={group.image}
+              src={stripImagePosition(group.image)}
               alt={group.imageAlt || active.title}
               fill
               className="object-cover"
+              style={{ objectPosition: toObjectPosition(group.image) }}
               sizes="(max-width: 768px) 100vw, 40vw"
               quality={75}
             />
@@ -267,6 +270,87 @@ export default function SubPageDetail() {
     [bodyForSegments]
   );
 
+  // 구조화 섹션 6개를 id별로 미리 만들어 두고, page.sectionOrder(관리자가 admin에서
+  // 조정한 순서)를 따라 순서대로 렌더링한다. 순서가 없거나 불완전해도
+  // normalizeSectionOrder가 항상 완전한 6개 순열로 보정해 준다.
+  const sectionNodes: Record<SubPageSectionId, React.ReactNode> = {
+    checklistHero: page?.checklistHero ? (
+      <ChecklistHero
+        eyebrow={page.checklistHero.eyebrow}
+        title={page.checklistHero.title}
+        items={page.checklistHero.items}
+        imageSrc={page.checklistHero.image ?? page.fullBleedImage ?? page.image ?? null}
+        imageAlt={page.checklistHero.imageAlt || page.title}
+      />
+    ) : (
+      parsedChecklistHero && (
+        <ChecklistHero
+          eyebrow="Check List"
+          title={parsedChecklistHero.title}
+          items={parsedChecklistHero.items}
+          imageSrc={page?.fullBleedImage ?? page?.image ?? null}
+          imageAlt={page?.title ?? ""}
+        />
+      )
+    ),
+    areaMap:
+      page?.areaMap?.enabled && page.areaMap.kind === "face" ? (
+        <TreatmentAreaMap
+          title={page.areaMap.title}
+          highlight={page.areaMap.highlight}
+          imageSrc={page.areaMap.image}
+          imageAlt={page.areaMap.imageAlt}
+          areas={page.areaMap.areas}
+        />
+      ) : page?.areaMap?.enabled && page.areaMap.kind === "body" ? (
+        <BodyAreaMap
+          title={page.areaMap.title}
+          highlight={page.areaMap.highlight}
+          imageSrc={page.areaMap.image}
+          imageAlt={page.areaMap.imageAlt}
+          areas={page.areaMap.areas}
+          footnote={page.areaMap.footnote}
+        />
+      ) : null,
+    checklist: page?.sequentialChecklist ? (
+      <SequentialChecklist
+        title={page.sequentialChecklist.title}
+        items={page.sequentialChecklist.items.map((it) => it.text)}
+        itemImages={page.sequentialChecklist.items.map((it) => it.image)}
+        images={[]}
+        note={page.sequentialChecklist.note}
+      />
+    ) : (
+      parsedSequentialChecklist && (
+        <SequentialChecklist
+          title={parsedSequentialChecklist.title}
+          items={parsedSequentialChecklist.items}
+          images={sequentialChecklistFallbackImages}
+        />
+      )
+    ),
+    checklistBlocks:
+      page?.checklistBlocks && page.checklistBlocks.length > 0 ? (
+        <ChecklistBlocks blocks={page.checklistBlocks} />
+      ) : null,
+    pointCards: page?.pointCards ? (
+      <PointCards
+        title={page.pointCards.title}
+        points={page.pointCards.items.map((it) => ({ title: it.title, body: it.body, image: it.image }))}
+        note={page.pointCards.note}
+      />
+    ) : null,
+    stepProcess: page?.stepProcess ? (
+      <StepProcess
+        title={page.stepProcess.title}
+        intro={page.stepProcess.intro}
+        steps={page.stepProcess.items.map((it) => ({ text: it.text, image: it.image }))}
+        note={page.stepProcess.note}
+      />
+    ) : null,
+  };
+  const orderedSectionIds = normalizeSectionOrder(page?.sectionOrder);
+
   if (!page) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 pt-20">
@@ -285,16 +369,17 @@ export default function SubPageDetail() {
   return (
     <>
       <section
-        className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden"
+        className="relative pt-32 pb-10 md:pt-44 md:pb-14 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
         {page.image && (
           <div className="absolute inset-0 opacity-30">
             <Image
-              src={page.image}
+              src={stripImagePosition(page.image)}
               alt={page.title}
               fill
               className="object-cover"
+              style={{ objectPosition: toObjectPosition(page.image) }}
               sizes="100vw"
               priority
               quality={75}
@@ -336,16 +421,17 @@ export default function SubPageDetail() {
         </div>
       </section>
 
-      <section className="py-20 md:py-32">
+      <section className="pt-10 pb-20 md:pt-16 md:pb-32">
         <div className="container-default">
           <div className="max-w-5xl mx-auto">
             {page.image && (
               <div className="relative aspect-[16/9] rounded overflow-hidden mb-12 bg-bg-alt">
                 <Image
-                  src={page.image || fallbackImage}
+                  src={stripImagePosition(page.image || fallbackImage)}
                   alt={page.title}
                   fill
                   className="object-cover"
+                  style={{ objectPosition: toObjectPosition(page.image || fallbackImage) }}
                   sizes="(max-width: 1024px) 100vw, 768px"
                   quality={75}
                   placeholder="blur"
@@ -354,85 +440,9 @@ export default function SubPageDetail() {
               </div>
             )}
 
-            {page.checklistHero ? (
-              <ChecklistHero
-                eyebrow={page.checklistHero.eyebrow}
-                title={page.checklistHero.title}
-                items={page.checklistHero.items}
-                imageSrc={page.checklistHero.image ?? page.fullBleedImage ?? page.image ?? null}
-                imageAlt={page.checklistHero.imageAlt || page.title}
-              />
-            ) : (
-              parsedChecklistHero && (
-                <ChecklistHero
-                  eyebrow="Check List"
-                  title={parsedChecklistHero.title}
-                  items={parsedChecklistHero.items}
-                  imageSrc={page.fullBleedImage ?? page.image ?? null}
-                  imageAlt={page.title}
-                />
-              )
-            )}
-
-            {page.areaMap?.enabled && page.areaMap.kind === "face" && (
-              <TreatmentAreaMap
-                title={page.areaMap.title}
-                highlight={page.areaMap.highlight}
-                imageSrc={page.areaMap.image}
-                imageAlt={page.areaMap.imageAlt}
-                areas={page.areaMap.areas}
-              />
-            )}
-
-            {page.areaMap?.enabled && page.areaMap.kind === "body" && (
-              <BodyAreaMap
-                title={page.areaMap.title}
-                highlight={page.areaMap.highlight}
-                imageSrc={page.areaMap.image}
-                imageAlt={page.areaMap.imageAlt}
-                areas={page.areaMap.areas}
-                footnote={page.areaMap.footnote}
-              />
-            )}
-
-            {page.sequentialChecklist ? (
-              <SequentialChecklist
-                title={page.sequentialChecklist.title}
-                items={page.sequentialChecklist.items.map((it) => it.text)}
-                itemImages={page.sequentialChecklist.items.map((it) => it.image)}
-                images={[]}
-                note={page.sequentialChecklist.note}
-              />
-            ) : (
-              parsedSequentialChecklist && (
-                <SequentialChecklist
-                  title={parsedSequentialChecklist.title}
-                  items={parsedSequentialChecklist.items}
-                  images={sequentialChecklistFallbackImages}
-                />
-              )
-            )}
-
-            {page.checklistBlocks && page.checklistBlocks.length > 0 && (
-              <ChecklistBlocks blocks={page.checklistBlocks} />
-            )}
-
-            {page.pointCards && (
-              <PointCards
-                title={page.pointCards.title}
-                points={page.pointCards.items.map((it) => ({ title: it.title, body: it.body, image: it.image }))}
-                note={page.pointCards.note}
-              />
-            )}
-
-            {page.stepProcess && (
-              <StepProcess
-                title={page.stepProcess.title}
-                intro={page.stepProcess.intro}
-                steps={page.stepProcess.items.map((it) => ({ text: it.text, image: it.image }))}
-                note={page.stepProcess.note}
-              />
-            )}
+            {orderedSectionIds.map((sectionId) => (
+              <Fragment key={sectionId}>{sectionNodes[sectionId]}</Fragment>
+            ))}
 
             {page.body ? (
               segments ? (

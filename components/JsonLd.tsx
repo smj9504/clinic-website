@@ -1,5 +1,6 @@
 import { getServiceClient } from "@/lib/supabase";
 import { clinicInfoShape } from "@/lib/data";
+import { parseHoursRange } from "@/lib/date";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gowoonbit-kmc.com";
 
@@ -16,13 +17,6 @@ async function getClinicHours(): Promise<typeof clinicInfoShape.hours> {
   } catch {
     return clinicInfoShape.hours;
   }
-}
-
-/** "평일 10:30 – 20:00" 같은 자유 텍스트에서 시작/종료 시각만 추출. 형식이 안 맞으면 null. */
-function parseHoursRange(text: string): { opens: string; closes: string } | null {
-  const matches = text.match(/\d{1,2}:\d{2}/g);
-  if (!matches || matches.length < 2) return null;
-  return { opens: matches[0], closes: matches[1] };
 }
 
 function buildOpeningHours(hours: typeof clinicInfoShape.hours) {

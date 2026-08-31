@@ -6,6 +6,7 @@ import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import type { EndedVisibility } from "@/lib/storage";
 import { todayKST, addDays } from "@/lib/date";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 function isHidden(item: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
   const today = todayKST();
@@ -25,12 +26,12 @@ export default function NoticePage() {
   return (
     <>
       <section
-        className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden"
+        className="relative pt-32 pb-10 md:pt-44 md:pb-14 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
-            <Image src={banner} alt="고운빛한의원 공지사항" fill className="object-cover" sizes="100vw" />
+            <Image src={stripImagePosition(banner)} alt="고운빛한의원 공지사항" fill className="object-cover" style={{ objectPosition: toObjectPosition(banner) }} sizes="100vw" />
           </div>
         )}
         <div className="container-default relative text-ink-inverse">
@@ -54,7 +55,7 @@ export default function NoticePage() {
         </div>
       </section>
 
-      <section className="py-20 md:py-32">
+      <section className="pt-10 pb-20 md:pt-16 md:pb-32">
         <div className="container-default">
           <div className="flex gap-8 mb-12 border-b border-line">
             <Link

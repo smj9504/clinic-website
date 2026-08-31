@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useScrollReveal } from "@/lib/useScrollReveal";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const ADVANCE_MS = 2200;
 
@@ -154,10 +155,11 @@ export default function SequentialChecklist({ title, items, images, itemImages, 
                     style={{ opacity: i === activeIndex ? 1 : 0 }}
                   >
                     <Image
-                      src={img.src}
+                      src={stripImagePosition(img.src)}
                       alt={img.alt}
                       fill
                       className="object-cover"
+                      style={{ objectPosition: toObjectPosition(img.src) }}
                       sizes="(max-width: 768px) 100vw, 50vw"
                       quality={80}
                       placeholder="blur"

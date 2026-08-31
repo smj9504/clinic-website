@@ -238,3 +238,23 @@ comment on column reservation_requests.sigma_reservation_dt is
   '관리자가 확정 처리 시 직접 입력한 정확한 예약 일시("YYYY-MM-DD HH:MM").
    desired_date/desired_time(환자가 신청한 희망 일시, 대략적인 값)과 달리
    이 값은 실제로 시그마에 등록된 확정 시각이다.';
+
+
+-- ─────────────────────────────────────────────────────────────
+-- 6) 시술 ↔ 이벤트 연결 컬럼 (supabase-services-events.sql)
+--
+-- 이벤트(site_data JSONB 블롭의 events 배열, id는 number)와 시술
+-- (services 테이블, id는 uuid)을 연결한다. 이벤트는 전용 테이블이
+-- 없으므로 참조 무결성(FK)을 걸 수 없어 event_id를 그대로 정수
+-- 배열에 담는다 — 관리자가 이벤트를 삭제하면 app/admin/events/page.tsx가
+-- 남은 참조를 함께 정리한다.
+--
+-- 방향은 시술 → 이벤트다(반대가 아니라). "이 시술이 적용받는 이벤트"를
+-- 시술 카드/상세에서 바로 알아야 하고, 목록 화면에서 "이벤트 적용 시술만
+-- 보기" 필터가 하나의 컬럼 조건(event_ids <> '{}')으로 끝나기 때문이다.
+-- ─────────────────────────────────────────────────────────────
+
+alter table services
+  add column if not exists event_ids integer[] not null default '{}';
+
+create index if not exists idx_services_event_ids on services using gin (event_ids);

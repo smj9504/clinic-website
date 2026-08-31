@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useScrollReveal } from "@/lib/useScrollReveal";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -102,10 +103,11 @@ function StepRow({
         <div className="relative aspect-square md:aspect-[4/3] rounded-2xl overflow-hidden bg-bg-alt">
           {image && (
             <Image
-              src={image}
+              src={stripImagePosition(image)}
               alt={imageAlt}
               fill
               className="object-cover"
+              style={{ objectPosition: toObjectPosition(image) }}
               sizes="(max-width: 768px) 100vw, 50vw"
               quality={75}
               placeholder="blur"

@@ -7,6 +7,7 @@ import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import type { PopupItem } from "@/lib/storage";
 import { todayKST } from "@/lib/date";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const DISMISS_EVENT = "popup_dismissed_event";
 const AUTO_ADVANCE_MS = 6000;
@@ -172,13 +173,14 @@ export default function PopupModal() {
                   }}
                 >
                   <Image
-                    src={item.image || fallbackImage}
+                    src={stripImagePosition(item.image || fallbackImage)}
                     alt={item.categoryLabel || item.title}
                     fill
                     sizes="1024px"
                     priority={i === slideIndex}
                     quality={75}
                     className="object-cover"
+                    style={{ objectPosition: toObjectPosition(item.image || fallbackImage) }}
                   />
                   {(item.imageOverlay ?? true) && (
                     <div

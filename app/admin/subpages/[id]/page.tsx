@@ -20,7 +20,9 @@ import type {
   SubPageChecklistHeroItem,
   SubPageChecklistBlock,
   SubPageChecklistBlockItem,
+  SubPageSectionId,
 } from "@/lib/data";
+import { normalizeSectionOrder } from "@/lib/data";
 import {
   PageHeader,
   Field,
@@ -30,12 +32,12 @@ import {
   Card,
   ImageInput,
   Toast,
-  Tabs,
   TabPanel,
 } from "@/components/admin/ui";
 import RichEditor from "@/components/admin/RichEditor";
 import AreaMapPicker from "@/components/admin/subpages/AreaMapPicker";
 import ChecklistHeroPicker from "@/components/admin/subpages/ChecklistHeroPicker";
+import { useReorderDrag, DragHandleIcon } from "@/components/admin/useReorderDrag";
 
 const DEFAULT_AREA_MAP: SubPageAreaMap = {
   enabled: false,
@@ -76,16 +78,105 @@ const POSITION_TO_COORD: Record<string, { x: number; y: number }> = {
 };
 
 
-const TABS = [
+/** 항상 맨 앞 고정 — 독립된 공개 화면 섹션이 아니라(제목/소개는 히어로에 쓰이고, 이미지는 다른 섹션용 사진 업로드일 뿐) 순서 조정 대상이 아니다 */
+const FIXED_TABS = [
   { id: "basic", label: "기본 정보" },
   { id: "images", label: "이미지" },
-  { id: "areaMap", label: "부위 맵" },
-  { id: "stepProcess", label: "순서 안내" },
-  { id: "pointCards", label: "포인트 카드" },
-  { id: "checklist", label: "추천 체크리스트" },
-  { id: "checklistHero", label: "사진 위 체크리스트" },
-  { id: "checklistBlocks", label: "체크리스트 블록" },
-];
+] as const;
+
+/** 공개 페이지에 실제 표시 영역을 갖는 6개 구조화 섹션 — 여기 순서가 아니라 draft.sectionOrder가 실제 표시 순서를 결정한다 */
+const SECTION_TAB_LABELS: Record<SubPageSectionId, string> = {
+  areaMap: "부위 맵",
+  stepProcess: "순서 안내",
+  pointCards: "포인트 카드",
+  checklist: "추천 체크리스트",
+  checklistHero: "사진 위 체크리스트",
+  checklistBlocks: "체크리스트 블록",
+};
+
+/** 내용 유무를 점 하나로 표시 — 채워짐(초록)·비어 있음(주황) 두 상태만 필요해서 색만으로 구분한다 */
+function ContentDot({ hasContent, title }: { hasContent: boolean; title: string }) {
+  return (
+    <span
+      className={`w-1.5 h-1.5 rounded-full shrink-0 ${hasContent ? "bg-emerald-500" : "bg-amber-500"}`}
+      title={title}
+    />
+  );
+}
+
+/**
+ * 체크리스트 블록 하나(제목+본문+번호 목록)의 편집 UI. 블록마다 목록
+ * 항목 개수가 다르므로 항목 드래그 훅(useReorderDrag)을 블록 개수만큼
+ * 부모에서 동적으로 호출할 수 없어(Hooks 규칙 위반) 블록 단위로 분리했다 —
+ * 이 컴포넌트 자체가 각자 자기 항목 리스트에 대한 훅을 하나씩 갖는다.
+ */
+function ChecklistBlockEditor({
+  block,
+  onUpdate,
+  onSetItems,
+  onAddItem,
+  onRemoveItem,
+}: {
+  block: SubPageChecklistBlock;
+  onUpdate: (p: Partial<SubPageChecklistBlock>) => void;
+  onSetItems: (items: SubPageChecklistBlockItem[]) => void;
+  onAddItem: () => void;
+  onRemoveItem: (itemIndex: number) => void;
+}) {
+  const itemDrag = useReorderDrag(block.items, onSetItems);
+
+  return (
+    <>
+      <TextInput
+        className="mb-2"
+        placeholder="제목 (예: 이런 변화가 느껴진다면)"
+        value={block.title}
+        onChange={(e) => onUpdate({ title: e.target.value })}
+      />
+      <TextArea
+        className="mb-3"
+        rows={2}
+        placeholder="본문 (선택 사항) — 목록 없이 안내 문단만 넣을 때도 사용합니다"
+        value={block.body ?? ""}
+        onChange={(e) => onUpdate({ body: e.target.value })}
+      />
+      <div className="space-y-2">
+        {block.items.map((item, ii) => (
+          <div
+            key={item.id}
+            {...itemDrag.getItemProps(ii)}
+            className={`flex items-center gap-2 rounded transition-colors ${
+              itemDrag.dragOverIndex === ii ? "bg-bg-alt" : ""
+            } ${itemDrag.draggingIndex === ii ? "opacity-40" : ""}`}
+          >
+            <span
+              {...itemDrag.getHandleProps(ii)}
+              className="cursor-grab active:cursor-grabbing text-ink-muted shrink-0 touch-none"
+              title="드래그해서 순서 변경"
+            >
+              <DragHandleIcon />
+            </span>
+            <span className="text-xs text-ink-muted font-mono w-6 shrink-0">
+              {String(ii + 1).padStart(2, "0")}
+            </span>
+            <TextInput
+              className="flex-1"
+              placeholder="목록 항목"
+              value={item.text}
+              onChange={(e) =>
+                onSetItems(block.items.map((it, idx) => (idx === ii ? { ...it, text: e.target.value } : it)))
+              }
+            />
+            <Button size="icon" variant="danger" onClick={() => onRemoveItem(ii)}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </Button>
+          </div>
+        ))}
+        <Button type="button" size="sm" variant="secondary" onClick={onAddItem}>+ 항목 추가</Button>
+      </div>
+    </>
+  );
+}
 
 export default function SubPageEditPage() {
   const params = useParams();
@@ -110,6 +201,25 @@ export default function SubPageEditPage() {
   }, [id, source]);
 
   const patch = (p: Partial<SubPage>) => setDraft((prev) => (prev ? { ...prev, ...p } : prev));
+
+  // 드래그 재정렬 훅은 draft가 아직 null인 로딩 상태에서도 항상 같은 순서로
+  // 호출돼야 하므로(React Hooks 규칙), draft 유무를 가리는 조건부 return보다
+  // 앞에 둔다 — 값 계산 자체는 draft가 없으면 빈 배열로 안전하게 폴백한다.
+  const areaDrag = useReorderDrag(draft?.areaMap?.areas ?? [], (areas) =>
+    patch({ areaMap: { ...(draft?.areaMap ?? DEFAULT_AREA_MAP), areas } })
+  );
+  const stepDrag = useReorderDrag(draft?.stepProcess?.items ?? [], (items) =>
+    patch({ stepProcess: { ...(draft?.stepProcess ?? DEFAULT_STEP_PROCESS), items } })
+  );
+  const pointDrag = useReorderDrag(draft?.pointCards?.items ?? [], (items) =>
+    patch({ pointCards: { ...(draft?.pointCards ?? DEFAULT_POINT_CARDS), items } })
+  );
+  const checklistDrag = useReorderDrag(draft?.sequentialChecklist?.items ?? [], (items) =>
+    patch({ sequentialChecklist: { ...(draft?.sequentialChecklist ?? DEFAULT_SEQUENTIAL_CHECKLIST), items } })
+  );
+  const checklistBlockDrag = useReorderDrag(draft?.checklistBlocks ?? [], (blocks) =>
+    patch({ checklistBlocks: blocks })
+  );
 
   if (loaded && !source) {
     return (
@@ -146,13 +256,6 @@ export default function SubPageEditPage() {
     setActiveAreaId(newId);
   };
   const removeArea = (i: number) => updateAreaMap({ areas: effectiveAreaMap.areas.filter((_, idx) => idx !== i) });
-  const moveArea = (i: number, dir: -1 | 1) => {
-    const list = [...effectiveAreaMap.areas];
-    const target = i + dir;
-    if (target < 0 || target >= list.length) return;
-    [list[i], list[target]] = [list[target], list[i]];
-    updateAreaMap({ areas: list });
-  };
   const addFootnote = () => updateAreaMap({ footnote: [...(effectiveAreaMap.footnote ?? []), ""] });
   const removeFootnote = (i: number) =>
     updateAreaMap({ footnote: (effectiveAreaMap.footnote ?? []).filter((_, idx) => idx !== i) });
@@ -169,13 +272,7 @@ export default function SubPageEditPage() {
     updateStepProcess({ items: [...effectiveStepProcess.items, { id: generateId("step"), text: "", image: null }] });
   const removeStepItem = (i: number) =>
     updateStepProcess({ items: effectiveStepProcess.items.filter((_, idx) => idx !== i) });
-  const moveStepItem = (i: number, dir: -1 | 1) => {
-    const list = [...effectiveStepProcess.items];
-    const target = i + dir;
-    if (target < 0 || target >= list.length) return;
-    [list[i], list[target]] = [list[target], list[i]];
-    updateStepProcess({ items: list });
-  };
+  const setStepItems = (items: SubPageStepItem[]) => updateStepProcess({ items });
 
   // 포인트 카드
   const effectivePointCards = draft.pointCards ?? DEFAULT_POINT_CARDS;
@@ -189,13 +286,7 @@ export default function SubPageEditPage() {
     });
   const removePointItem = (i: number) =>
     updatePointCards({ items: effectivePointCards.items.filter((_, idx) => idx !== i) });
-  const movePointItem = (i: number, dir: -1 | 1) => {
-    const list = [...effectivePointCards.items];
-    const target = i + dir;
-    if (target < 0 || target >= list.length) return;
-    [list[i], list[target]] = [list[target], list[i]];
-    updatePointCards({ items: list });
-  };
+  const setPointItems = (items: SubPagePointItem[]) => updatePointCards({ items });
 
   // 추천 체크리스트
   const effectiveChecklist = draft.sequentialChecklist ?? DEFAULT_SEQUENTIAL_CHECKLIST;
@@ -207,13 +298,7 @@ export default function SubPageEditPage() {
     updateChecklist({ items: [...effectiveChecklist.items, { id: generateId("check"), text: "", image: null }] });
   const removeChecklistItem = (i: number) =>
     updateChecklist({ items: effectiveChecklist.items.filter((_, idx) => idx !== i) });
-  const moveChecklistItem = (i: number, dir: -1 | 1) => {
-    const list = [...effectiveChecklist.items];
-    const target = i + dir;
-    if (target < 0 || target >= list.length) return;
-    [list[i], list[target]] = [list[target], list[i]];
-    updateChecklist({ items: list });
-  };
+  const setChecklistItems = (items: SubPageChecklistItem[]) => updateChecklist({ items });
 
   // 사진 위 체크리스트 히어로. x/y 없이 position 프리셋만 저장된 구버전
   // 데이터는 화면에 열자마자 좌표로 변환해 보여준다 — 그래야 피커에서
@@ -253,17 +338,6 @@ export default function SubPageEditPage() {
     setChecklistBlocks([...effectiveChecklistBlocks, { id: generateId("checkblock"), title: "", body: "", items: [] }]);
   const removeChecklistBlock = (i: number) =>
     setChecklistBlocks(effectiveChecklistBlocks.filter((_, idx) => idx !== i));
-  const moveChecklistBlock = (i: number, dir: -1 | 1) => {
-    const list = [...effectiveChecklistBlocks];
-    const target = i + dir;
-    if (target < 0 || target >= list.length) return;
-    [list[i], list[target]] = [list[target], list[i]];
-    setChecklistBlocks(list);
-  };
-  const updateChecklistBlockItem = (blockIndex: number, itemIndex: number, p: Partial<SubPageChecklistBlockItem>) =>
-    updateChecklistBlock(blockIndex, {
-      items: effectiveChecklistBlocks[blockIndex].items.map((it, idx) => (idx === itemIndex ? { ...it, ...p } : it)),
-    });
   const addChecklistBlockItem = (blockIndex: number) =>
     updateChecklistBlock(blockIndex, {
       items: [...effectiveChecklistBlocks[blockIndex].items, { id: generateId("checkblockitem"), text: "" }],
@@ -272,13 +346,34 @@ export default function SubPageEditPage() {
     updateChecklistBlock(blockIndex, {
       items: effectiveChecklistBlocks[blockIndex].items.filter((_, idx) => idx !== itemIndex),
     });
-  const moveChecklistBlockItem = (blockIndex: number, itemIndex: number, dir: -1 | 1) => {
-    const list = [...effectiveChecklistBlocks[blockIndex].items];
-    const target = itemIndex + dir;
+  const setChecklistBlockItems = (blockIndex: number, items: SubPageChecklistBlockItem[]) =>
+    updateChecklistBlock(blockIndex, { items });
+
+  // 섹션 표시 순서 — 항상 6개 id 전부를 포함한 완전한 순열로 정규화해서 쓴다.
+  // 탭 옆 ↑↓ 버튼으로만 바꾸고(이 저장소 전반의 기존 순서 변경 관례와 동일), 드래그는 쓰지 않는다.
+  const effectiveSectionOrder = normalizeSectionOrder(draft.sectionOrder);
+  const moveSectionTab = (sectionId: SubPageSectionId, dir: -1 | 1) => {
+    const list = [...effectiveSectionOrder];
+    const i = list.indexOf(sectionId);
+    const target = i + dir;
     if (target < 0 || target >= list.length) return;
-    [list[itemIndex], list[target]] = [list[target], list[itemIndex]];
-    updateChecklistBlock(blockIndex, { items: list });
+    [list[i], list[target]] = [list[target], list[i]];
+    patch({ sectionOrder: list });
   };
+
+  // 탭에서 내용 유무를 한눈에 비교할 수 있도록 각 섹션의 "내용이 있는지" 여부를 계산한다.
+  // 채워진 값 없이 빈 배열/빈 문자열만 있는 상태(추가는 했지만 아직 아무것도 안 쓴 상태)는
+  // "없음"으로 취급해, 실수로 빈 섹션을 켜둔 채 저장하는 것을 미리 알아챌 수 있게 한다.
+  const sectionHasContent: Record<SubPageSectionId, boolean> = {
+    areaMap: effectiveAreaMap.enabled && effectiveAreaMap.areas.length > 0,
+    stepProcess: effectiveStepProcess.items.length > 0,
+    pointCards: effectivePointCards.items.length > 0,
+    checklist: effectiveChecklist.items.length > 0,
+    checklistHero: effectiveChecklistHero.items.length > 0,
+    checklistBlocks: effectiveChecklistBlocks.length > 0,
+  };
+  const imagesHaveContent = Boolean(draft.image) && Boolean(draft.fullBleedImage);
+  const basicHasContent = Boolean(draft.title?.trim()) && Boolean(draft.body?.trim());
 
   const save = async () => {
     setSaving(true);
@@ -302,13 +397,6 @@ export default function SubPageEditPage() {
     );
     if (ok) router.push("/admin/subpages");
   };
-
-  const hasImage = Boolean(draft.image);
-  const hasBanner = Boolean(draft.fullBleedImage);
-  const imagesBadge =
-    hasImage && hasBanner ? null : (
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" title="비어 있는 이미지가 있습니다" />
-    );
 
   return (
     <>
@@ -339,20 +427,89 @@ export default function SubPageEditPage() {
       />
 
       <Card>
-        <Tabs
-          tabs={[
-            TABS[0],
-            { ...TABS[1], badge: imagesBadge },
-            TABS[2],
-            TABS[3],
-            TABS[4],
-            TABS[5],
-            TABS[6],
-            TABS[7],
-          ]}
-          active={activeTab}
-          onChange={setActiveTab}
-        />
+        <div className="mb-3">
+          <p className="text-xs text-ink-muted mb-2">
+            공개 페이지 표시 순서 — 탭 오른쪽 ↑↓ 버튼으로 바꿀 수 있습니다. 점 색상은 내용이 채워져 있는지(●) 비어 있는지(●)를 나타냅니다.
+          </p>
+          <div role="tablist" className="flex flex-wrap gap-1 border-b border-line overflow-x-auto">
+            {FIXED_TABS.map((tab) => {
+              const isActive = tab.id === activeTab;
+              const hasContent = tab.id === "basic" ? basicHasContent : imagesHaveContent;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative shrink-0 px-4 py-3 text-sm font-semibold transition-colors ${
+                    isActive ? "text-ink" : "text-ink-muted hover:text-ink"
+                  }`}
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    {tab.label}
+                    <ContentDot
+                      hasContent={hasContent}
+                      title={hasContent ? "내용이 채워져 있습니다" : "비어 있는 항목이 있습니다"}
+                    />
+                  </span>
+                  {isActive && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-ink rounded-full" />}
+                </button>
+              );
+            })}
+            <span className="w-px my-2 bg-line shrink-0" aria-hidden="true" />
+            {effectiveSectionOrder.map((sectionId, i) => {
+              const isActive = sectionId === activeTab;
+              const hasContent = sectionHasContent[sectionId];
+              return (
+                <span
+                  key={sectionId}
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`relative shrink-0 flex items-center gap-0.5 pl-4 pr-1.5 py-1.5 text-sm font-semibold transition-colors ${
+                    isActive ? "text-ink" : "text-ink-muted hover:text-ink"
+                  }`}
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(sectionId)}
+                    className="inline-flex items-center gap-1.5 py-1.5"
+                  >
+                    <span className="text-[0.7rem] text-ink-muted/70 font-mono">{i + 1}</span>
+                    {SECTION_TAB_LABELS[sectionId]}
+                    <ContentDot
+                      hasContent={hasContent}
+                      title={hasContent ? "내용이 채워져 있습니다" : "비어 있습니다"}
+                    />
+                  </button>
+                  <span className="flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => moveSectionTab(sectionId, -1)}
+                      disabled={i === 0}
+                      aria-label={`${SECTION_TAB_LABELS[sectionId]} 순서를 앞으로`}
+                      className="w-5 h-5 flex items-center justify-center rounded text-ink-muted hover:text-ink hover:bg-bg-alt disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveSectionTab(sectionId, 1)}
+                      disabled={i === effectiveSectionOrder.length - 1}
+                      aria-label={`${SECTION_TAB_LABELS[sectionId]} 순서를 뒤로`}
+                      className="w-5 h-5 flex items-center justify-center rounded text-ink-muted hover:text-ink hover:bg-bg-alt disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                    >
+                      →
+                    </button>
+                  </span>
+                  {isActive && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-ink rounded-full" />}
+                </span>
+              );
+            })}
+          </div>
+        </div>
 
         <TabPanel id="basic" active={activeTab}>
           <Field label="제목">
@@ -490,15 +647,25 @@ export default function SubPageEditPage() {
                     {effectiveAreaMap.areas.map((area, i) => (
                       <div
                         key={area.id}
-                        className={`border rounded-lg p-3 ${area.id === activeAreaId ? "border-accent" : "border-line"}`}
+                        {...areaDrag.getItemProps(i)}
+                        className={`border rounded-lg p-3 transition-colors ${
+                          area.id === activeAreaId ? "border-accent" : "border-line"
+                        } ${areaDrag.dragOverIndex === i ? "border-accent bg-bg-alt" : ""} ${
+                          areaDrag.draggingIndex === i ? "opacity-40" : ""
+                        }`}
                       >
                         <div className="flex items-center gap-2 mb-2 cursor-pointer" onClick={() => setActiveAreaId(area.id)}>
+                          <span
+                            {...areaDrag.getHandleProps(i)}
+                            className="cursor-grab active:cursor-grabbing text-ink-muted shrink-0 touch-none"
+                            title="드래그해서 순서 변경"
+                          >
+                            <DragHandleIcon />
+                          </span>
                           <span className="text-xs text-ink-muted font-mono w-5 shrink-0">{i + 1}</span>
                           <span className="text-xs text-ink-muted flex-1">
                             ({Math.round(area.x)}, {Math.round(area.y)})
                           </span>
-                          <Button size="icon" variant="ghost" onClick={() => moveArea(i, -1)} disabled={i === 0}>↑</Button>
-                          <Button size="icon" variant="ghost" onClick={() => moveArea(i, 1)} disabled={i === effectiveAreaMap.areas.length - 1}>↓</Button>
                           <Button size="icon" variant="danger" onClick={() => removeArea(i)}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                           </Button>
@@ -569,14 +736,25 @@ export default function SubPageEditPage() {
           <Field label="스텝 목록">
             <div className="space-y-3">
               {effectiveStepProcess.items.map((item, i) => (
-                <div key={item.id} className="border border-line rounded-lg p-4">
+                <div
+                  key={item.id}
+                  {...stepDrag.getItemProps(i)}
+                  className={`border rounded-lg p-4 transition-colors ${
+                    stepDrag.dragOverIndex === i ? "border-accent bg-bg-alt" : "border-line"
+                  } ${stepDrag.draggingIndex === i ? "opacity-40" : ""}`}
+                >
                   <div className="flex items-center gap-2 mb-3">
+                    <span
+                      {...stepDrag.getHandleProps(i)}
+                      className="cursor-grab active:cursor-grabbing text-ink-muted shrink-0 touch-none"
+                      title="드래그해서 순서 변경"
+                    >
+                      <DragHandleIcon />
+                    </span>
                     <span className="text-xs font-mono text-ink-muted w-14 shrink-0">
                       STEP {String(i + 1).padStart(2, "0")}
                     </span>
                     <div className="flex-1" />
-                    <Button size="icon" variant="ghost" onClick={() => moveStepItem(i, -1)} disabled={i === 0}>↑</Button>
-                    <Button size="icon" variant="ghost" onClick={() => moveStepItem(i, 1)} disabled={i === effectiveStepProcess.items.length - 1}>↓</Button>
                     <Button size="icon" variant="danger" onClick={() => removeStepItem(i)}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     </Button>
@@ -616,14 +794,25 @@ export default function SubPageEditPage() {
           <Field label="카드 목록">
             <div className="space-y-3">
               {effectivePointCards.items.map((item, i) => (
-                <div key={item.id} className="border border-line rounded-lg p-4">
+                <div
+                  key={item.id}
+                  {...pointDrag.getItemProps(i)}
+                  className={`border rounded-lg p-4 transition-colors ${
+                    pointDrag.dragOverIndex === i ? "border-accent bg-bg-alt" : "border-line"
+                  } ${pointDrag.draggingIndex === i ? "opacity-40" : ""}`}
+                >
                   <div className="flex items-center gap-2 mb-3">
+                    <span
+                      {...pointDrag.getHandleProps(i)}
+                      className="cursor-grab active:cursor-grabbing text-ink-muted shrink-0 touch-none"
+                      title="드래그해서 순서 변경"
+                    >
+                      <DragHandleIcon />
+                    </span>
                     <span className="text-xs font-mono text-ink-muted w-16 shrink-0">
                       POINT {String(i + 1).padStart(2, "0")}
                     </span>
                     <div className="flex-1" />
-                    <Button size="icon" variant="ghost" onClick={() => movePointItem(i, -1)} disabled={i === 0}>↑</Button>
-                    <Button size="icon" variant="ghost" onClick={() => movePointItem(i, 1)} disabled={i === effectivePointCards.items.length - 1}>↓</Button>
                     <Button size="icon" variant="danger" onClick={() => removePointItem(i)}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     </Button>
@@ -672,12 +861,23 @@ export default function SubPageEditPage() {
           >
             <div className="space-y-3">
               {effectiveChecklist.items.map((item, i) => (
-                <div key={item.id} className="border border-line rounded-lg p-4">
+                <div
+                  key={item.id}
+                  {...checklistDrag.getItemProps(i)}
+                  className={`border rounded-lg p-4 transition-colors ${
+                    checklistDrag.dragOverIndex === i ? "border-accent bg-bg-alt" : "border-line"
+                  } ${checklistDrag.draggingIndex === i ? "opacity-40" : ""}`}
+                >
                   <div className="flex items-center gap-2 mb-3">
+                    <span
+                      {...checklistDrag.getHandleProps(i)}
+                      className="cursor-grab active:cursor-grabbing text-ink-muted shrink-0 touch-none"
+                      title="드래그해서 순서 변경"
+                    >
+                      <DragHandleIcon />
+                    </span>
                     <span className="text-xs text-ink-muted font-mono w-5 shrink-0">{i + 1}</span>
                     <div className="flex-1" />
-                    <Button size="icon" variant="ghost" onClick={() => moveChecklistItem(i, -1)} disabled={i === 0}>↑</Button>
-                    <Button size="icon" variant="ghost" onClick={() => moveChecklistItem(i, 1)} disabled={i === effectiveChecklist.items.length - 1}>↓</Button>
                     <Button size="icon" variant="danger" onClick={() => removeChecklistItem(i)}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     </Button>
@@ -802,50 +1002,34 @@ export default function SubPageEditPage() {
           </p>
           <div className="space-y-4">
             {effectiveChecklistBlocks.map((block, bi) => (
-              <div key={block.id} className="border border-line rounded-lg p-4">
+              <div
+                key={block.id}
+                {...checklistBlockDrag.getItemProps(bi)}
+                className={`border rounded-lg p-4 transition-colors ${
+                  checklistBlockDrag.dragOverIndex === bi ? "border-accent bg-bg-alt" : "border-line"
+                } ${checklistBlockDrag.draggingIndex === bi ? "opacity-40" : ""}`}
+              >
                 <div className="flex items-center gap-2 mb-3">
+                  <span
+                    {...checklistBlockDrag.getHandleProps(bi)}
+                    className="cursor-grab active:cursor-grabbing text-ink-muted shrink-0 touch-none"
+                    title="드래그해서 순서 변경"
+                  >
+                    <DragHandleIcon />
+                  </span>
                   <span className="text-xs text-ink-muted font-mono w-5 shrink-0">{bi + 1}</span>
                   <div className="flex-1" />
-                  <Button size="icon" variant="ghost" onClick={() => moveChecklistBlock(bi, -1)} disabled={bi === 0}>↑</Button>
-                  <Button size="icon" variant="ghost" onClick={() => moveChecklistBlock(bi, 1)} disabled={bi === effectiveChecklistBlocks.length - 1}>↓</Button>
                   <Button size="icon" variant="danger" onClick={() => removeChecklistBlock(bi)}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                   </Button>
                 </div>
-                <TextInput
-                  className="mb-2"
-                  placeholder="제목 (예: 이런 변화가 느껴진다면)"
-                  value={block.title}
-                  onChange={(e) => updateChecklistBlock(bi, { title: e.target.value })}
+                <ChecklistBlockEditor
+                  block={block}
+                  onUpdate={(p) => updateChecklistBlock(bi, p)}
+                  onSetItems={(items) => setChecklistBlockItems(bi, items)}
+                  onAddItem={() => addChecklistBlockItem(bi)}
+                  onRemoveItem={(ii) => removeChecklistBlockItem(bi, ii)}
                 />
-                <TextArea
-                  className="mb-3"
-                  rows={2}
-                  placeholder="본문 (선택 사항) — 목록 없이 안내 문단만 넣을 때도 사용합니다"
-                  value={block.body ?? ""}
-                  onChange={(e) => updateChecklistBlock(bi, { body: e.target.value })}
-                />
-                <div className="space-y-2">
-                  {block.items.map((item, ii) => (
-                    <div key={item.id} className="flex items-center gap-2">
-                      <span className="text-xs text-ink-muted font-mono w-6 shrink-0">
-                        {String(ii + 1).padStart(2, "0")}
-                      </span>
-                      <TextInput
-                        className="flex-1"
-                        placeholder="목록 항목"
-                        value={item.text}
-                        onChange={(e) => updateChecklistBlockItem(bi, ii, { text: e.target.value })}
-                      />
-                      <Button size="icon" variant="ghost" onClick={() => moveChecklistBlockItem(bi, ii, -1)} disabled={ii === 0}>↑</Button>
-                      <Button size="icon" variant="ghost" onClick={() => moveChecklistBlockItem(bi, ii, 1)} disabled={ii === block.items.length - 1}>↓</Button>
-                      <Button size="icon" variant="danger" onClick={() => removeChecklistBlockItem(bi, ii)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                      </Button>
-                    </div>
-                  ))}
-                  <Button type="button" size="sm" variant="secondary" onClick={() => addChecklistBlockItem(bi)}>+ 항목 추가</Button>
-                </div>
               </div>
             ))}
             <Button type="button" size="sm" variant="secondary" onClick={addChecklistBlock}>+ 블록 추가</Button>

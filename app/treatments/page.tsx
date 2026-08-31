@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -15,12 +16,12 @@ export default function TreatmentsPage() {
   return (
     <>
       <section
-        className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden"
+        className="relative pt-32 pb-10 md:pt-44 md:pb-14 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
-            <Image src={banner} alt="고운빛한의원 진료 안내" fill className="object-cover" sizes="100vw" quality={75} placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
+            <Image src={stripImagePosition(banner)} alt="고운빛한의원 진료 안내" fill className="object-cover" style={{ objectPosition: toObjectPosition(banner) }} sizes="100vw" quality={75} placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
           </div>
         )}
         <div className="container-default relative text-ink-inverse">
@@ -44,7 +45,7 @@ export default function TreatmentsPage() {
         </div>
       </section>
 
-      <section className="py-20 md:py-32">
+      <section className="pt-10 pb-20 md:pt-16 md:pb-32">
         <div className="container-default space-y-24">
           {treatments.map((item, i) => (
             <article
@@ -91,10 +92,11 @@ export default function TreatmentsPage() {
               <div className="aspect-[4/3] relative rounded overflow-hidden bg-bg-alt">
                 {item.image ? (
                   <Image
-                    src={item.image}
+                    src={stripImagePosition(item.image)}
                     alt={item.title}
                     fill
                     className="object-cover"
+                    style={{ objectPosition: toObjectPosition(item.image) }}
                     sizes="(max-width: 768px) 100vw, 50vw"
                     quality={75}
                     placeholder="blur"

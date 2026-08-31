@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -71,10 +72,11 @@ function TreatmentItem({
         >
           {item.image ? (
             <Image
-              src={item.image}
+              src={stripImagePosition(item.image)}
               alt={item.title}
               fill
               className="object-cover"
+              style={{ objectPosition: toObjectPosition(item.image) }}
               sizes="(max-width: 768px) 100vw, 50vw"
               quality={75}
               placeholder="blur"
@@ -94,10 +96,11 @@ function TreatmentItem({
           className="reveal-fade relative w-full aspect-[21/9] md:aspect-[3/1] mt-24 bg-bg-alt"
         >
           <Image
-            src={item.fullBleedImage}
+            src={stripImagePosition(item.fullBleedImage)}
             alt={item.title}
             fill
             className="object-cover"
+            style={{ objectPosition: toObjectPosition(item.fullBleedImage) }}
             sizes="100vw"
             quality={75}
             placeholder="blur"
@@ -121,16 +124,17 @@ export default function KoreanTreatmentPage() {
   return (
     <>
       <section
-        className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden"
+        className="relative pt-32 pb-10 md:pt-44 md:pb-14 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
             <Image
-              src={banner}
+              src={stripImagePosition(banner)}
               alt="한방치료"
               fill
               className="object-cover"
+              style={{ objectPosition: toObjectPosition(banner) }}
               sizes="100vw"
               quality={75}
               placeholder="blur"
@@ -159,7 +163,7 @@ export default function KoreanTreatmentPage() {
         </div>
       </section>
 
-      <section className="py-20 md:py-32">
+      <section className="pt-10 pb-20 md:pt-16 md:pb-32">
         <div className="space-y-24">
           {items.map((item, i) => (
             <TreatmentItem key={item.id} item={item} index={i} moreLabel={t("hub.moreDetail")} />

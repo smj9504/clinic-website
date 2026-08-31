@@ -43,12 +43,28 @@ export type Notice = {
   endDate?: string;   // "2026-05-31"
 };
 
+/** Ken Burns 이펙트 종류. 미지정 시 슬라이드 인덱스로 자동 배정(기존 동작과 동일). */
+export type HeroSlideEffect = "pan-right" | "pan-left" | "zoom" | "none";
+
+/**
+ * effect 필드가 없는 기존 슬라이드를 위한 인덱스 기반 폴백.
+ * 과거 Hero.tsx에 하드코딩되어 있던 규칙(세 번째 슬라이드는 줌, 나머지는 좌우 번갈아 팬)을 그대로 보존한다.
+ */
+export function defaultHeroEffect(index: number): HeroSlideEffect {
+  if (index === 2) return "zoom";
+  return index % 2 === 0 ? "pan-right" : "pan-left";
+}
+
 export type HeroSlide = {
   id: number;
   label: string;
   title: string;
   subtitle: string;
   image: string;
+  /** "video"면 image 필드에 동영상 URL을 담고 Ken Burns 대신 자동재생한다. 미지정 시 "image". */
+  mediaType?: "image" | "video";
+  /** mediaType이 "video"일 땐 무시된다(동영상엔 Ken Burns 미적용). */
+  effect?: HeroSlideEffect;
   linkLabel?: string;
   linkUrl?: string;
 };
@@ -187,7 +203,47 @@ export type SubPage = {
   checklistHero?: SubPageChecklistHero;
   /** 소제목+본문+번호 목록 반복 블록 (선택 사항) — 순서대로 렌더링되며, 본문(body) 상단에 표시된다 */
   checklistBlocks?: SubPageChecklistBlock[];
+  /**
+   * 구조화 섹션 6개(areaMap · stepProcess · pointCards · checklist ·
+   * checklistHero · checklistBlocks)의 공개 페이지 표시 순서. 값이 없거나
+   * 일부 id가 빠져 있으면 이 기본 순서로 취급한다 — DEFAULT_SUBPAGE_SECTION_ORDER
+   * 참고. 본문(body)은 이 목록에 포함되지 않고 항상 구조화 섹션들 다음에 온다.
+   */
+  sectionOrder?: SubPageSectionId[];
 };
+
+/** app/admin/subpages/[id]/page.tsx의 순서 조정 탭, app/subpages/[slug]/page.tsx의 렌더 순서가 함께 참조하는 6개 구조화 섹션 id */
+export type SubPageSectionId =
+  | "areaMap"
+  | "stepProcess"
+  | "pointCards"
+  | "checklist"
+  | "checklistHero"
+  | "checklistBlocks";
+
+/** sectionOrder가 비어 있거나 불완전할 때 쓰는 기본 순서. 기존(리팩터링 전) 공개 페이지의 하드코딩 렌더 순서와 동일하게 맞춰, 이 필드가 없는 기존 서브페이지들의 화면이 바뀌지 않게 한다 */
+export const DEFAULT_SUBPAGE_SECTION_ORDER: SubPageSectionId[] = [
+  "checklistHero",
+  "areaMap",
+  "checklist",
+  "checklistBlocks",
+  "pointCards",
+  "stepProcess",
+];
+
+/**
+ * 저장된 sectionOrder를 항상 6개 id 전부를 포함한 완전한 순열로 정규화한다.
+ * admin에서 새 섹션 id가 추가되거나(예: 이후 7번째 섹션 도입), 저장 시점 이후
+ * 알 수 없는 값이 섞여도 공개 페이지 렌더링이 깨지지 않도록 여기서 한 번에 방어한다.
+ * 알려진 id는 저장된 순서를 그대로 두고, 목록에 없는 id는 기본 순서상의 상대
+ * 위치를 유지하며 끝에 이어붙인다.
+ */
+export function normalizeSectionOrder(order: SubPageSectionId[] | undefined): SubPageSectionId[] {
+  const known = new Set(DEFAULT_SUBPAGE_SECTION_ORDER);
+  const deduped = [...new Set(order ?? [])].filter((id): id is SubPageSectionId => known.has(id));
+  const missing = DEFAULT_SUBPAGE_SECTION_ORDER.filter((id) => !deduped.includes(id));
+  return [...deduped, ...missing];
+}
 
 /** 메인페이지에 표시되는 섹션 id (Hero 제외 — Hero는 항상 최상단 고정) */
 export type HomeSectionId =

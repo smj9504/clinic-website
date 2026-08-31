@@ -16,6 +16,7 @@ import {
   type ServiceBadge,
 } from "@/lib/services";
 import type { TranslationKey } from "@/lib/translations";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -162,10 +163,11 @@ function SignatureCard({
       <div className="relative overflow-hidden bg-black/30" style={{ aspectRatio: "16 / 10" }}>
         {hasRealImage ? (
           <Image
-            src={service.image}
+            src={stripImagePosition(service.image)}
             alt={name}
             fill
             className="object-cover opacity-90 transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+            style={{ objectPosition: toObjectPosition(service.image) }}
             sizes="(max-width: 768px) 100vw, 33vw"
             quality={75}
             placeholder="blur"

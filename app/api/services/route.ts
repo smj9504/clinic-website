@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 /** 목록 조회에서는 blocks(상세)를 가져오지 않는다 — 카탈로그에서 제일 무거운 컬럼이다 */
 const LIST_COLUMNS =
-  "id,subcategory_id,image,tag,badges,sale_start_date,sale_end_date,sort_order,is_hidden,i18n,prices";
+  "id,subcategory_id,image,tag,badges,sale_start_date,sale_end_date,sort_order,is_hidden,i18n,prices,event_ids";
 
 const EMPTY_CATALOG: ServiceCatalog = { categories: [], subcategories: [], services: [] };
 

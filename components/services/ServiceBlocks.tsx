@@ -4,6 +4,7 @@ import Image from "next/image";
 import { blockText, type ServiceBlock } from "@/lib/services";
 import type { Locale } from "@/lib/i18n";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -213,10 +214,11 @@ function BlockBody({ block, locale }: { block: ServiceBlock; locale: Locale }) {
                   style={{ aspectRatio: "4 / 3" }}
                 >
                   <Image
-                    src={image.url}
+                    src={stripImagePosition(image.url)}
                     alt={caption || ""}
                     fill
                     className="object-cover"
+                    style={{ objectPosition: toObjectPosition(image.url) }}
                     sizes="(max-width: 640px) 100vw, 50vw"
                     quality={75}
                     placeholder="blur"
@@ -258,10 +260,11 @@ function ChecklistBlock({ block, locale }: { block: ServiceBlock; locale: Locale
       >
         {image?.url && (
           <Image
-            src={image.url}
+            src={stripImagePosition(image.url)}
             alt={text.title || ""}
             fill
             className="object-cover"
+            style={{ objectPosition: toObjectPosition(image.url) }}
             sizes="(max-width: 768px) 100vw, 40vw"
             quality={75}
             placeholder="blur"

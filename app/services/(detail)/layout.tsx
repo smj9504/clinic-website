@@ -10,6 +10,7 @@ import { useServiceCatalog } from "@/lib/useServices";
 import { categoryText, isVideoUrl, serviceText } from "@/lib/services";
 import { useSiteData } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
@@ -135,10 +136,11 @@ export default function ServiceDetailLayout({ children }: { children: React.Reac
                       >
                         <span className="relative w-7 h-7 rounded-full overflow-hidden bg-bg-alt shrink-0">
                           <Image
-                            src={isVideoUrl(s.image) ? fallbackImage : s.image || fallbackImage}
+                            src={stripImagePosition(isVideoUrl(s.image) ? fallbackImage : s.image || fallbackImage)}
                             alt=""
                             fill
                             className="object-cover"
+                            style={{ objectPosition: toObjectPosition(isVideoUrl(s.image) ? fallbackImage : s.image || fallbackImage) }}
                             sizes="28px"
                             quality={60}
                           />

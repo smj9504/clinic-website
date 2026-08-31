@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import SlideCarousel from "./SlideCarousel";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -25,12 +26,13 @@ export default function FacilityCarousel({
           <div className="aspect-[4/3] relative rounded overflow-hidden bg-bg">
             {src && (
               <Image
-                src={src}
+                src={stripImagePosition(src)}
                 alt={`${altBase} ${i + 1}`}
                 fill
                 className={`object-cover transition-transform duration-[6000ms] ease-out ${
                   isActive ? "scale-[1.06]" : "scale-100"
                 }`}
+                style={{ objectPosition: toObjectPosition(src) }}
                 sizes="(max-width: 768px) 78vw, (max-width: 1024px) 42vw, 32vw"
                 quality={75}
                 placeholder="blur"

@@ -109,7 +109,7 @@ export default function ReservationPage() {
   return (
     <>
       <section
-        className="relative pt-32 pb-16 md:pt-44 md:pb-20 overflow-hidden"
+        className="relative pt-32 pb-8 md:pt-44 md:pb-10 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
         <div className="container-default relative text-ink-inverse">
@@ -147,7 +147,7 @@ export default function ReservationPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-24">
+      <section className="pt-8 pb-16 md:pt-12 md:pb-24">
         <div className="container-default max-w-xl">
           {hasCartItems && (
             <div className="mb-8 border border-line rounded-lg overflow-hidden">
@@ -278,7 +278,13 @@ export default function ReservationPage() {
                 >
                   희망 시간대
                 </label>
-                <TimeSelect id="desiredTime" value={desiredTime} onChange={setDesiredTime} />
+                <TimeSelect
+                  id="desiredTime"
+                  value={desiredTime}
+                  onChange={setDesiredTime}
+                  desiredDate={desiredDate}
+                  clinicHours={clinicInfo.hours}
+                />
               </div>
             </div>
 

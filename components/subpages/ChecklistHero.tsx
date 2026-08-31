@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 import type { ChecklistHeroItem } from "@/lib/proseCards";
 import type { SubPageChecklistHeroPosition } from "@/lib/data";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -163,10 +164,11 @@ export default function ChecklistHero({
         {imageSrc && (
           <div ref={photoRef} className="checklist-hero-photo absolute inset-0">
             <Image
-              src={imageSrc}
+              src={stripImagePosition(imageSrc)}
               alt={imageAlt}
               fill
               className="object-cover"
+              style={{ objectPosition: toObjectPosition(imageSrc) }}
               sizes="100vw"
               quality={75}
               placeholder="blur"

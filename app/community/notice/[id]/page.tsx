@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -40,16 +41,17 @@ export default function NoticeDetailPage() {
     <>
       {/* Header */}
       <section
-        className="relative pt-32 pb-16 md:pt-44 md:pb-20 overflow-hidden"
+        className="relative pt-32 pb-8 md:pt-44 md:pb-10 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
             <Image
-              src={banner}
+              src={stripImagePosition(banner)}
               alt={notice.title}
               fill
               className="object-cover"
+              style={{ objectPosition: toObjectPosition(banner) }}
               sizes="100vw"
               quality={75}
               placeholder="blur"
@@ -92,7 +94,7 @@ export default function NoticeDetailPage() {
       </section>
 
       {/* Content */}
-      <section className="py-16 md:py-24">
+      <section className="pt-8 pb-16 md:pt-12 md:pb-24">
         <div className="container-default max-w-3xl">
           {notice.content ? (
             notice.content.startsWith("<") ? (

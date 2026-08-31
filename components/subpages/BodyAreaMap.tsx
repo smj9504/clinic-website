@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 export type BodyArea = {
   id: string;
@@ -61,10 +62,11 @@ export default function BodyAreaMap({
       <div className="relative aspect-[3/4] sm:aspect-[4/3] rounded-2xl overflow-hidden bg-bg-alt border border-line">
         {imageSrc ? (
           <Image
-            src={imageSrc}
+            src={stripImagePosition(imageSrc)}
             alt={imageAlt}
             fill
             className="object-cover"
+            style={{ objectPosition: toObjectPosition(imageSrc) }}
             sizes="(max-width: 768px) 100vw, 768px"
             quality={80}
           />

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useScrollReveal } from "@/lib/useScrollReveal";
-import { isVideoUrl, hasRealEquipmentImage } from "@/lib/services";
+import { hasRealEquipmentImage } from "@/lib/services";
 import type { Equipment } from "@/lib/data";
 import EquipmentImage from "@/components/EquipmentImage";
 
@@ -62,22 +62,9 @@ function EquipmentTabs({
 
 /** 이미지·동영상 겸용 — equipment.image가 어느 쪽이어도 그대로 재생 가능하다.
  * 사진이 없거나 아직 실사진으로 교체되지 않은 데모 placeholder면 임의 사진
- * 대신 클리닉 로고를 보여준다(EquipmentImage 참고). */
+ * 대신 클리닉 로고를 보여준다. 동영상/이미지 분기는 EquipmentImage 내부에서
+ * 처리하므로 여기서는 그대로 위임한다. */
 function EquipmentMedia({ equipment: eq }: { equipment: Equipment }) {
-  if (eq.image && isVideoUrl(eq.image)) {
-    return (
-      <video
-        key={eq.id}
-        src={eq.image}
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-    );
-  }
-
   return <EquipmentImage key={eq.id} src={eq.image} alt={eq.title} sizes="100vw" quality={80} />;
 }
 
@@ -128,7 +115,7 @@ export default function EquipmentShowcase() {
   const hasIntroText = Boolean(introLabel || introTitle || introBody || introCta);
 
   return (
-    <section className="pt-20 pb-16 md:pt-28 md:pb-20 overflow-x-hidden">
+    <section className="pt-10 pb-16 md:pt-14 md:pb-20 overflow-x-hidden">
       <div className="container-default">
         <div
           className={
@@ -146,11 +133,7 @@ export default function EquipmentShowcase() {
                 key={slot.key}
                 className="relative aspect-square overflow-hidden rounded bg-bg-alt"
               >
-                {slot.image && isVideoUrl(slot.image) ? (
-                  <video src={slot.image} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover" />
-                ) : (
-                  <EquipmentImage src={slot.image} alt={slot.alt} sizes="(max-width: 768px) 33vw, 22vw" />
-                )}
+                <EquipmentImage src={slot.image} alt={slot.alt} sizes="(max-width: 768px) 33vw, 22vw" />
               </div>
             ))}
           </div>

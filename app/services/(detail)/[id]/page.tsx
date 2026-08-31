@@ -9,6 +9,7 @@ import { useService } from "@/lib/useServices";
 import { isVideoUrl, serviceText } from "@/lib/services";
 import { useSiteData } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -76,17 +77,19 @@ export default function ServiceDetailPage() {
             )}
             {isVideoUrl(service.image) ? (
               <video
-                src={service.image}
+                src={stripImagePosition(service.image)}
                 controls
                 playsInline
                 className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectPosition: toObjectPosition(service.image) }}
               />
             ) : (
               <Image
-                src={service.image || fallbackImage}
+                src={stripImagePosition(service.image || fallbackImage)}
                 alt={name}
                 fill
                 className="object-cover"
+                style={{ objectPosition: toObjectPosition(service.image || fallbackImage) }}
                 sizes="(max-width: 1024px) 100vw, 45vw"
                 priority
                 quality={80}

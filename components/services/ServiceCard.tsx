@@ -6,6 +6,7 @@ import { computePrice, formatKRW } from "@/lib/price";
 import { isVideoUrl, priceText, serviceText, type Service, type ServiceBadge } from "@/lib/services";
 import type { Locale } from "@/lib/i18n";
 import type { TranslationKey } from "@/lib/translations";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -47,10 +48,11 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
       <div className="relative bg-bg-alt overflow-hidden" style={{ aspectRatio: "4 / 3" }}>
         {/* 대표 미디어가 동영상이면 카드에서는 재생하지 않고 폴백 이미지를 보여준다 — 재생은 상세 페이지에서만 */}
         <Image
-          src={isVideoUrl(service.image) ? fallbackImage : service.image || fallbackImage}
+          src={stripImagePosition(isVideoUrl(service.image) ? fallbackImage : service.image || fallbackImage)}
           alt={name}
           fill
           className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+          style={{ objectPosition: toObjectPosition(isVideoUrl(service.image) ? fallbackImage : service.image || fallbackImage) }}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           quality={75}
           placeholder="blur"

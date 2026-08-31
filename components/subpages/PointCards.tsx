@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 type PointCardsProps = {
   /** 카드 그리드 위에 표시되는 섹션 제목 (선택 사항 — 없으면 카드만 표시) */
@@ -52,10 +53,11 @@ export default function PointCards({ title, points, fallbackImage, imageAlt = ""
             {image && (
               <div className="relative aspect-[4/3]">
                 <Image
-                  src={image}
+                  src={stripImagePosition(image)}
                   alt={imageAlt || point.title}
                   fill
                   className="object-cover"
+                  style={{ objectPosition: toObjectPosition(image) }}
                   sizes="(max-width: 400px) 100vw, (max-width: 1280px) 50vw, 25vw"
                   quality={75}
                 />

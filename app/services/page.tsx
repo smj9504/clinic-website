@@ -3,13 +3,14 @@
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import CategoryFilter, { ALL } from "@/components/services/CategoryFilter";
+import CategoryFilter, { ALL, EVENT_FILTER } from "@/components/services/CategoryFilter";
 import ServiceCard from "@/components/services/ServiceCard";
 import CartSummaryBar from "@/components/services/CartSummaryBar";
 import { useServiceCatalog } from "@/lib/useServices";
 import { sortServicesForDisplay } from "@/lib/services";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -61,9 +62,17 @@ function ServicesPageInner() {
   const banner = getBannerImage(menus, "/services", heroSlides[0]?.image);
   const fallbackImage = clinicInfo.defaultImage || FALLBACK_IMAGE;
 
+  const hasEventServices = useMemo(
+    () => services.some((s) => (s.eventIds ?? []).length > 0),
+    [services]
+  );
+
   const visible = useMemo(() => {
     const ordered = sortServicesForDisplay({ categories, subcategories, services });
     if (activeCategory === ALL) return ordered;
+    if (activeCategory === EVENT_FILTER) {
+      return ordered.filter((s) => (s.eventIds ?? []).length > 0);
+    }
 
     const childIds = new Set(
       subcategories.filter((s) => s.categoryId === activeCategory).map((s) => s.id)
@@ -74,16 +83,17 @@ function ServicesPageInner() {
   return (
     <>
       <section
-        className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden"
+        className="relative pt-32 pb-10 md:pt-44 md:pb-14 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
             <Image
-              src={banner}
+              src={stripImagePosition(banner)}
               alt="고운빛한의원 시술 안내"
               fill
               className="object-cover"
+              style={{ objectPosition: toObjectPosition(banner) }}
               sizes="100vw"
               quality={75}
               placeholder="blur"
@@ -112,7 +122,7 @@ function ServicesPageInner() {
         </div>
       </section>
 
-      <section className="py-16 md:py-24 pb-28">
+      <section className="pt-8 md:pt-12 pb-28">
         <div className="container-default grid grid-cols-1 md:grid-cols-[220px_1fr] gap-8 lg:gap-12 items-start">
           <div className="md:sticky md:top-28">
             <CategoryFilter
@@ -121,6 +131,7 @@ function ServicesPageInner() {
               onCategoryChange={setActiveCategory}
               locale={locale}
               t={t}
+              hasEventServices={hasEventServices}
             />
           </div>
 

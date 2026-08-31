@@ -2,11 +2,22 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+import { defaultHeroEffect } from "@/lib/data";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
-const INTERVAL = 8000;
+const IMAGE_INTERVAL = 8000;
+// 동영상 duration을 아직 모를 때(메타데이터 로딩 전) 쓰는 안전장치용 상한 — 무한 대기 방지
+const VIDEO_FALLBACK_INTERVAL = 15000;
+
+const EFFECT_CLASS: Record<string, string> = {
+  "pan-right": "ken-burns-pan-right",
+  "pan-left": "ken-burns-pan-left",
+  zoom: "ken-burns-zoom",
+  none: "",
+};
 
 // 1x1 SVG blur placeholder (로딩 중 표시)
 const BLUR_PLACEHOLDER =
@@ -17,29 +28,41 @@ export default function Hero() {
   const t = useT();
   const [activeIndex, setActiveIndex] = useState(0);
   const [animKey, setAnimKey] = useState(0);
+  // 활성 슬라이드가 동영상일 때, 재생 길이를 알아낼 때까지의 임시값 → onLoadedMetadata에서 실측치로 갱신
+  const [activeVideoDuration, setActiveVideoDuration] = useState<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const slide = heroSlides.length > 0 ? heroSlides[Math.min(activeIndex, heroSlides.length - 1)] : null;
+  const isActiveVideo = slide?.mediaType === "video";
 
   const goTo = useCallback(
     (index: number) => {
       setActiveIndex(index);
       setAnimKey((k) => k + 1);
+      setActiveVideoDuration(null);
     },
     []
   );
 
+  // 자동 전환: 이미지는 고정 8초 타이머. 동영상은 <video onEnded>가 전환을 담당하므로
+  // 여기서는 메타데이터 로드 실패 등 onEnded가 영영 안 오는 극단적 상황을 막는 안전망(폴백 상한)만 건다.
   useEffect(() => {
     if (heroSlides.length <= 1) return;
-    const id = setInterval(() => {
-      setActiveIndex((prev) => {
-        const next = (prev + 1) % heroSlides.length;
-        setAnimKey((k) => k + 1);
-        return next;
-      });
-    }, INTERVAL);
-    return () => clearInterval(id);
-  }, [heroSlides.length]);
+    const duration = isActiveVideo ? VIDEO_FALLBACK_INTERVAL : IMAGE_INTERVAL;
 
-  if (heroSlides.length === 0) return null;
-  const slide = heroSlides[Math.min(activeIndex, heroSlides.length - 1)];
+    timerRef.current = setTimeout(() => {
+      setActiveIndex((prev) => (prev + 1) % heroSlides.length);
+      setAnimKey((k) => k + 1);
+      setActiveVideoDuration(null);
+    }, duration);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [heroSlides.length, activeIndex, isActiveVideo]);
+
+  if (heroSlides.length === 0 || !slide) return null;
+  const progressDuration = isActiveVideo ? (activeVideoDuration ?? VIDEO_FALLBACK_INTERVAL) : IMAGE_INTERVAL;
 
   return (
     <section
@@ -55,6 +78,9 @@ export default function Hero() {
           const shouldRender = i === activeIndex || i === nextIdx || i === prevIdx;
           if (!shouldRender) return null;
 
+          const isVideo = s.mediaType === "video";
+          const effectClass = i === activeIndex && !isVideo ? EFFECT_CLASS[s.effect ?? defaultHeroEffect(i)] : "";
+
           return (
             <div
               key={s.id}
@@ -62,30 +88,44 @@ export default function Hero() {
                 i === activeIndex ? "opacity-100" : "opacity-0"
               }`}
             >
-              <div
-                className={
-                  i === activeIndex
-                    ? i === 2
-                      ? "ken-burns-zoom"
-                      : i % 2 === 0
-                        ? "ken-burns-pan-right"
-                        : "ken-burns-pan-left"
-                    : ""
-                }
-                style={{ width: "100%", height: "100%" }}
-              >
-                <Image
-                  src={s.image}
-                  alt={s.title}
-                  fill
-                  priority={i === activeIndex}
-                  className="object-cover"
-                  sizes="100vw"
-                  quality={75}
-                  placeholder="blur"
-                  blurDataURL={BLUR_PLACEHOLDER}
+              {isVideo ? (
+                <video
+                  // 동영상 URL이 바뀔 때 이전 재생 상태가 남지 않도록 key로 강제 재마운트
+                  key={s.image}
+                  src={stripImagePosition(s.image)}
+                  muted
+                  autoPlay
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ objectPosition: toObjectPosition(s.image) }}
+                  onLoadedMetadata={(e) => {
+                    if (i === activeIndex) {
+                      setActiveVideoDuration(e.currentTarget.duration * 1000);
+                    }
+                  }}
+                  onEnded={() => {
+                    if (i !== activeIndex || heroSlides.length <= 1) return;
+                    setActiveIndex((prev) => (prev + 1) % heroSlides.length);
+                    setAnimKey((k) => k + 1);
+                    setActiveVideoDuration(null);
+                  }}
                 />
-              </div>
+              ) : (
+                <div className={effectClass} style={{ width: "100%", height: "100%" }}>
+                  <Image
+                    src={stripImagePosition(s.image)}
+                    alt={s.title}
+                    fill
+                    priority={i === activeIndex}
+                    className="object-cover"
+                    style={{ objectPosition: toObjectPosition(s.image) }}
+                    sizes="100vw"
+                    quality={75}
+                    placeholder="blur"
+                    blurDataURL={BLUR_PLACEHOLDER}
+                  />
+                </div>
+              )}
               <div
                 className="absolute inset-0"
                 style={{
@@ -180,11 +220,11 @@ export default function Hero() {
               >
                 {i === activeIndex ? (
                   <div
-                    key={`prog-${animKey}-${i}`}
+                    key={`prog-${animKey}-${i}-${progressDuration}`}
                     className="hero-progress-bar absolute inset-0 rounded-full"
                     style={{
                       background: "var(--color-ink-inverse)",
-                      "--hero-interval": `${INTERVAL}ms`,
+                      "--hero-interval": `${progressDuration}ms`,
                     } as React.CSSProperties}
                   />
                 ) : (

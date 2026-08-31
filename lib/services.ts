@@ -109,6 +109,8 @@ export type Service = {
   isHidden: boolean;
   i18n: I18nMap<{ name: string; summary: string }>;
   prices: ServicePrice[];
+  /** 이 시술이 적용받는 이벤트 id 목록 (site_data의 events 배열 참조, locale 무관) */
+  eventIds?: number[];
   /** 목록 응답에는 포함되지 않는다 (상세 조회에서만 채워진다) */
   blocks?: ServiceBlock[];
 };
@@ -380,6 +382,7 @@ export type ServiceRow = {
   i18n: Json | null;
   prices: unknown;
   blocks?: unknown;
+  event_ids?: number[] | null;
 };
 
 export function toCategory(row: CategoryRow): ServiceCategory {
@@ -419,6 +422,7 @@ export function toService(row: ServiceRow): Service {
     isHidden: row.is_hidden,
     i18n: (row.i18n ?? {}) as Service["i18n"],
     prices: Array.isArray(row.prices) ? (row.prices as ServicePrice[]) : [],
+    eventIds: row.event_ids ?? [],
   };
   // 목록 조회는 blocks를 SELECT하지 않는다 — 없으면 필드 자체를 만들지 않는다
   if (row.blocks !== undefined) {
@@ -465,5 +469,6 @@ export function serviceToRow(s: Partial<Service>): Json {
   if (s.i18n !== undefined) row.i18n = s.i18n;
   if (s.prices !== undefined) row.prices = s.prices;
   if (s.blocks !== undefined) row.blocks = s.blocks;
+  if (s.eventIds !== undefined) row.event_ids = s.eventIds;
   return row;
 }

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
 import { updateSiteData, syncImages, changePassword, defaultHomeSections } from "@/lib/storage";
-import type { HeroSlide, Treatment, HomeSectionConfig, HomeSectionId } from "@/lib/data";
+import type { HeroSlide, HeroSlideEffect, Treatment, HomeSectionConfig, HomeSectionId } from "@/lib/data";
+import { defaultHeroEffect } from "@/lib/data";
 import {
   PageHeader,
   Field,
@@ -14,7 +15,15 @@ import {
   Card,
   ImageInput,
   Toast,
+  isVideoUrl,
 } from "@/components/admin/ui";
+
+const HERO_EFFECT_OPTIONS: { value: HeroSlideEffect; label: string }[] = [
+  { value: "pan-right", label: "우측 팬" },
+  { value: "pan-left", label: "좌측 팬" },
+  { value: "zoom", label: "줌인" },
+  { value: "none", label: "없음" },
+];
 
 type Tab = "clinic" | "hero" | "treatments" | "layout" | "about" | "password";
 
@@ -326,6 +335,7 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
             title: "새 슬라이드 제목",
             subtitle: "부제목을 입력하세요",
             image: "",
+            mediaType: "image",
             linkLabel: "",
             linkUrl: "",
           },
@@ -430,13 +440,41 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
                 </p>
               </div>
               <div>
-                <Field label="배경 이미지" hint="권장 크기 1920×1080 이상">
+                <Field label="배경 이미지 · 동영상" hint="이미지 권장 크기 1920×1080 이상 · 동영상은 mp4/webm/mov, 최대 100MB">
                   <ImageInput
                     value={s.image}
-                    onChange={(v) => update(s.id, { image: v })}
+                    onChange={(v) => {
+                      // 새로 업로드/입력한 파일 확장자로 mediaType을 함께 갱신 — 사용자가 이미지→동영상으로 교체할 때 이전 mediaType이 남지 않도록
+                      update(s.id, { image: v, mediaType: isVideoUrl(v) ? "video" : "image" });
+                    }}
                     aspectRatio="16 / 9"
+                    allowVideo
                   />
                 </Field>
+
+                {s.mediaType !== "video" && (
+                  <Field
+                    label="배경 이펙트"
+                    hint="정지 이미지에 적용할 카메라 움직임을 선택하세요"
+                  >
+                    <div className="flex gap-1 flex-wrap">
+                      {HERO_EFFECT_OPTIONS.map((opt) => {
+                        const active = (s.effect ?? defaultHeroEffect(i)) === opt.value;
+                        return (
+                          <Button
+                            key={opt.value}
+                            type="button"
+                            size="sm"
+                            variant={active ? "primary" : "secondary"}
+                            onClick={() => update(s.id, { effect: opt.value })}
+                          >
+                            {opt.label}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </Field>
+                )}
               </div>
             </div>
           </Card>

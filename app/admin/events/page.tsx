@@ -6,6 +6,8 @@ import { useAdminLocale } from "@/lib/adminLocale";
 import { updateSiteData, syncImages } from "@/lib/storage";
 import { todayKST } from "@/lib/date";
 import type { Event } from "@/lib/data";
+import { useServiceCatalog } from "@/lib/useServices";
+import { patchServices } from "@/lib/servicesApi";
 import {
   PageHeader,
   Field,
@@ -16,6 +18,7 @@ import {
   Toast,
 } from "@/components/admin/ui";
 import RichEditor from "@/components/admin/RichEditor";
+import LinkedServicesPicker from "@/components/admin/equipment/LinkedServicesPicker";
 
 const todayStr = todayKST;
 
@@ -58,6 +61,13 @@ export default function EventsAdminPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
 
+  // 시술 ↔ 이벤트 연결: 소스 오브 트루스는 services 테이블의 event_ids다.
+  // 이벤트 목록 자체엔 저장하지 않고, 편집 중일 때만 현재 연결 상태를 계산해 보여준다.
+  const { categories, subcategories, services, reload: reloadServices } = useServiceCatalog({
+    includeHidden: true,
+  });
+  const [linkedServiceIds, setLinkedServiceIds] = useState<string[]>([]);
+
   const filteredEvents = filter === "all"
     ? events
     : events.filter((e) => getStatus(e) === filter);
@@ -80,11 +90,33 @@ export default function EventsAdminPage() {
       startDate: e.startDate || "",
       endDate: e.endDate || "",
     });
+    setLinkedServiceIds(services.filter((s) => (s.eventIds ?? []).includes(e.id)).map((s) => s.id));
   };
 
   const startNew = () => {
     setEditing("new");
     setDraft(emptyEvent);
+    setLinkedServiceIds([]);
+  };
+
+  /** 선택된 시술 목록과 실제 저장된 event_ids의 차이만 골라 필요한 시술만 patch한다 */
+  const syncLinkedServices = async (eventId: number, nextServiceIds: string[]) => {
+    const nextSet = new Set(nextServiceIds);
+    const updates: { id: string; eventIds: number[] }[] = [];
+    for (const s of services) {
+      const current = s.eventIds ?? [];
+      const shouldHave = nextSet.has(s.id);
+      const has = current.includes(eventId);
+      if (shouldHave === has) continue;
+      updates.push({
+        id: s.id,
+        eventIds: shouldHave ? [...current, eventId] : current.filter((id) => id !== eventId),
+      });
+    }
+    if (updates.length === 0) return true;
+    const ok = await patchServices(updates);
+    if (ok) reloadServices();
+    return ok;
   };
 
   const save = async () => {
@@ -93,9 +125,11 @@ export default function EventsAdminPage() {
       return;
     }
     const wasNew = editing === "new";
+    let newId: number | null = null;
     const ok = await update((d) => {
       if (editing === "new") {
         const nextId = Math.max(0, ...d.events.map((e) => e.id)) + 1;
+        newId = nextId;
         return { ...d, events: [{ ...draft, id: nextId }, ...d.events] };
       }
       return {
@@ -105,6 +139,10 @@ export default function EventsAdminPage() {
         ),
       };
     });
+    if (ok) {
+      const eventId = wasNew ? newId! : (editing as number);
+      await syncLinkedServices(eventId, linkedServiceIds);
+    }
     setEditing(null);
     if (ok) setToast(wasNew ? "이벤트가 추가되었습니다" : "이벤트가 저장되었습니다");
   };
@@ -119,7 +157,11 @@ export default function EventsAdminPage() {
         items: (d.popup.items ?? []).filter((it) => it.eventId !== id),
       },
     }));
-    if (ok) setToast("이벤트가 삭제되었습니다");
+    if (ok) {
+      // 삭제된 이벤트를 참조하던 시술들의 event_ids에서도 정리한다 (고아 참조 방지)
+      await syncLinkedServices(id, []);
+      setToast("이벤트가 삭제되었습니다");
+    }
   };
 
   const move = (id: number, dir: -1 | 1) => {
@@ -210,6 +252,19 @@ export default function EventsAdminPage() {
                   value={draft.image}
                   onChange={(v) => setDraft((p) => ({ ...p, image: v }))}
                   aspectRatio="4 / 3"
+                />
+              </Field>
+              <Field
+                label="이벤트 적용 시술"
+                hint="이 이벤트가 적용되는 시술을 선택하세요. 이벤트 상세 페이지에 목록으로 표시되고, 시술 목록에서도 '이벤트' 탭으로 모아 볼 수 있습니다."
+              >
+                <LinkedServicesPicker
+                  selectedIds={linkedServiceIds}
+                  onChange={setLinkedServiceIds}
+                  categories={categories}
+                  subcategories={subcategories}
+                  services={services}
+                  locale={editingLocale}
                 />
               </Field>
             </div>

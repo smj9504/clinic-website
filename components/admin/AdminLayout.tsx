@@ -248,7 +248,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {clinicName} 관리자
             </span>
           </div>
-          <div className="p-4 md:p-10 max-w-6xl">
+          <div className="p-4 md:p-10 max-w-[90rem]">
             {dataLoaded ? children : (
               <div className="flex items-center justify-center py-20 text-ink-muted">
                 데이터를 불러오는 중...

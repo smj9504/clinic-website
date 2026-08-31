@@ -2,11 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import EventImage from "@/components/EventImage";
+import ServiceCard from "@/components/services/ServiceCard";
 import { useSiteData, getMenuLabel } from "@/lib/useSiteData";
-import { useT } from "@/lib/i18n";
+import { useServiceCatalog } from "@/lib/useServices";
+import { isServiceVisible } from "@/lib/services";
+import { useLocale, useT } from "@/lib/i18n";
 import { todayKST, formatEventPeriod } from "@/lib/date";
+import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -20,12 +25,19 @@ function isEnded(ev: { endDate?: string }) {
 export default function EventDetailPage() {
   const { id } = useParams();
   const { events, clinicInfo, menus } = useSiteData();
+  const { services } = useServiceCatalog();
+  const { locale } = useLocale();
   const t = useT();
   const fallbackImage = clinicInfo.defaultImage || FALLBACK_IMAGE;
   const eventsLabel = getMenuLabel(menus, "/events", t("events.title"));
 
   const event = events.find((e) => String(e.id) === id);
   const ended = event ? isEnded(event) : false;
+
+  const linkedServices = useMemo(() => {
+    if (!event) return [];
+    return services.filter((s) => (s.eventIds ?? []).includes(event.id) && isServiceVisible(s));
+  }, [services, event]);
 
   if (!event) {
     return (
@@ -41,7 +53,7 @@ export default function EventDetailPage() {
     );
   }
 
-  const otherEvents = events.filter((e) => e.id !== event.id).slice(0, 2);
+  const otherEvents = events.filter((e) => e.id !== event.id).slice(0, 3);
 
   return (
     <>
@@ -49,10 +61,11 @@ export default function EventDetailPage() {
       <section className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden">
         <div className="absolute inset-0">
           <Image
-            src={event.image || fallbackImage}
+            src={stripImagePosition(event.image || fallbackImage)}
             alt={event.title}
             fill
             className="object-cover"
+            style={{ objectPosition: toObjectPosition(event.image || fallbackImage) }}
             sizes="100vw"
             priority
             quality={75}
@@ -221,6 +234,31 @@ export default function EventDetailPage() {
               </div>
             </aside>
           </div>
+
+          {/* 이벤트 적용 시술 */}
+          {linkedServices.length > 0 && (
+            <div className="mt-20 md:mt-28 pt-16 md:pt-20 border-t border-line">
+              <div className="mb-10">
+                <span className="section-label block mb-4">{t("badge.event")}</span>
+                <h2 className="section-title">{t("events.linkedServices")}</h2>
+                <div className="section-divider" />
+                <p className="mt-5 text-ink-muted" style={{ letterSpacing: "-0.01em" }}>
+                  {t("events.linkedServicesHint")}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {linkedServices.map((service) => (
+                  <ServiceCard
+                    key={service.id}
+                    service={service}
+                    locale={locale}
+                    fallbackImage={fallbackImage}
+                    t={t}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -234,7 +272,7 @@ export default function EventDetailPage() {
               <div className="section-divider" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-start gap-8">
               {otherEvents.map((other) => (
                 <Link
                   key={other.id}
@@ -243,17 +281,17 @@ export default function EventDetailPage() {
                 >
                   <EventImage
                     ratio={16 / 10}
-                    wrapperClassName="overflow-hidden rounded mb-6 bg-bg-alt"
+                    wrapperClassName="overflow-hidden rounded mb-5 bg-bg-alt"
                     className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                     src={other.image || fallbackImage}
                     alt={other.title}
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
                     quality={75}
                     placeholder="blur"
                     blurDataURL={BLUR_PLACEHOLDER}
                   />
                   <div
-                    className="text-xs font-semibold uppercase text-ink-muted mb-3"
+                    className="text-xs font-semibold uppercase text-ink-muted mb-2.5"
                     style={{ letterSpacing: "0.15em" }}
                   >
                     {formatEventPeriod(other, t)}
@@ -261,7 +299,7 @@ export default function EventDetailPage() {
                   <h3
                     className="font-display mb-2"
                     style={{
-                      fontSize: "1.35rem",
+                      fontSize: "1.15rem",
                       fontWeight: 600,
                       letterSpacing: "-0.03em",
                       lineHeight: 1.3,
@@ -273,7 +311,7 @@ export default function EventDetailPage() {
                     </span>
                   </h3>
                   <span
-                    className="inline-flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all mt-3"
+                    className="inline-flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all mt-2"
                     style={{ letterSpacing: "-0.02em" }}
                   >
                     {t("section.detail")}
