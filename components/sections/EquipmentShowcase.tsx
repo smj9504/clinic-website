@@ -65,7 +65,8 @@ function EquipmentTabs({
  * 대신 클리닉 로고를 보여준다. 동영상/이미지 분기는 EquipmentImage 내부에서
  * 처리하므로 여기서는 그대로 위임한다. */
 function EquipmentMedia({ equipment: eq }: { equipment: Equipment }) {
-  return <EquipmentImage key={eq.id} src={eq.image} alt={eq.title} sizes="100vw" quality={80} />;
+  const src = eq.showcaseImage || eq.image;
+  return <EquipmentImage key={eq.id} src={src} alt={eq.title} sizes="100vw" quality={90} />;
 }
 
 /**

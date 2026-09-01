@@ -3,10 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { computePrice, formatKRW } from "@/lib/price";
-import { isVideoUrl, priceText, serviceText, type Service, type ServiceBadge } from "@/lib/services";
+import { isEventService, isVideoUrl, priceText, serviceText, type Service, type ServiceBadge } from "@/lib/services";
 import type { Locale } from "@/lib/i18n";
 import type { TranslationKey } from "@/lib/translations";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -52,14 +52,25 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
           alt={name}
           fill
           className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-          style={{ objectPosition: toObjectPosition(isVideoUrl(service.image) ? fallbackImage : service.image || fallbackImage) }}
+          style={{ ...getImageCropStyle(isVideoUrl(service.image) ? fallbackImage : service.image || fallbackImage) }}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           quality={75}
           placeholder="blur"
           blurDataURL={BLUR_PLACEHOLDER}
         />
-        {service.badges.length > 0 && (
+        {(service.badges.length > 0 || isEventService(service)) && (
           <div className="absolute right-0 bottom-0 flex">
+            {/* EVENT는 admin이 badges 배열에 직접 넣는 게 아니라 eventIds 연결 여부로만
+                자동 계산된다 — 이벤트 화면에서 시술을 연결/해제하면 그대로 반영되고,
+                수동으로 껐다 켰다 할 별도 설정을 두지 않는다. */}
+            {isEventService(service) && (
+              <span
+                className="px-2 py-1 text-[0.6rem] font-bold bg-sale text-white"
+                style={{ letterSpacing: "0.08em" }}
+              >
+                EVENT
+              </span>
+            )}
             {service.badges.map((badge) => (
               <span
                 key={badge}

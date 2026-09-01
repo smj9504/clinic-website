@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { defaultHeroEffect } from "@/lib/data";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const IMAGE_INTERVAL = 8000;
 // 동영상 duration을 아직 모를 때(메타데이터 로딩 전) 쓰는 안전장치용 상한 — 무한 대기 방지
@@ -97,7 +97,7 @@ export default function Hero() {
                   autoPlay
                   playsInline
                   className="absolute inset-0 w-full h-full object-cover"
-                  style={{ objectPosition: toObjectPosition(s.image) }}
+                  style={{ ...getImageCropStyle(s.image) }}
                   onLoadedMetadata={(e) => {
                     if (i === activeIndex) {
                       setActiveVideoDuration(e.currentTarget.duration * 1000);
@@ -118,7 +118,7 @@ export default function Hero() {
                     fill
                     priority={i === activeIndex}
                     className="object-cover"
-                    style={{ objectPosition: toObjectPosition(s.image) }}
+                    style={{ ...getImageCropStyle(s.image) }}
                     sizes="100vw"
                     quality={75}
                     placeholder="blur"

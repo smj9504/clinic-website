@@ -385,6 +385,8 @@ export type SiteData = {
   equipment?: Equipment[];
   /** /skin-beauty 페이지의 두 장비소개 섹션이 각각 보여줄 장비 구성 (선택 사항) */
   skinBeautyEquipmentSections?: SkinBeautyEquipmentSections;
+  /** /equipment(장비소개) 목록 페이지 맨 위 제목 영역의 배경(30% 밝기). 비어 있으면 그라디언트만 표시된다 */
+  equipmentPageBanner?: string;
   /** 메인페이지 섹션 표시 순서/숨김 (Hero 제외) */
   homeSections?: HomeSectionConfig[];
 };
@@ -463,12 +465,18 @@ function stripBase64Images(data: SiteData): SiteData {
     subPages: (data.subPages ?? []).map((sp) => ({
       ...sp,
       image: strip(sp.image ?? ""),
+      titleBgImage: strip(sp.titleBgImage ?? ""),
       fullBleedImage: strip(sp.fullBleedImage ?? ""),
       areaMap: sp.areaMap
         ? { ...sp.areaMap, image: sp.areaMap.image ? strip(sp.areaMap.image) : sp.areaMap.image }
         : sp.areaMap,
     })),
-    equipment: (data.equipment ?? []).map((eq) => ({ ...eq, image: strip(eq.image ?? "") })),
+    equipment: (data.equipment ?? []).map((eq) => ({
+      ...eq,
+      image: strip(eq.image ?? ""),
+      showcaseImage: strip(eq.showcaseImage ?? ""),
+    })),
+    equipmentPageBanner: strip(data.equipmentPageBanner ?? ""),
   };
 }
 
@@ -606,6 +614,7 @@ export async function syncImages(locale: Locale) {
       return {
         ...sp,
         image: cur?.image ?? sp.image,
+        titleBgImage: cur?.titleBgImage ?? sp.titleBgImage,
         fullBleedImage: cur?.fullBleedImage ?? sp.fullBleedImage,
         areaMap: sp.areaMap
           ? { ...sp.areaMap, image: cur?.areaMap?.image !== undefined ? cur.areaMap.image : sp.areaMap.image }
@@ -614,8 +623,14 @@ export async function syncImages(locale: Locale) {
     }),
     equipment: (other.equipment ?? []).map((eq) => {
       const cur = (current.equipment ?? []).find((c) => c.id === eq.id);
-      return { ...eq, image: cur?.image ?? eq.image, serviceIds: cur?.serviceIds ?? eq.serviceIds };
+      return {
+        ...eq,
+        image: cur?.image ?? eq.image,
+        showcaseImage: cur?.showcaseImage ?? eq.showcaseImage,
+        serviceIds: cur?.serviceIds ?? eq.serviceIds,
+      };
     }),
+    equipmentPageBanner: current.equipmentPageBanner ?? other.equipmentPageBanner,
   };
 
   await setSiteData(synced, otherLocale);
@@ -885,6 +900,7 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
           intro: next() || undefined,
           body: next(),
           image: sp.image,
+          titleBgImage: sp.titleBgImage,
           fullBleedImage: sp.fullBleedImage,
           isHidden: sp.isHidden,
           sortOrder: sp.sortOrder,
@@ -926,10 +942,12 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
         description: next(),
         tags: eq.tags.map(() => next()),
         image: eq.image,
+        showcaseImage: eq.showcaseImage,
         isHidden: eq.isHidden,
         sortOrder: eq.sortOrder,
         serviceIds: eq.serviceIds ?? [],
       })),
+      equipmentPageBanner: koData.equipmentPageBanner,
     };
 
     await setSiteData(translatedEn, "en");

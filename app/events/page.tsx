@@ -5,7 +5,7 @@ import Link from "next/link";
 import EventImage from "@/components/EventImage";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -43,7 +43,7 @@ export default function EventsPage() {
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
-            <Image src={stripImagePosition(banner)} alt="고운빛한의원 이벤트" fill className="object-cover" style={{ objectPosition: toObjectPosition(banner) }} sizes="100vw" quality={75} placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
+            <Image src={stripImagePosition(banner)} alt="고운빛한의원 이벤트" fill className="object-cover" style={{ ...getImageCropStyle(banner) }} sizes="100vw" quality={75} placeholder="blur" blurDataURL={BLUR_PLACEHOLDER} />
           </div>
         )}
         <div className="container-default relative text-ink-inverse">

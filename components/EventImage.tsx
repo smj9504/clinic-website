@@ -2,7 +2,7 @@
 
 import Image, { type ImageProps } from "next/image";
 import { useCallback, useState, type ReactNode } from "react";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 type EventImageProps = Omit<ImageProps, "onLoad" | "className" | "fill" | "style"> & {
   /** 디자인된 박스 비율(가로/세로). 가로형 이미지는 이 비율로 꽉 채워진다(cover). */
@@ -44,7 +44,7 @@ export default function EventImage({
   // 그런 프래그먼트를 가질 수 없으므로 문자열일 때만 유틸을 거친다.
   const rawSrc = typeof src === "string" ? src : null;
   const cleanSrc = rawSrc !== null ? stripImagePosition(rawSrc) : src;
-  const objectPosition = rawSrc !== null ? toObjectPosition(rawSrc) : undefined;
+  const cropStyle = rawSrc !== null ? getImageCropStyle(rawSrc) : undefined;
 
   return (
     <div className={`relative w-full ${wrapperClassName}`} style={{ aspectRatio: boxRatio }}>
@@ -56,7 +56,7 @@ export default function EventImage({
         onLoad={(e) => measure(e.currentTarget)}
         fill
         className={`object-cover ${className}`}
-        style={objectPosition ? { objectPosition } : undefined}
+        style={cropStyle}
       />
       {children}
     </div>

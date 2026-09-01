@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -51,7 +51,7 @@ export default function NoticeDetailPage() {
               alt={notice.title}
               fill
               className="object-cover"
-              style={{ objectPosition: toObjectPosition(banner) }}
+              style={{ ...getImageCropStyle(banner) }}
               sizes="100vw"
               quality={75}
               placeholder="blur"

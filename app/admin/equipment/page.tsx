@@ -32,7 +32,7 @@ function textToTags(text: string) {
 
 export default function EquipmentAdminPage() {
   const { editingLocale } = useAdminLocale();
-  const { equipment } = useSiteDataForLocale(editingLocale);
+  const { equipment, equipmentPageBanner } = useSiteDataForLocale(editingLocale);
   const { categories, subcategories, services } = useServiceCatalog({ includeHidden: true });
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>({});
@@ -41,6 +41,11 @@ export default function EquipmentAdminPage() {
 
   const sorted = [...(equipment ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
   const update = (fn: (data: SiteData) => SiteData) => updateSiteData(fn, editingLocale);
+
+  const updatePageBanner = async (v: string) => {
+    await update((d) => ({ ...d, equipmentPageBanner: v }));
+    await syncImages(editingLocale);
+  };
 
   const startEdit = (eq: Equipment) => {
     setEditing(eq.id);
@@ -119,6 +124,19 @@ export default function EquipmentAdminPage() {
         actions={<Button onClick={add} disabled={adding}>+ 장비 추가</Button>}
       />
 
+      <Card className="mb-6">
+        <Field
+          label="상단 배경 이미지"
+          hint="/equipment(장비소개) 목록 페이지 맨 위 제목 영역의 배경(어둡게 처리되어 30% 밝기로)입니다. 비워두면 그라디언트만 표시됩니다"
+        >
+          <ImageInput
+            value={equipmentPageBanner ?? ""}
+            onChange={updatePageBanner}
+            aspectRatio="16 / 5"
+          />
+        </Field>
+      </Card>
+
       <Card className="p-0 overflow-hidden">
         {sorted.length === 0 && (
           <div className="px-4 py-8 text-center text-ink-muted text-sm">등록된 장비가 없습니다.</div>
@@ -167,12 +185,22 @@ export default function EquipmentAdminPage() {
                     locale={editingLocale}
                   />
                 </Field>
-                <Field label="이미지 · 동영상">
+                <Field label="이미지 · 동영상" hint="장비소개 목록 카드, 피부미용 페이지 콜라주 등에 쓰이는 4:3 대표 이미지입니다">
                   <ImageInput
                     value={draft.image ?? eq.image}
                     onChange={(v) => setDraft((p) => ({ ...p, image: v }))}
                     aspectRatio="4 / 3"
                     allowVideo
+                  />
+                </Field>
+                <Field
+                  label="와이드 이미지 (선택)"
+                  hint="피부미용 페이지 장비 탭 하단 전체폭 영역 전용 고화질 사진입니다. 권장 비율 21:9, 고해상도(2000px 이상) 권장. 비워두면 위 대표 이미지가 대신 쓰입니다"
+                >
+                  <ImageInput
+                    value={draft.showcaseImage ?? eq.showcaseImage ?? ""}
+                    onChange={(v) => setDraft((p) => ({ ...p, showcaseImage: v }))}
+                    aspectRatio="21 / 9"
                   />
                 </Field>
                 <div className="flex gap-2 mt-4">

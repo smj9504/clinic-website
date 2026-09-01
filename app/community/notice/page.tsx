@@ -6,7 +6,7 @@ import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import type { EndedVisibility } from "@/lib/storage";
 import { todayKST, addDays } from "@/lib/date";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 function isHidden(item: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
   const today = todayKST();
@@ -31,7 +31,7 @@ export default function NoticePage() {
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
-            <Image src={stripImagePosition(banner)} alt="고운빛한의원 공지사항" fill className="object-cover" style={{ objectPosition: toObjectPosition(banner) }} sizes="100vw" />
+            <Image src={stripImagePosition(banner)} alt="고운빛한의원 공지사항" fill className="object-cover" style={{ ...getImageCropStyle(banner) }} sizes="100vw" />
           </div>
         )}
         <div className="container-default relative text-ink-inverse">

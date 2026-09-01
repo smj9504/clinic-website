@@ -6,10 +6,10 @@ import { useParams } from "next/navigation";
 import PriceTable from "@/components/services/PriceTable";
 import ServiceBlocks from "@/components/services/ServiceBlocks";
 import { useService } from "@/lib/useServices";
-import { isVideoUrl, serviceText } from "@/lib/services";
+import { isEventService, isVideoUrl, serviceText } from "@/lib/services";
 import { useSiteData } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -81,7 +81,7 @@ export default function ServiceDetailPage() {
                 controls
                 playsInline
                 className="absolute inset-0 w-full h-full object-cover"
-                style={{ objectPosition: toObjectPosition(service.image) }}
+                style={{ ...getImageCropStyle(service.image) }}
               />
             ) : (
               <Image
@@ -89,7 +89,7 @@ export default function ServiceDetailPage() {
                 alt={name}
                 fill
                 className="object-cover"
-                style={{ objectPosition: toObjectPosition(service.image || fallbackImage) }}
+                style={{ ...getImageCropStyle(service.image || fallbackImage) }}
                 sizes="(max-width: 1024px) 100vw, 45vw"
                 priority
                 quality={80}
@@ -97,8 +97,16 @@ export default function ServiceDetailPage() {
                 blurDataURL={BLUR_PLACEHOLDER}
               />
             )}
-            {service.badges.length > 0 && (
+            {(service.badges.length > 0 || isEventService(service)) && (
               <div className="absolute right-0 bottom-0 flex">
+                {isEventService(service) && (
+                  <span
+                    className="px-2.5 py-1.5 text-xs font-bold bg-sale text-white"
+                    style={{ letterSpacing: "0.08em" }}
+                  >
+                    EVENT
+                  </span>
+                )}
                 {service.badges.map((badge) => (
                   <span
                     key={badge}
@@ -154,6 +162,7 @@ export default function ServiceDetailPage() {
             prices={service.prices}
             locale={locale}
             t={t}
+            isEvent={isEventService(service)}
           />
 
           {period && (

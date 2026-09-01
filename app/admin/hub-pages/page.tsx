@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
-import { updateSiteData, type SiteData, type MenuItem } from "@/lib/storage";
+import { updateSiteData, syncImages, type SiteData, type MenuItem } from "@/lib/storage";
 import type { SkinBeautyEquipmentSections } from "@/lib/data";
 import { PageHeader, Field, TextInput, TextArea, Card, ImageInput, Tabs, TabPanel } from "@/components/admin/ui";
 
@@ -46,6 +46,19 @@ export default function HubPagesAdminPage() {
       }),
       editingLocale
     );
+  };
+
+  const updateFullBleedImage = async (subPageId: string, fullBleedImage: string) => {
+    await updateSiteData(
+      (d: SiteData) => ({
+        ...d,
+        subPages: (d.subPages ?? []).map((sp) =>
+          sp.id === subPageId ? { ...sp, fullBleedImage } : sp
+        ),
+      }),
+      editingLocale
+    );
+    await syncImages(editingLocale);
   };
 
   const effectiveEquipmentSections = skinBeautyEquipmentSections ?? DEFAULT_EQUIPMENT_SECTIONS;
@@ -121,42 +134,52 @@ export default function HubPagesAdminPage() {
                 {items.length === 0 ? (
                   <p className="text-sm text-ink-muted py-6 text-center">등록된 카드가 없습니다.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {items.map((item) => (
                       <div
                         key={item.id}
-                        className={`flex items-center gap-3 border border-line rounded-lg p-3 ${
-                          item.isHidden ? "opacity-50" : ""
-                        }`}
+                        className={`border border-line rounded-lg p-3 ${item.isHidden ? "opacity-50" : ""}`}
                       >
-                        <div className="w-16 h-12 bg-bg-alt rounded overflow-hidden shrink-0 flex items-center justify-center">
-                          {item.image ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={item.image} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-ink-muted text-xs">사진 없음</span>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-medium truncate">{item.title}</span>
-                            {item.isHidden && (
-                              <span className="text-xs px-1.5 py-0.5 bg-bg-alt rounded text-ink-muted shrink-0">
-                                숨김
-                              </span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-16 h-12 bg-bg-alt rounded overflow-hidden shrink-0 flex items-center justify-center">
+                            {item.image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={item.image} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-ink-muted text-xs">사진 없음</span>
                             )}
                           </div>
-                          <p className="text-xs text-ink-muted truncate mt-0.5">
-                            {item.intro || "소개 문구 없음"}
-                          </p>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-medium truncate">{item.title}</span>
+                              {item.isHidden && (
+                                <span className="text-xs px-1.5 py-0.5 bg-bg-alt rounded text-ink-muted shrink-0">
+                                  숨김
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-ink-muted truncate mt-0.5">
+                              {item.intro || "소개 문구 없음"}
+                            </p>
+                          </div>
+                          <Link
+                            href={`/admin/subpages/${item.id}`}
+                            className="inline-flex items-center gap-1.5 rounded font-semibold transition-colors border border-line bg-surface text-ink hover:bg-bg-alt px-3 py-1.5 text-xs shrink-0"
+                            style={{ letterSpacing: "-0.02em" }}
+                          >
+                            편집
+                          </Link>
                         </div>
-                        <Link
-                          href={`/admin/subpages/${item.id}`}
-                          className="inline-flex items-center gap-1.5 rounded font-semibold transition-colors border border-line bg-surface text-ink hover:bg-bg-alt px-3 py-1.5 text-xs shrink-0"
-                          style={{ letterSpacing: "-0.02em" }}
-                        >
-                          편집
-                        </Link>
+                        <div className="mt-3 pt-3 border-t border-line">
+                          <span className="text-xs text-ink-muted block mb-1.5">
+                            넓은 배너 이미지 — 이 카드 블록 아래에 화면 좌우 끝까지 꽉 채워 표시됩니다 (선택 사항, 권장 비율 21:9)
+                          </span>
+                          <ImageInput
+                            value={item.fullBleedImage ?? ""}
+                            onChange={(v) => updateFullBleedImage(item.id, v)}
+                            aspectRatio="21 / 9"
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -187,6 +187,8 @@ export type SubPage = {
   intro?: string;
   body: string;
   image?: string;
+  /** 상세페이지 맨 위 제목 영역의 배경(30% 밝기). 비어 있으면 image로 대체된다 */
+  titleBgImage?: string;
   /** 허브 페이지(피부미용/한방치료)에서 이 항목 블록 아래에 좌우 꽉 채워 표시하는 이미지 */
   fullBleedImage?: string;
   isHidden: boolean;
@@ -263,6 +265,13 @@ export type HomeSectionConfig = {
 export type Equipment = {
   id: string;
   image: string;
+  /**
+   * /skin-beauty의 EquipmentShowcase 하단 전체폭(16:9 · 데스크톱 21:9) 미디어에만
+   * 쓰이는 고화질 와이드 이미지. 카드 썸네일용 image(4:3)와 비율이 달라 그대로
+   * 재사용하면 화질이 떨어지거나 크롭이 부자연스러워 별도로 관리한다. 비어 있으면
+   * image로 폴백한다.
+   */
+  showcaseImage?: string;
   title: string;
   subtitle?: string;
   tags: string[];

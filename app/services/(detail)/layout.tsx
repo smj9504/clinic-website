@@ -7,10 +7,10 @@ import CartSummaryBar from "@/components/services/CartSummaryBar";
 import CategoryFilter, { ALL } from "@/components/services/CategoryFilter";
 import ServiceCard from "@/components/services/ServiceCard";
 import { useServiceCatalog } from "@/lib/useServices";
-import { categoryText, isVideoUrl, serviceText } from "@/lib/services";
+import { categoryText, isEventService, isVideoUrl, serviceText } from "@/lib/services";
 import { useSiteData } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
@@ -140,7 +140,7 @@ export default function ServiceDetailLayout({ children }: { children: React.Reac
                             alt=""
                             fill
                             className="object-cover"
-                            style={{ objectPosition: toObjectPosition(isVideoUrl(s.image) ? fallbackImage : s.image || fallbackImage) }}
+                            style={{ ...getImageCropStyle(isVideoUrl(s.image) ? fallbackImage : s.image || fallbackImage) }}
                             sizes="28px"
                             quality={60}
                           />
@@ -155,6 +155,14 @@ export default function ServiceDetailLayout({ children }: { children: React.Reac
                         >
                           {label}
                         </span>
+                        {isEventService(s) && (
+                          <span
+                            className="shrink-0 px-1.5 py-0.5 text-[0.6rem] font-bold bg-sale text-white rounded-sm"
+                            style={{ letterSpacing: "0.05em" }}
+                          >
+                            EVENT
+                          </span>
+                        )}
                       </Link>
                     );
                   })}

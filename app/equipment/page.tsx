@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useSiteData } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
 import { useServiceCatalog } from "@/lib/useServices";
@@ -8,6 +9,10 @@ import { isServiceVisible, type Service } from "@/lib/services";
 import type { Equipment } from "@/lib/data";
 import EquipmentServicesModal from "@/components/equipment/EquipmentServicesModal";
 import EquipmentImage from "@/components/EquipmentImage";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+
+const BLUR_PLACEHOLDER =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
 
 /** 장비에 연결된 시술 중, 지금 공개 화면에 노출 가능한 것만 골라낸다 */
 function resolveLinkedServices(eq: Equipment, services: Service[]): Service[] {
@@ -16,7 +21,7 @@ function resolveLinkedServices(eq: Equipment, services: Service[]): Service[] {
 }
 
 export default function EquipmentPage() {
-  const { equipment, clinicInfo } = useSiteData();
+  const { equipment, clinicInfo, equipmentPageBanner } = useSiteData();
   const { locale } = useLocale();
   const t = useT();
   const { services } = useServiceCatalog();
@@ -35,6 +40,21 @@ export default function EquipmentPage() {
         className="relative pt-32 pb-10 md:pt-44 md:pb-14 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
+        {equipmentPageBanner && (
+          <div className="absolute inset-0 opacity-30">
+            <Image
+              src={stripImagePosition(equipmentPageBanner)}
+              alt="고운빛한의원 장비소개"
+              fill
+              className="object-cover"
+              style={{ ...getImageCropStyle(equipmentPageBanner) }}
+              sizes="100vw"
+              quality={75}
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
+            />
+          </div>
+        )}
         <div className="container-default relative text-ink-inverse">
           <span
             className="text-xs font-semibold uppercase opacity-70 mb-4 block"

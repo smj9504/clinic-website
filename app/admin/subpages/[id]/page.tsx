@@ -372,7 +372,7 @@ export default function SubPageEditPage() {
     checklistHero: effectiveChecklistHero.items.length > 0,
     checklistBlocks: effectiveChecklistBlocks.length > 0,
   };
-  const imagesHaveContent = Boolean(draft.image) && Boolean(draft.fullBleedImage);
+  const imagesHaveContent = Boolean(draft.image);
   const basicHasContent = Boolean(draft.title?.trim()) && Boolean(draft.body?.trim());
 
   const save = async () => {
@@ -532,7 +532,7 @@ export default function SubPageEditPage() {
         <TabPanel id="images" active={activeTab}>
           <Field
             label="대표 이미지"
-            hint="본문 상단 대표 사진으로 쓰이고, 페이지 맨 위 제목 영역의 배경(어둡게 처리되어 30% 밝기로)으로도 함께 표시됩니다"
+            hint="본문 상단에 표시되는 대표 사진입니다"
           >
             <ImageInput
               value={draft.image ?? ""}
@@ -541,15 +541,22 @@ export default function SubPageEditPage() {
             />
           </Field>
           <Field
-            label="넓은 배너 이미지"
-            hint="목록 페이지에서 이 항목 아래에 화면 좌우 끝까지 꽉 채워 표시됩니다 (선택 사항, 권장 비율 21:9)"
+            label="상단 배경 이미지"
+            hint="페이지 맨 위 제목 영역의 배경(어둡게 처리되어 30% 밝기로)입니다. 비워두면 대표 이미지가 대신 쓰입니다"
           >
             <ImageInput
-              value={draft.fullBleedImage ?? ""}
-              onChange={(v) => patch({ fullBleedImage: v })}
-              aspectRatio="21 / 9"
+              value={draft.titleBgImage ?? ""}
+              onChange={(v) => patch({ titleBgImage: v })}
+              aspectRatio="16 / 9"
             />
           </Field>
+          <p className="text-xs text-ink-muted">
+            목록 페이지(피부미용·한방치료)의 넓은 배너 이미지는{" "}
+            <Link href="/admin/hub-pages" className="text-accent hover:underline">
+              피부미용 · 한방치료 페이지
+            </Link>{" "}
+            화면에서 관리합니다.
+          </p>
         </TabPanel>
 
         <TabPanel id="areaMap" active={activeTab}>

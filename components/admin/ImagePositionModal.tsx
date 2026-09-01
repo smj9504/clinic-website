@@ -3,12 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { parseImagePosition, stripImagePosition } from "@/lib/imagePosition";
 
+const MIN_SCALE = 1;
+const MAX_SCALE = 3;
+const SCALE_STEP = 0.05;
+
 type Props = {
   /** 위치 프래그먼트가 섞여 있어도, 없어도 상관없다 — 내부에서 파싱한다 */
   url: string;
   aspectRatio: string;
   isVideo: boolean;
-  onConfirm: (x: number, y: number) => void;
+  onConfirm: (x: number, y: number, scale: number) => void;
   onClose: () => void;
   /**
    * 같은 이미지가 이 비율 외에 다른 화면에도 그대로(동일 초점 좌표로) 노출될 때,
@@ -34,12 +38,13 @@ function clientToPercent(clientX: number, clientY: number, rect: DOMRect) {
  */
 export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfirm, onClose, extraRatios = [] }: Props) {
   const cleanUrl = stripImagePosition(url);
-  const initial = parseImagePosition(url) ?? { x: 50, y: 50 };
+  const initial = parseImagePosition(url) ?? { x: 50, y: 50, scale: 1 };
 
   const frameRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ pointerId: number } | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState(initial);
+  const [pos, setPos] = useState({ x: initial.x, y: initial.y });
+  const [scale, setScale] = useState(initial.scale);
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
@@ -84,7 +89,10 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
     setIsDragging(false);
   };
 
-  const reset = () => setPos({ x: 50, y: 50 });
+  const reset = () => {
+    setPos({ x: 50, y: 50 });
+    setScale(1);
+  };
 
   return (
     <div
@@ -114,6 +122,7 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
         </h2>
         <p className="text-xs text-ink-muted mb-5" style={{ letterSpacing: "-0.01em" }}>
           사진을 마우스로 드래그해서 실제 화면에 보여질 위치를 정하세요. 비율은 그대로 유지됩니다.
+          아래 슬라이더로 확대/축소도 조절할 수 있습니다.
           {extraRatios.length > 0 &&
             " 같은 사진이 아래 비율로도 함께 노출되니, 모든 미리보기가 괜찮은 지점을 찾으세요."}
         </p>
@@ -135,7 +144,11 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
               loop
               playsInline
               className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-              style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
+              style={{
+                objectPosition: `${pos.x}% ${pos.y}%`,
+                transform: scale !== 1 ? `scale(${scale})` : undefined,
+                transformOrigin: `${pos.x}% ${pos.y}%`,
+              }}
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -143,7 +156,11 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
               src={cleanUrl}
               alt=""
               className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-              style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
+              style={{
+                objectPosition: `${pos.x}% ${pos.y}%`,
+                transform: scale !== 1 ? `scale(${scale})` : undefined,
+                transformOrigin: `${pos.x}% ${pos.y}%`,
+              }}
             />
           )}
 
@@ -163,6 +180,22 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
           />
         </div>
 
+        <div className="flex items-center gap-3 mt-4">
+          <label className="text-xs text-ink-muted shrink-0" style={{ letterSpacing: "-0.01em" }}>
+            확대
+          </label>
+          <input
+            type="range"
+            min={MIN_SCALE}
+            max={MAX_SCALE}
+            step={SCALE_STEP}
+            value={scale}
+            onChange={(e) => setScale(Number(e.target.value))}
+            className="flex-1 accent-ink"
+          />
+          <span className="text-xs text-ink-muted w-10 text-right font-mono">{scale.toFixed(2)}x</span>
+        </div>
+
         {extraRatios.length > 0 && (
           <div className="flex gap-3 mt-4 flex-wrap">
             {extraRatios.map((extra) => (
@@ -179,7 +212,11 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
                       loop
                       playsInline
                       className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                      style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
+                      style={{
+                        objectPosition: `${pos.x}% ${pos.y}%`,
+                        transform: scale !== 1 ? `scale(${scale})` : undefined,
+                        transformOrigin: `${pos.x}% ${pos.y}%`,
+                      }}
                     />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -187,7 +224,11 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
                       src={cleanUrl}
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                      style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
+                      style={{
+                        objectPosition: `${pos.x}% ${pos.y}%`,
+                        transform: scale !== 1 ? `scale(${scale})` : undefined,
+                        transformOrigin: `${pos.x}% ${pos.y}%`,
+                      }}
                     />
                   )}
                 </div>
@@ -219,7 +260,7 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
             </button>
             <button
               type="button"
-              onClick={() => onConfirm(pos.x, pos.y)}
+              onClick={() => onConfirm(pos.x, pos.y, scale)}
               className="px-4 py-2 text-sm bg-ink text-ink-inverse rounded hover:bg-ink-soft transition-colors font-semibold"
               style={{ letterSpacing: "-0.02em" }}
             >

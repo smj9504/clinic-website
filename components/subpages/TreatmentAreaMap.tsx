@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useScrollReveal } from "@/lib/useScrollReveal";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 export type TreatmentArea = {
   id: string;
@@ -57,7 +57,7 @@ export default function TreatmentAreaMap({
             alt={imageAlt}
             fill
             className="object-cover"
-            style={{ objectPosition: toObjectPosition(imageSrc) }}
+            style={{ ...getImageCropStyle(imageSrc) }}
             sizes="(max-width: 768px) 100vw, 768px"
             quality={80}
           />

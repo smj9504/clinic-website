@@ -6,7 +6,7 @@ import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import EquipmentShowcase from "@/components/sections/EquipmentShowcase";
 import EquipmentCarousel from "@/components/sections/EquipmentCarousel";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -33,7 +33,7 @@ export default function SkinBeautyPage() {
               alt="피부미용"
               fill
               className="object-cover"
-              style={{ objectPosition: toObjectPosition(banner) }}
+              style={{ ...getImageCropStyle(banner) }}
               sizes="100vw"
               quality={75}
               placeholder="blur"
@@ -113,7 +113,7 @@ export default function SkinBeautyPage() {
                       alt={item.title}
                       fill
                       className="object-cover"
-                      style={{ objectPosition: toObjectPosition(item.image) }}
+                      style={{ ...getImageCropStyle(item.image) }}
                       sizes="(max-width: 768px) 100vw, 50vw"
                       quality={75}
                       placeholder="blur"
@@ -134,7 +134,7 @@ export default function SkinBeautyPage() {
                     alt={item.title}
                     fill
                     className="object-cover"
-                    style={{ objectPosition: toObjectPosition(item.fullBleedImage) }}
+                    style={{ ...getImageCropStyle(item.fullBleedImage) }}
                     sizes="100vw"
                     quality={75}
                     placeholder="blur"

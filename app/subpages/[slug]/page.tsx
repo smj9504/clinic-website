@@ -21,7 +21,7 @@ import StepProcess from "@/components/subpages/StepProcess";
 import SequentialChecklist from "@/components/subpages/SequentialChecklist";
 import PointCards from "@/components/subpages/PointCards";
 import ChecklistBlocks from "@/components/subpages/ChecklistBlocks";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -109,7 +109,7 @@ function TabbedPoints({ group }: { group: ProseTabGroup }) {
               alt={group.imageAlt || active.title}
               fill
               className="object-cover"
-              style={{ objectPosition: toObjectPosition(group.image) }}
+              style={{ ...getImageCropStyle(group.image) }}
               sizes="(max-width: 768px) 100vw, 40vw"
               quality={75}
             />
@@ -185,9 +185,8 @@ function TabbedPoints({ group }: { group: ProseTabGroup }) {
 
 export default function SubPageDetail() {
   const { slug } = useParams();
-  const { subPages, menus, clinicInfo } = useSiteData();
+  const { subPages, menus } = useSiteData();
   const t = useT();
-  const fallbackImage = clinicInfo.defaultImage || "/gowoonbit.jpg";
   // 본문 전체(.prose)는 richtext 길이에 따라 수백~수천 px까지 늘어날 수 있어,
   // 기본 threshold(0.15)로는 컨테이너의 15%가 뷰포트에 들어올 때까지 기다리다가
   // 실질적으로 절대 발동하지 않는 경우가 생긴다(예: pain-treatment 본문 3100px+).
@@ -370,14 +369,14 @@ export default function SubPageDetail() {
         className="relative pt-32 pb-10 md:pt-44 md:pb-14 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
       >
-        {page.image && (
+        {(page.titleBgImage || page.image) && (
           <div className="absolute inset-0 opacity-30">
             <Image
-              src={stripImagePosition(page.image)}
+              src={stripImagePosition(page.titleBgImage || page.image || "")}
               alt={page.title}
               fill
               className="object-cover"
-              style={{ objectPosition: toObjectPosition(page.image) }}
+              style={{ ...getImageCropStyle(page.titleBgImage || page.image || "") }}
               sizes="100vw"
               priority
               quality={75}
@@ -422,22 +421,6 @@ export default function SubPageDetail() {
       <section className="pt-10 pb-20 md:pt-16 md:pb-32">
         <div className="container-default">
           <div className="max-w-5xl mx-auto">
-            {page.image && (
-              <div className="relative aspect-[16/9] rounded overflow-hidden mb-12 bg-bg-alt">
-                <Image
-                  src={stripImagePosition(page.image || fallbackImage)}
-                  alt={page.title}
-                  fill
-                  className="object-cover"
-                  style={{ objectPosition: toObjectPosition(page.image || fallbackImage) }}
-                  sizes="(max-width: 1024px) 100vw, 768px"
-                  quality={75}
-                  placeholder="blur"
-                  blurDataURL={BLUR_PLACEHOLDER}
-                />
-              </div>
-            )}
-
             {orderedSectionIds.map((sectionId) => (
               <Fragment key={sectionId}>{sectionNodes[sectionId]}</Fragment>
             ))}

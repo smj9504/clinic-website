@@ -12,6 +12,8 @@ export type PriceTableProps = {
   prices: ServicePrice[];
   locale: Locale;
   t: (key: TranslationKey) => string;
+  /** 이 시술이 이벤트에 연결되어 있으면, 할인이 적용된 옵션마다 "이벤트가" 라벨을 붙인다. */
+  isEvent?: boolean;
 };
 
 /**
@@ -24,7 +26,7 @@ export type PriceTableProps = {
  * 담을 때 이름·가격을 스냅샷으로 고정해 장바구니에 넣는다(lib/cart.tsx 참고) —
  * 원본 시술 데이터가 나중에 바뀌어도 이미 담긴 항목은 변하지 않아야 한다.
  */
-export default function PriceTable({ serviceId, serviceName, prices, locale, t }: PriceTableProps) {
+export default function PriceTable({ serviceId, serviceName, prices, locale, t, isEvent = false }: PriceTableProps) {
   const { addItem, removeItem, isSelected } = useCart();
 
   if (prices.length === 0) return null;
@@ -62,8 +64,18 @@ export default function PriceTable({ serviceId, serviceName, prices, locale, t }
                 className="mt-1 shrink-0 w-4 h-4 rounded border-line accent-accent"
               />
               <div className="min-w-0 flex-1">
-                <div className="text-sm text-ink-soft" style={{ letterSpacing: "-0.01em" }}>
-                  {label || t("services.option")}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-sm text-ink-soft" style={{ letterSpacing: "-0.01em" }}>
+                    {label || t("services.option")}
+                  </span>
+                  {isEvent && hasDiscount && (
+                    <span
+                      className="px-1.5 py-0.5 text-[0.65rem] font-bold bg-sale/10 text-sale rounded-sm shrink-0"
+                      style={{ letterSpacing: "0.02em" }}
+                    >
+                      {t("services.eventPrice")}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-baseline gap-2 flex-wrap mt-1.5">

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 import type { ChecklistHeroItem } from "@/lib/proseCards";
 import type { SubPageChecklistHeroPosition } from "@/lib/data";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -94,15 +94,15 @@ function ChecklistCard({
       }}
     >
       <strong
-        className="font-semibold block text-ink-inverse"
-        style={{ fontSize: "0.92rem", lineHeight: 1.45, letterSpacing: "-0.01em" }}
+        className="font-semibold block text-ink-inverse text-center"
+        style={{ fontSize: "1.08rem", lineHeight: 1.45, letterSpacing: "-0.01em" }}
       >
         {item.label}
       </strong>
       {item.detail && (
         <span
-          className="block mt-0.5"
-          style={{ fontSize: "0.78rem", color: "rgba(251, 250, 247, 0.72)", lineHeight: 1.55, letterSpacing: "-0.01em", whiteSpace: "pre-line" }}
+          className="block mt-1 text-center"
+          style={{ fontSize: "0.92rem", color: "rgba(251, 250, 247, 0.72)", lineHeight: 1.55, letterSpacing: "-0.01em", whiteSpace: "pre-line" }}
         >
           {item.detail}
         </span>
@@ -168,7 +168,7 @@ export default function ChecklistHero({
               alt={imageAlt}
               fill
               className="object-cover"
-              style={{ objectPosition: toObjectPosition(imageSrc) }}
+              style={{ ...getImageCropStyle(imageSrc) }}
               sizes="100vw"
               quality={75}
               placeholder="blur"

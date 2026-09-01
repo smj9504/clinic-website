@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useScrollReveal } from "@/lib/useScrollReveal";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -107,7 +107,7 @@ function StepRow({
               alt={imageAlt}
               fill
               className="object-cover"
-              style={{ objectPosition: toObjectPosition(image) }}
+              style={{ ...getImageCropStyle(image) }}
               sizes="(max-width: 768px) 100vw, 50vw"
               quality={75}
               placeholder="blur"

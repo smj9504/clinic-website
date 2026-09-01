@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { stripImagePosition, toObjectPosition, setImagePosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle, setImagePosition } from "@/lib/imagePosition";
 import ImagePositionModal from "@/components/admin/ImagePositionModal";
 
 export function PageHeader({
@@ -210,14 +210,14 @@ export function ImageInput({
                 src={cleanValue}
                 controls
                 className="w-full h-full object-cover"
-                style={{ objectPosition: toObjectPosition(value) }}
+                style={{ ...getImageCropStyle(value) }}
               />
             ) : (
               <img
                 src={cleanValue}
                 alt="preview"
                 className="w-full h-full object-cover"
-                style={{ objectPosition: toObjectPosition(value) }}
+                style={{ ...getImageCropStyle(value) }}
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.opacity = "0.3";
                 }}
@@ -235,14 +235,14 @@ export function ImageInput({
                     src={cleanValue}
                     muted
                     className="w-full h-full object-cover"
-                    style={{ objectPosition: toObjectPosition(value) }}
+                    style={{ ...getImageCropStyle(value) }}
                   />
                 ) : (
                   <img
                     src={cleanValue}
                     alt=""
                     className="w-full h-full object-cover"
-                    style={{ objectPosition: toObjectPosition(value) }}
+                    style={{ ...getImageCropStyle(value) }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.opacity = "0.3";
                     }}
@@ -261,7 +261,7 @@ export function ImageInput({
         <input
           ref={fileRef}
           type="file"
-          accept={allowVideo ? "image/*,video/mp4,video/webm,video/quicktime" : "image/*"}
+          accept={allowVideo ? "image/*,video/*" : "image/*"}
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -312,8 +312,8 @@ export function ImageInput({
           extraRatios={extraRatios}
           isVideo={Boolean(preview)}
           onClose={() => setPositionModalOpen(false)}
-          onConfirm={(x, y) => {
-            onChange(setImagePosition(cleanValue, x, y));
+          onConfirm={(x, y, scale) => {
+            onChange(setImagePosition(cleanValue, x, y, scale));
             setPositionModalOpen(false);
           }}
         />

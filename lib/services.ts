@@ -95,6 +95,14 @@ export type ServiceSubcategory = {
   i18n: I18nMap<{ name: string }>;
 };
 
+/** 시술이 하나 이상의 이벤트에 연결되어 있는지 — 카드·상세의 EVENT 뱃지, 가격표의
+ * "이벤트가" 라벨이 전부 이 값 하나로만 판단한다(별도 온오프 설정을 두지 않는다).
+ * eventIds는 admin의 이벤트 화면에서 시술을 연결/해제할 때만 채워지므로, 이 값이
+ * true라는 것은 "관리자가 이 시술을 실제 이벤트에 연결해 두었다"는 뜻과 정확히 같다. */
+export function isEventService(service: { eventIds?: number[] }): boolean {
+  return (service.eventIds?.length ?? 0) > 0;
+}
+
 export type Service = {
   id: string;
   subcategoryId: string;

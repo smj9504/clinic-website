@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSiteData, getBannerImage } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 export default function FaqPage() {
   const { faqs, menus, heroSlides } = useSiteData();
@@ -23,7 +23,7 @@ export default function FaqPage() {
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
-            <Image src={stripImagePosition(banner)} alt="고운빛한의원 자주 묻는 질문" fill className="object-cover" style={{ objectPosition: toObjectPosition(banner) }} sizes="100vw" />
+            <Image src={stripImagePosition(banner)} alt="고운빛한의원 자주 묻는 질문" fill className="object-cover" style={{ ...getImageCropStyle(banner) }} sizes="100vw" />
           </div>
         )}
         <div className="container-default relative text-ink-inverse">

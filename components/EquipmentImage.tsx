@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { hasRealEquipmentImage, isVideoUrl } from "@/lib/services";
-import { stripImagePosition, toObjectPosition } from "@/lib/imagePosition";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNGM0VGRTgiLz48L3N2Zz4=";
@@ -52,7 +52,7 @@ export default function EquipmentImage({ src, alt, sizes, className = "", qualit
         // object-cover를 항상 강제 — 호출부가 className을 안 넘기면 fill 모드 기본값(object-fit: fill)이
         // 적용돼 비율이 찌그러진다. 호출부는 추가 효과(hover 확대 등)만 얹는다.
         className={`absolute inset-0 w-full h-full object-cover ${className}`}
-        style={{ objectPosition: toObjectPosition(src) }}
+        style={{ ...getImageCropStyle(src) }}
       />
     );
   }
@@ -63,7 +63,7 @@ export default function EquipmentImage({ src, alt, sizes, className = "", qualit
       alt={alt}
       fill={fill}
       className={`object-cover ${className}`}
-      style={{ objectPosition: toObjectPosition(src) }}
+      style={{ ...getImageCropStyle(src) }}
       sizes={sizes}
       quality={quality}
       placeholder="blur"
