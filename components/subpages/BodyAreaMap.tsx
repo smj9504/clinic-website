@@ -165,7 +165,7 @@ export default function BodyAreaMap({
               </p>
               <p
                 className="text-ink-soft max-w-xl mx-auto"
-                style={{ fontSize: "1rem", lineHeight: 1.8, letterSpacing: "-0.01em" }}
+                style={{ fontSize: "1rem", lineHeight: 1.8, letterSpacing: "-0.01em", whiteSpace: "pre-line" }}
               >
                 {active.description}
               </p>

@@ -202,9 +202,12 @@ export default function PopupModal() {
           </div>
         )}
 
-        {/* Bottom category tabs — 2 columns on mobile, 4 columns on larger screens (wraps if more) */}
+        {/* Bottom category tabs — column count always matches event count, so each tab evenly splits the width */}
         {hasMultiple && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 w-full flex-shrink-0">
+          <div
+            className="grid w-full flex-shrink-0"
+            style={{ gridTemplateColumns: `repeat(${popupItems.length}, minmax(0, 1fr))` }}
+          >
             {popupItems.map((item, i) => (
               <button
                 key={item.eventId}

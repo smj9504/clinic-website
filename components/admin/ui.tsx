@@ -147,11 +147,18 @@ export function ImageInput({
   onChange,
   aspectRatio = "16 / 10",
   allowVideo = false,
+  extraRatios = [],
 }: {
   value: string;
   onChange: (v: string) => void;
   aspectRatio?: string;
   allowVideo?: boolean;
+  /**
+   * 같은 이미지가 다른 화면에도 그대로(동일 초점 좌표로) 노출될 때, 그 목적지들을
+   * 나열한다. 미리보기 아래에 각 비율로 함께 표시하고, 크롭 위치 조정 모달에도
+   * 그대로 전달해 하나의 초점으로 모든 비율이 잘 보이는지 확인할 수 있게 한다.
+   */
+  extraRatios?: { label: string; ratio: string }[];
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -193,28 +200,60 @@ export function ImageInput({
   return (
     <div className="space-y-3">
       {value && (
-        <div
-          className="relative w-full max-w-md bg-bg-alt rounded overflow-hidden border border-line"
-          style={{ aspectRatio }}
-        >
-          {preview ? (
-            <video
-              src={cleanValue}
-              controls
-              className="w-full h-full object-cover"
-              style={{ objectPosition: toObjectPosition(value) }}
-            />
-          ) : (
-            <img
-              src={cleanValue}
-              alt="preview"
-              className="w-full h-full object-cover"
-              style={{ objectPosition: toObjectPosition(value) }}
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.opacity = "0.3";
-              }}
-            />
-          )}
+        <div className="flex gap-3 flex-wrap items-start">
+          <div
+            className="relative w-full max-w-md bg-bg-alt rounded overflow-hidden border border-line"
+            style={{ aspectRatio }}
+          >
+            {preview ? (
+              <video
+                src={cleanValue}
+                controls
+                className="w-full h-full object-cover"
+                style={{ objectPosition: toObjectPosition(value) }}
+              />
+            ) : (
+              <img
+                src={cleanValue}
+                alt="preview"
+                className="w-full h-full object-cover"
+                style={{ objectPosition: toObjectPosition(value) }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.opacity = "0.3";
+                }}
+              />
+            )}
+          </div>
+          {extraRatios.map((extra) => (
+            <div key={extra.label} className="w-24 shrink-0">
+              <div
+                className="relative w-full bg-bg-alt rounded overflow-hidden border border-line"
+                style={{ aspectRatio: extra.ratio }}
+              >
+                {preview ? (
+                  <video
+                    src={cleanValue}
+                    muted
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: toObjectPosition(value) }}
+                  />
+                ) : (
+                  <img
+                    src={cleanValue}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: toObjectPosition(value) }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.opacity = "0.3";
+                    }}
+                  />
+                )}
+              </div>
+              <p className="text-[0.7rem] text-ink-muted mt-1 text-center" style={{ letterSpacing: "-0.01em" }}>
+                {extra.label}
+              </p>
+            </div>
+          ))}
         </div>
       )}
 
@@ -270,6 +309,7 @@ export function ImageInput({
         <ImagePositionModal
           url={value}
           aspectRatio={aspectRatio}
+          extraRatios={extraRatios}
           isVideo={Boolean(preview)}
           onClose={() => setPositionModalOpen(false)}
           onConfirm={(x, y) => {

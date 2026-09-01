@@ -144,7 +144,7 @@ function StepRow({
         </span>
         <p
           className="font-display mt-5"
-          style={{ fontSize: "1.3rem", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.5 }}
+          style={{ fontSize: "1.3rem", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.5, whiteSpace: "pre-line" }}
         >
           {text}
         </p>

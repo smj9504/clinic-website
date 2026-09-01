@@ -78,7 +78,7 @@ export default function PointCards({ title, points, fallbackImage, imageAlt = ""
               </h3>
               <p
                 className="text-ink-soft"
-                style={{ fontSize: "0.9rem", lineHeight: 1.75, letterSpacing: "-0.01em" }}
+                style={{ fontSize: "0.9rem", lineHeight: 1.75, letterSpacing: "-0.01em", whiteSpace: "pre-line" }}
               >
                 {point.body}
               </p>

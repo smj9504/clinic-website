@@ -127,6 +127,14 @@ img { max-width: 100%; display: block; }
 }
 
 .anim-fade-up { animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+
+/* 탭 전환(TabbedPoints) 전용 — key 교체로 패널이 재마운트될 때 항상 처음부터
+   재생된다. useScrollReveal(IntersectionObserver) 기반 reveal-fade-up은 스크롤
+   진입 감지용이라, 이미 뷰포트 안에서 재마운트되는 탭 전환에는 트랜지션이
+   시작과 거의 동시에 끝나버려 사실상 안 보인다 — 그래서 여기만 순수
+   @keyframes 애니메이션으로 분리했다. 700ms보다 느리게 잡아 전환이 뚜렷이
+   읽히게 한다. */
+.anim-tab-panel { animation: fadeUp 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
 .anim-delay-200 { animation-delay: 200ms; }
 .anim-delay-400 { animation-delay: 400ms; }
 .anim-delay-600 { animation-delay: 600ms; }

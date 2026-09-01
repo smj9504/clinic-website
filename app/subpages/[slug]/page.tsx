@@ -72,7 +72,6 @@ const SEQUENTIAL_CHECKLIST_HEADINGS: Record<string, string> = {
  */
 function TabbedPoints({ group }: { group: ProseTabGroup }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const panelRef = useScrollReveal<HTMLDivElement>();
   const active = group.points[activeIndex];
 
   return (
@@ -101,8 +100,7 @@ function TabbedPoints({ group }: { group: ProseTabGroup }) {
 
       <div
         key={activeIndex}
-        ref={panelRef}
-        className="reveal-fade-up grid grid-cols-1 md:grid-cols-[5fr_7fr] gap-10 md:gap-14 items-start"
+        className="anim-tab-panel grid grid-cols-1 md:grid-cols-[5fr_7fr] gap-10 md:gap-14 items-start"
       >
         <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-line">
           {group.image && (
@@ -124,11 +122,11 @@ function TabbedPoints({ group }: { group: ProseTabGroup }) {
               {active.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-accent-soft/12 text-accent-soft font-medium"
+                  className="rounded-full bg-accent/10 text-accent font-semibold"
                   style={{
                     fontSize: "0.8rem",
                     letterSpacing: "-0.01em",
-                    padding: "0.3rem 0.75rem",
+                    padding: "0.3rem 0.85rem",
                   }}
                 >
                   #{tag}

@@ -10,6 +10,14 @@ type Props = {
   isVideo: boolean;
   onConfirm: (x: number, y: number) => void;
   onClose: () => void;
+  /**
+   * 같은 이미지가 이 비율 외에 다른 화면에도 그대로(동일 초점 좌표로) 노출될 때,
+   * 그 목적지들을 여기 나열한다. 크롭 위치는 이미지당 좌표 하나뿐이라(imagePosition.ts)
+   * 주 비율만 보고 위치를 잡으면 다른 비율에서 원치 않는 부분이 잘릴 수 있어,
+   * 조정하는 동안 모든 목적지를 동시에 보여줘 하나의 초점으로 다 같이 잘 보이는
+   * 지점을 고르게 한다.
+   */
+  extraRatios?: { label: string; ratio: string }[];
 };
 
 function clientToPercent(clientX: number, clientY: number, rect: DOMRect) {
@@ -24,7 +32,7 @@ function clientToPercent(clientX: number, clientY: number, rect: DOMRect) {
  * 갱신하고 pointerup에서만 커밋한다(AreaMapPicker와 동일한 이유 — 매
  * pointermove마다 부모를 리렌더하면 저사양 기기에서 버벅인다).
  */
-export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfirm, onClose }: Props) {
+export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfirm, onClose, extraRatios = [] }: Props) {
   const cleanUrl = stripImagePosition(url);
   const initial = parseImagePosition(url) ?? { x: 50, y: 50 };
 
@@ -106,6 +114,8 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
         </h2>
         <p className="text-xs text-ink-muted mb-5" style={{ letterSpacing: "-0.01em" }}>
           사진을 마우스로 드래그해서 실제 화면에 보여질 위치를 정하세요. 비율은 그대로 유지됩니다.
+          {extraRatios.length > 0 &&
+            " 같은 사진이 아래 비율로도 함께 노출되니, 모든 미리보기가 괜찮은 지점을 찾으세요."}
         </p>
 
         <div
@@ -152,6 +162,42 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
             aria-hidden="true"
           />
         </div>
+
+        {extraRatios.length > 0 && (
+          <div className="flex gap-3 mt-4 flex-wrap">
+            {extraRatios.map((extra) => (
+              <div key={extra.label} className="flex-1 min-w-[7rem]">
+                <div
+                  className="relative w-full rounded overflow-hidden bg-bg-alt border border-line"
+                  style={{ aspectRatio: extra.ratio }}
+                >
+                  {isVideo ? (
+                    <video
+                      src={cleanUrl}
+                      muted
+                      autoPlay
+                      loop
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                      style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={cleanUrl}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                      style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
+                    />
+                  )}
+                </div>
+                <p className="text-[0.7rem] text-ink-muted mt-1 text-center" style={{ letterSpacing: "-0.01em" }}>
+                  {extra.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center justify-between mt-5">
           <button

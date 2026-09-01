@@ -102,7 +102,7 @@ function ChecklistCard({
       {item.detail && (
         <span
           className="block mt-0.5"
-          style={{ fontSize: "0.78rem", color: "rgba(251, 250, 247, 0.72)", lineHeight: 1.55, letterSpacing: "-0.01em" }}
+          style={{ fontSize: "0.78rem", color: "rgba(251, 250, 247, 0.72)", lineHeight: 1.55, letterSpacing: "-0.01em", whiteSpace: "pre-line" }}
         >
           {item.detail}
         </span>
