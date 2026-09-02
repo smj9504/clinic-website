@@ -4,6 +4,12 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import { useEffect, useCallback } from "react";
+import {
+  MAX_REQUEST_BYTES,
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_LABEL,
+  shrinkForUpload,
+} from "@/lib/imageUpload";
 
 function ToolbarButton({
   onClick,
@@ -76,14 +82,20 @@ export default function RichEditor({
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      if (file.size > 10 * 1024 * 1024) {
-        alert("10MB 이하 이미지만 업로드 가능합니다.");
+      if (file.size > MAX_UPLOAD_BYTES) {
+        alert(`${MAX_UPLOAD_LABEL} 이하 이미지만 업로드 가능합니다.`);
+        return;
+      }
+
+      const upload = await shrinkForUpload(file);
+      if (upload.size > MAX_REQUEST_BYTES) {
+        alert("이미지를 압축하지 못했습니다. JPG 또는 PNG로 변환한 뒤 다시 시도해주세요.");
         return;
       }
 
       const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", upload);
       formData.append("password", password);
 
       try {
@@ -178,7 +190,7 @@ export default function RichEditor({
 
         <span className="w-px h-5 bg-line mx-1 self-center" />
 
-        <ToolbarButton onClick={insertImage} title="이미지 삽입 (최대 10MB)">
+        <ToolbarButton onClick={insertImage} title={`이미지 삽입 (최대 ${MAX_UPLOAD_LABEL})`}>
           🖼 이미지
         </ToolbarButton>
       </div>

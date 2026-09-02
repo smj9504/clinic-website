@@ -3,6 +3,12 @@
 import { useRef, useState } from "react";
 import { stripImagePosition, getImageCropStyle, setImagePosition } from "@/lib/imagePosition";
 import ImagePositionModal from "@/components/admin/ImagePositionModal";
+import {
+  MAX_REQUEST_BYTES,
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_LABEL,
+  shrinkForUpload,
+} from "@/lib/imageUpload";
 
 export function PageHeader({
   title,
@@ -164,19 +170,36 @@ export function ImageInput({
   const [uploading, setUploading] = useState(false);
   const [positionModalOpen, setPositionModalOpen] = useState(false);
 
-  const maxSize = allowVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
-  const maxSizeLabel = allowVideo ? "이미지 10MB · 동영상 100MB" : "10MB";
+  const maxVideoSize = 100 * 1024 * 1024;
+  const maxSizeLabel = allowVideo ? `이미지 ${MAX_UPLOAD_LABEL} · 동영상 100MB` : MAX_UPLOAD_LABEL;
 
   const onFile = async (file: File) => {
-    if (file.size > maxSize) {
-      alert(`업로드 용량 초과 (최대: ${maxSizeLabel})`);
+    const isVideo = file.type.startsWith("video/");
+
+    if (isVideo) {
+      if (file.size > maxVideoSize) {
+        alert("업로드 용량 초과 (최대: 동영상 100MB)");
+        return;
+      }
+    } else if (file.size > MAX_UPLOAD_BYTES) {
+      alert(`${MAX_UPLOAD_LABEL} 이하 이미지만 업로드 가능합니다.`);
       return;
     }
+
     setUploading(true);
     try {
+      // 이미지는 전송 전에 1920px WebP로 축소 — 서버가 어차피 같은 크기로 변환하므로
+      // 최종 화질은 그대로면서 요청 본문 크기 제한에 걸리지 않는다. 동영상은
+      // 브라우저에서 재인코딩할 수 없어 원본 그대로 보낸다.
+      const upload = isVideo ? file : await shrinkForUpload(file);
+      if (!isVideo && upload.size > MAX_REQUEST_BYTES) {
+        alert("이미지를 압축하지 못했습니다. JPG 또는 PNG로 변환한 뒤 다시 시도해주세요.");
+        return;
+      }
+
       const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", upload);
       formData.append("password", password);
 
       const res = await fetch("/api/upload", { method: "POST", body: formData });
@@ -289,7 +312,7 @@ export function ImageInput({
         )}
       </div>
       <p className="text-xs text-ink-muted">
-        최대 업로드 용량: {maxSizeLabel}
+        최대 업로드 용량: {maxSizeLabel} · 이미지는 업로드 시 1920px WebP로 자동 압축됩니다
         {allowVideo && " (mp4 · webm · mov)"}
       </p>
 

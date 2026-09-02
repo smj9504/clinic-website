@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/adminAuth";
+import { MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import sharp from "sharp";
 
 const MAX_WIDTH = 1920;
 const MAX_HEIGHT = 1920;
 const WEBP_QUALITY = 80;
 
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB — 시술 홍보 영상 등 짧은 클립 기준
 
 const VIDEO_EXT_BY_TYPE: Record<string, string> = {
@@ -43,8 +43,14 @@ export async function POST(request: NextRequest) {
     if (file.size > MAX_VIDEO_SIZE) {
       return NextResponse.json({ error: "file too large (max 100MB)" }, { status: 413 });
     }
-  } else if (file.size > MAX_IMAGE_SIZE) {
-    return NextResponse.json({ error: "file too large (max 10MB)" }, { status: 413 });
+  } else if (file.size > MAX_UPLOAD_BYTES) {
+    // 원본 기준 25MB. 단, Vercel Functions는 요청 본문이 4.5MB를 넘으면 이 핸들러가
+    // 실행되기 전에 413으로 끊으므로, admin 화면은 전송 전에 브라우저에서
+    // 1920px WebP로 축소해 보낸다 (lib/imageUpload.ts).
+    return NextResponse.json(
+      { error: `file too large (max ${MAX_UPLOAD_BYTES / 1024 / 1024}MB)` },
+      { status: 413 }
+    );
   }
 
   const supabase = getServiceClient();
@@ -68,6 +74,8 @@ export async function POST(request: NextRequest) {
     ext = "svg";
   } else {
     optimizedBuffer = await sharp(inputBuffer)
+      // 휴대폰 원본 사진은 EXIF 방향값을 갖고 있어 회전 없이는 눕는다
+      .rotate()
       .resize(MAX_WIDTH, MAX_HEIGHT, { fit: "inside", withoutEnlargement: true })
       .webp({ quality: WEBP_QUALITY })
       .toBuffer();
