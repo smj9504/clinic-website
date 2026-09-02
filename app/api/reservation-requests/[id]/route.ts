@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { requireAdminRequest } from "@/lib/adminAuth";
 import { sendReservationCancelledSms } from "@/lib/sms";
-import { createSigmaReservation } from "@/lib/sigma";
+import { createSigmaReservation, cancelSigmaReservation } from "@/lib/sigma";
 import {
   isValidSigmaDateTime,
   toReservation,
@@ -31,6 +31,11 @@ const ALLOWED_STATUSES: ReservationStatus[] = ["pending", "confirmed", "cancelle
  * 확정 알림 SMS는 더 이상 여기서 보내지 않는다 — 시그마에 예약이
  * 생성되면 병원 내부 시스템이 자체적으로 문자를 보낸다. 취소 알림은
  * 시그마와 무관한 홈페이지 자체 기능이라 그대로 유지한다.
+ *
+ * status를 "cancelled"로 바꾸는 요청에서, 그 신청이 이미 시그마에
+ * 예약이 등록돼 있었다면(sigma_reservation_uuid 존재) 시그마 취소
+ * API도 함께 호출한다. 이것도 실패 시 DB를 바꾸지 않는다 — 홈페이지만
+ * 취소로 표시되고 병원 시스템에는 예약이 그대로 남으면 안 된다.
  */
 export async function PATCH(request: NextRequest, { params }: Params) {
   const denied = await requireAdminRequest(request);
@@ -63,15 +68,27 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   // 정보를 먼저 조회한다. adminNote만 바꾸는 요청(status === undefined)은
   // 이 조회를 건너뛴다.
   let previousStatus: ReservationStatus | null = null;
-  let existingRow: { name: string; phone: string; memo: string } | null = null;
+  let existingRow: {
+    name: string;
+    phone: string;
+    memo: string;
+    sigma_reservation_uuid: string | null;
+  } | null = null;
   if (status !== undefined) {
     const { data: existing } = await supabase
       .from("reservation_requests")
-      .select("status, name, phone, memo")
+      .select("status, name, phone, memo, sigma_reservation_uuid")
       .eq("id", id)
       .maybeSingle();
     previousStatus = (existing?.status as ReservationStatus) ?? null;
-    existingRow = existing ? { name: existing.name, phone: existing.phone, memo: existing.memo } : null;
+    existingRow = existing
+      ? {
+          name: existing.name,
+          phone: existing.phone,
+          memo: existing.memo,
+          sigma_reservation_uuid: existing.sigma_reservation_uuid ?? null,
+        }
+      : null;
   }
 
   const statusActuallyChanges = status !== undefined && previousStatus !== null && previousStatus !== status;
@@ -95,6 +112,22 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       sigma_reservation_uuid: sigmaResult.reservation.reservationUuid,
       sigma_reservation_dt: reservationDt!,
     };
+  }
+
+  // 취소도 확정과 동일하게 "시그마 성공 시에만 DB 반영"을 원칙으로 한다 —
+  // sigma_reservation_uuid가 있다는 건 실제로 병원 시스템에 예약이 잡혀
+  // 있다는 뜻이라, 시그마 취소가 실패했는데 홈페이지만 "취소됨"으로
+  // 표시하면 병원 시스템에는 예약이 그대로 남아 이중예약을 놓칠 수 있다.
+  // 시그마 자체는 이미 취소된 예약에 다시 취소 호출해도 현재 상태를 그대로
+  // 반환하므로(멱등), previousStatus가 이미 cancelled여도 안전하게 재호출된다.
+  if (status === "cancelled" && statusActuallyChanges && existingRow?.sigma_reservation_uuid) {
+    const cancelResult = await cancelSigmaReservation(existingRow.sigma_reservation_uuid);
+    if (!cancelResult.ok) {
+      return NextResponse.json(
+        { error: `병원 예약 시스템 취소 연동에 실패했습니다: ${cancelResult.error}` },
+        { status: cancelResult.status ?? 502 }
+      );
+    }
   }
 
   const row: Record<string, string> = { updated_at: new Date().toISOString() };

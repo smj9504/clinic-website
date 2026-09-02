@@ -20,13 +20,13 @@ function headers(withBody: boolean): Record<string, string> {
 
 async function request<T>(
   url: string,
-  method: "GET" | "PATCH" | "DELETE",
+  method: "GET" | "POST" | "PATCH" | "DELETE",
   body?: unknown
 ): Promise<T | null> {
   try {
     const res = await fetch(url, {
       method,
-      headers: headers(body !== undefined),
+      headers: headers(method !== "GET"),
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const json = await res.json().catch(() => ({}));
@@ -100,6 +100,34 @@ export async function fetchAvailableSlots(
   date: string
 ): Promise<{ bookedTimes: string[]; upstreamFailed?: boolean } | null> {
   return request(`/api/admin/available-slots?date=${encodeURIComponent(date)}`, "GET");
+}
+
+export type ReservationSyncLogRow = {
+  id: string;
+  trigger: "scheduled" | "manual";
+  checked_count: number;
+  updated_count: number;
+  error_count: number;
+  details: Array<{
+    reservationId: string;
+    name: string;
+    sigmaReservationDt: string;
+    reason: "cancelled_in_sigma" | "sigma_lookup_failed";
+  }>;
+  created_at: string;
+};
+
+/** 관리자의 "지금 동기화" 버튼 — 시그마 상태를 즉시 1회 대조해 어긋난 상태를 바로잡는다 */
+export async function syncReservationsWithSigma(): Promise<{
+  summary: { checkedCount: number; updatedCount: number; errorCount: number };
+  reservations: ReservationRequest[];
+} | null> {
+  return request("/api/admin/reservations/sync", "POST");
+}
+
+/** 최근 동기화 실행 이력 */
+export async function fetchReservationSyncLogs(): Promise<{ logs: ReservationSyncLogRow[] } | null> {
+  return request("/api/admin/reservations/sync", "GET");
 }
 
 /** 공개 예약 신청 폼에서 사용 — 인증 헤더 불필요 */

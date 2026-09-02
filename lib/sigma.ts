@@ -143,6 +143,75 @@ export async function createSigmaReservation(
   };
 }
 
+/**
+ * 시그마 예약을 취소한다 (PATCH /external/v2/reservations/{uuid}/cancel).
+ * 명세상 요청 본문은 없고, 이미 취소된 예약에 다시 호출해도 현재 상태를
+ * 그대로 반환한다(idempotent) — 그래서 호출부에서 "이미 취소됨"을 별도로
+ * 특별 취급할 필요가 없다.
+ */
+export async function cancelSigmaReservation(reservationUuid: string): Promise<SigmaCallResult> {
+  const baseUrl = getBaseUrl();
+  const apiKey = getApiKey();
+
+  const rejectUnauthorized = process.env.SIGMA_TLS_REJECT_UNAUTHORIZED !== "0";
+  const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+  if (!rejectUnauthorized) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `${baseUrl}/external/v2/reservations/${encodeURIComponent(reservationUuid)}/cancel`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: `시그마 서버에 연결할 수 없습니다. (${message})` };
+  } finally {
+    if (!rejectUnauthorized) {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousTlsSetting;
+    }
+  }
+
+  if (response.status === 429) {
+    const retryAfter = response.headers.get("Retry-After");
+    const errorCode = response.headers.get("X-RateLimit-Error-Code");
+    const waitHint = retryAfter ? ` (${retryAfter}초 후 재시도 가능)` : "";
+    return {
+      ok: false,
+      status: 429,
+      error: `시그마 API 요청 한도를 초과했습니다${waitHint}. ${errorCode ?? ""}`.trim(),
+    };
+  }
+
+  if (!response.ok) {
+    const problem = (await response.json().catch(() => null)) as SigmaProblemDetails | null;
+    const detail = problem?.detail || problem?.title || `요청이 거부되었습니다 (${response.status})`;
+    return { ok: false, status: response.status, error: detail };
+  }
+
+  const data = await response.json().catch(() => null);
+  if (!data?.reservation_uuid) {
+    return { ok: false, error: "시그마 응답 형식이 올바르지 않습니다." };
+  }
+
+  return {
+    ok: true,
+    reservation: {
+      reservationUuid: data.reservation_uuid,
+      reservationDt: data.reservation_dt,
+      reservationStatus: data.reservation_status,
+    },
+  };
+}
+
 export type SigmaReservationListItem = {
   reservationDt: string;
   reservationStatus: string;

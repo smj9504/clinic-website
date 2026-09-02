@@ -258,3 +258,30 @@ alter table services
   add column if not exists event_ids integer[] not null default '{}';
 
 create index if not exists idx_services_event_ids on services using gin (event_ids);
+
+
+-- ─────────────────────────────────────────────────────────────
+-- 7) 시그마 동기화 로그 (supabase-reservations-sync.sql)
+--
+-- 확정된 예약은 병원 직원이 시그마(병원 내부 시스템)에서 직접 취소하거나
+-- 시간을 바꿀 수 있는데, 그 변경이 홈페이지 DB에는 자동으로 반영되지
+-- 않는다. lib/reservationSync.ts가 주기적으로(진료시간 중 30분마다,
+-- app/instrumentation.ts의 스케줄러) 또는 관리자의 수동 "지금 동기화"
+-- 요청으로 시그마 조회 결과와 대조해 어긋난 상태를 바로잡는다. 이 표는
+-- 그 실행 이력이다 — 예약 신청 자체의 이력이 아니라 "동기화를 언제,
+-- 몇 건 돌렸고 무엇이 바뀌었는지"를 남긴다.
+-- ─────────────────────────────────────────────────────────────
+
+create table if not exists reservation_sync_log (
+  id              uuid primary key default gen_random_uuid(),
+  trigger         text not null,               -- 'scheduled' | 'manual'
+  checked_count   int not null default 0,       -- 시그마와 대조한 확정 예약 수
+  updated_count   int not null default 0,       -- 상태가 바뀐(주로 취소 감지) 예약 수
+  error_count     int not null default 0,       -- 시그마 조회 실패 등으로 확인 못 한 건수
+  details         jsonb not null default '[]',  -- [{reservationId, name, previousStatus, newStatus, reason}]
+  created_at      timestamptz not null default now()
+);
+
+create index if not exists reservation_sync_log_created_at_idx on reservation_sync_log(created_at desc);
+
+alter table reservation_sync_log enable row level security;

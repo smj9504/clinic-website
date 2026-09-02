@@ -58,6 +58,22 @@ export function isPastClinicHoursToday(dateStr: string, hours: { weekday: string
 }
 
 /**
+ * 지금(KST) 이 진료 시간 내인지 여부. 자동 동기화 스케줄러(app/instrumentation.ts)가
+ * 진료시간 외에는 실행하지 않도록 걸러내는 데 쓰인다 — 밤새 30분마다 시그마에
+ * 불필요한 요청을 보낼 이유가 없다. hours 텍스트 형식이 안 맞으면 판단할 수
+ * 없으므로 안전하게 false(=실행 안 함)로 취급한다.
+ */
+export function isWithinClinicHoursNow(hours: { weekday: string; saturday: string }): boolean {
+  const today = todayKST();
+  const weekday = weekdayOf(today);
+  if (weekday === 0) return false; // 일요일 휴진
+  const range = weekday === 6 ? parseHoursRange(hours.saturday) : parseHoursRange(hours.weekday);
+  if (!range) return false;
+  const now = nowKST();
+  return now >= range.opens && now < range.closes;
+}
+
+/**
  * 주어진 날짜의 진료 시간을 30분 간격 "HH:MM" 슬롯 배열로 반환한다.
  * 평일(월~금)은 hours.weekday, 토요일은 hours.saturday를 파싱해서 쓰고,
  * 일요일이거나 hours 텍스트 형식이 안 맞으면 빈 배열(=선택 가능한 슬롯 없음).

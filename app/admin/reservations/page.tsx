@@ -8,6 +8,9 @@ import {
   updateReservationStatus,
   updateReservationNote,
   deleteReservationRequest,
+  syncReservationsWithSigma,
+  fetchReservationSyncLogs,
+  type ReservationSyncLogRow,
 } from "@/lib/reservationsApi";
 import { isValidSigmaDateTime, type ReservationRequest, type ReservationStatus } from "@/lib/reservations";
 import { formatKRW } from "@/lib/price";
@@ -74,6 +77,12 @@ function ReservationsAdminPageInner() {
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
 
+  // 시그마(병원 내부 시스템) 상태 동기화 — 진료시간 중 30분마다 자동 실행되고
+  // (app/instrumentation.ts), 관리자가 이 버튼으로 즉시 1회 더 돌릴 수도 있다.
+  const [syncLogs, setSyncLogs] = useState<ReservationSyncLogRow[] | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncLogOpen, setSyncLogOpen] = useState(false);
+
   const load = async () => {
     const res = await fetchReservationRequests();
     if (res) {
@@ -82,9 +91,25 @@ function ReservationsAdminPageInner() {
     }
   };
 
+  const loadSyncLogs = async () => {
+    const res = await fetchReservationSyncLogs();
+    if (res) setSyncLogs(res.logs);
+  };
+
   useEffect(() => {
     load();
+    loadSyncLogs();
   }, []);
+
+  const runSync = async () => {
+    setSyncing(true);
+    const res = await syncReservationsWithSigma();
+    setSyncing(false);
+    if (res) {
+      setReservations(res.reservations);
+      await loadSyncLogs();
+    }
+  };
 
   const setStatus = async (id: string, status: ReservationStatus) => {
     const updated = await updateReservationStatus(id, status);
@@ -202,6 +227,77 @@ function ReservationsAdminPageInner() {
         title="예약 신청 관리"
         description="환자가 홈페이지에서 신청한 예약을 확인하고, 병원 시스템에 등록한 뒤 상태를 처리하세요."
       />
+
+      {!setupRequired && (
+        <Card className="p-4 mb-6">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <p className="text-sm font-semibold" style={{ letterSpacing: "-0.01em" }}>
+                병원 시스템(시그마) 동기화
+              </p>
+              <p className="text-xs text-ink-muted mt-1">
+                진료시간 중 30분마다 자동으로 확정 예약 상태를 병원 시스템과 대조합니다. 병원에서 직접
+                취소·변경한 예약이 있으면 여기서도 취소로 반영됩니다.
+                {syncLogs && syncLogs.length > 0 && (
+                  <>
+                    {" "}
+                    최근 실행: {new Date(syncLogs[0].created_at).toLocaleString("ko-KR")} (확인{" "}
+                    {syncLogs[0].checked_count}건, 변경 {syncLogs[0].updated_count}건
+                    {syncLogs[0].error_count > 0 ? `, 오류 ${syncLogs[0].error_count}건` : ""})
+                  </>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button size="sm" variant="ghost" onClick={() => setSyncLogOpen((v) => !v)}>
+                {syncLogOpen ? "이력 닫기" : "이력 보기"}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={runSync} disabled={syncing}>
+                {syncing ? "동기화 중..." : "지금 동기화"}
+              </Button>
+            </div>
+          </div>
+
+          {syncLogOpen && (
+            <div className="mt-4 pt-4 border-t border-line">
+              {!syncLogs || syncLogs.length === 0 ? (
+                <p className="text-sm text-ink-muted">아직 실행 이력이 없습니다.</p>
+              ) : (
+                <ul className="space-y-2 max-h-64 overflow-y-auto">
+                  {syncLogs.map((log) => (
+                    <li key={log.id} className="text-sm">
+                      <div className="flex items-center gap-2 flex-wrap text-ink-soft">
+                        <span className="text-xs text-ink-muted">
+                          {new Date(log.created_at).toLocaleString("ko-KR")}
+                        </span>
+                        <span className="text-xs px-1.5 py-0.5 rounded-sm bg-bg-alt text-ink-muted">
+                          {log.trigger === "manual" ? "수동" : "자동"}
+                        </span>
+                        <span>
+                          확인 {log.checked_count}건 · 변경 {log.updated_count}건
+                          {log.error_count > 0 ? ` · 오류 ${log.error_count}건` : ""}
+                        </span>
+                      </div>
+                      {log.details.length > 0 && (
+                        <ul className="mt-1 ml-1 pl-3 border-l border-line space-y-0.5">
+                          {log.details.map((d, i) => (
+                            <li key={`${log.id}_${i}`} className="text-xs text-ink-muted">
+                              {d.name} ({d.sigmaReservationDt}) —{" "}
+                              {d.reason === "cancelled_in_sigma"
+                                ? "병원 시스템에서 취소 확인됨 → 취소 처리"
+                                : "병원 시스템 조회 실패"}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
 
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
         <div className="flex gap-2 flex-wrap">
