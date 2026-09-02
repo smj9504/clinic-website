@@ -209,7 +209,10 @@ export async function sendReservationNotificationEmail(
   reservation: ReservationRequest,
   origin?: string | null
 ): Promise<void> {
-  const to = process.env.RESERVATION_NOTIFY_EMAIL || "minjeesong95@gmail.com";
+  const to = (process.env.RESERVATION_NOTIFY_EMAIL || "minjeesong95@gmail.com")
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
   const from = `"${BRAND_NAME}" <${process.env.GMAIL_USER}>`;
 
   const base = origin || process.env.NEXT_PUBLIC_SITE_URL || null;
