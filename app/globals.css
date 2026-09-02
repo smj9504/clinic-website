@@ -737,6 +737,28 @@ img { max-width: 100%; display: block; }
 }
 .prose p { margin: 0.6em 0; }
 
+/* 시술 본문 richtext 안에 삽입된 "가로 배치" 이미지 그룹 —
+   RichEditor(admin/richEditor/ImageRow.ts)가 저장한 HTML을 그대로 렌더링한다 */
+.service-image-row {
+  display: grid;
+  grid-template-columns: repeat(var(--image-row-count, 2), 1fr);
+  gap: 0.75rem;
+  margin: 1em 0;
+}
+.service-image-row__img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  display: block;
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .service-image-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Accessibility: respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

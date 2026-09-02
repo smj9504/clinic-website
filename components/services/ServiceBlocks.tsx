@@ -20,7 +20,11 @@ function hasContent(block: ServiceBlock, locale: Locale): boolean {
   const text = blockText(block, locale);
   switch (block.type) {
     case "richtext":
-      return !!text.html && text.html.replace(/<[^>]*>/g, "").trim() !== "";
+      return (
+        !!text.html &&
+        (text.html.replace(/<[^>]*>/g, "").trim() !== "" ||
+          /<img\b|data-image-row/.test(text.html))
+      );
     case "points":
     case "steps":
     case "notice":

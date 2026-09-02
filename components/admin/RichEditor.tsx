@@ -2,7 +2,6 @@
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
 import { useEffect, useCallback } from "react";
 import {
   MAX_REQUEST_BYTES,
@@ -10,6 +9,9 @@ import {
   MAX_UPLOAD_LABEL,
   shrinkForUpload,
 } from "@/lib/imageUpload";
+import CropImage from "@/components/admin/richEditor/CropImage";
+import ImageRow from "@/components/admin/richEditor/ImageRow";
+import { insertTrailingParagraph } from "@/components/admin/richEditor/insertTrailingParagraph";
 
 function ToolbarButton({
   onClick,
@@ -50,10 +52,11 @@ export default function RichEditor({
       StarterKit.configure({
         heading: { levels: [2, 3] },
       }),
-      Image.configure({
+      CropImage.configure({
         inline: false,
         allowBase64: false,
       }),
+      ImageRow,
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -105,12 +108,22 @@ export default function RichEditor({
           alert(`업로드 실패: ${json.error || res.statusText}`);
           return;
         }
-        editor.chain().focus().setImage({ src: json.url }).run();
+        editor.chain().focus().setImage({ src: json.url }).command(insertTrailingParagraph).run();
       } catch {
         alert("이미지 업로드에 실패했습니다.");
       }
     };
     input.click();
+  }, [editor]);
+
+  const insertImageRow = useCallback(() => {
+    if (!editor) return;
+    editor
+      .chain()
+      .focus()
+      .insertContent({ type: "imageRow", attrs: { slots: [{ src: "" }, { src: "" }] } })
+      .command(insertTrailingParagraph)
+      .run();
   }, [editor]);
 
   if (!editor) return null;
@@ -193,6 +206,9 @@ export default function RichEditor({
         <ToolbarButton onClick={insertImage} title={`이미지 삽입 (최대 ${MAX_UPLOAD_LABEL})`}>
           🖼 이미지
         </ToolbarButton>
+        <ToolbarButton onClick={insertImageRow} title="이미지 2~3장을 가로로 나란히 배치">
+          🖼🖼 가로 배치
+        </ToolbarButton>
       </div>
 
       {/* Editor */}
@@ -248,6 +264,19 @@ export default function RichEditor({
         }
         .ProseMirror:focus {
           outline: none;
+        }
+        .service-image-row {
+          display: grid;
+          grid-template-columns: repeat(var(--image-row-count, 2), 1fr);
+          gap: 0.75rem;
+          margin: 0.8em 0;
+        }
+        .service-image-row__img {
+          width: 100%;
+          aspect-ratio: 4 / 3;
+          object-fit: cover;
+          border-radius: 0.375rem;
+          display: block;
         }
       `}</style>
     </div>
