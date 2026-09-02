@@ -209,23 +209,24 @@ export type SubPage = {
   checklistBlocks?: SubPageChecklistBlock[];
   /**
    * 구조화 섹션 6개(areaMap · stepProcess · pointCards · checklist ·
-   * checklistHero · checklistBlocks)의 공개 페이지 표시 순서. 값이 없거나
-   * 일부 id가 빠져 있으면 이 기본 순서로 취급한다 — DEFAULT_SUBPAGE_SECTION_ORDER
-   * 참고. 본문(body)은 이 목록에 포함되지 않고 항상 구조화 섹션들 다음에 온다.
+   * checklistHero · checklistBlocks) + 본문(body)의 공개 페이지 표시 순서.
+   * 값이 없거나 일부 id가 빠져 있으면 이 기본 순서로 취급한다 —
+   * DEFAULT_SUBPAGE_SECTION_ORDER 참고.
    */
   sectionOrder?: SubPageSectionId[];
 };
 
-/** app/admin/subpages/[id]/page.tsx의 순서 조정 탭, app/subpages/[slug]/page.tsx의 렌더 순서가 함께 참조하는 6개 구조화 섹션 id */
+/** app/admin/subpages/[id]/page.tsx의 순서 조정 탭, app/subpages/[slug]/page.tsx의 렌더 순서가 함께 참조하는 섹션 id. body(자유 서술 본문)도 다른 구조화 섹션과 동일하게 순서 이동 대상이다 */
 export type SubPageSectionId =
   | "areaMap"
   | "stepProcess"
   | "pointCards"
   | "checklist"
   | "checklistHero"
-  | "checklistBlocks";
+  | "checklistBlocks"
+  | "body";
 
-/** sectionOrder가 비어 있거나 불완전할 때 쓰는 기본 순서. 기존(리팩터링 전) 공개 페이지의 하드코딩 렌더 순서와 동일하게 맞춰, 이 필드가 없는 기존 서브페이지들의 화면이 바뀌지 않게 한다 */
+/** sectionOrder가 비어 있거나 불완전할 때 쓰는 기본 순서. 기존(리팩터링 전) 공개 페이지의 하드코딩 렌더 순서와 동일하게 맞춰, 이 필드가 없는 기존 서브페이지들의 화면이 바뀌지 않게 한다 — body는 항상 구조화 섹션들 다음에 오던 예전 위치 그대로 맨 뒤에 둔다 */
 export const DEFAULT_SUBPAGE_SECTION_ORDER: SubPageSectionId[] = [
   "checklistHero",
   "areaMap",
@@ -233,11 +234,12 @@ export const DEFAULT_SUBPAGE_SECTION_ORDER: SubPageSectionId[] = [
   "checklistBlocks",
   "pointCards",
   "stepProcess",
+  "body",
 ];
 
 /**
- * 저장된 sectionOrder를 항상 6개 id 전부를 포함한 완전한 순열로 정규화한다.
- * admin에서 새 섹션 id가 추가되거나(예: 이후 7번째 섹션 도입), 저장 시점 이후
+ * 저장된 sectionOrder를 항상 DEFAULT_SUBPAGE_SECTION_ORDER의 모든 id를 포함한
+ * 완전한 순열로 정규화한다. admin에서 새 섹션 id가 추가되거나, 저장 시점 이후
  * 알 수 없는 값이 섞여도 공개 페이지 렌더링이 깨지지 않도록 여기서 한 번에 방어한다.
  * 알려진 id는 저장된 순서를 그대로 두고, 목록에 없는 id는 기본 순서상의 상대
  * 위치를 유지하며 끝에 이어붙인다.

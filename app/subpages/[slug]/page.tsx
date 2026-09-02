@@ -267,9 +267,9 @@ export default function SubPageDetail() {
     [bodyForSegments]
   );
 
-  // 구조화 섹션 6개를 id별로 미리 만들어 두고, page.sectionOrder(관리자가 admin에서
-  // 조정한 순서)를 따라 순서대로 렌더링한다. 순서가 없거나 불완전해도
-  // normalizeSectionOrder가 항상 완전한 6개 순열로 보정해 준다.
+  // 구조화 섹션 6개 + 본문(body)을 id별로 미리 만들어 두고, page.sectionOrder
+  // (관리자가 admin에서 조정한 순서)를 따라 순서대로 렌더링한다. 순서가 없거나
+  // 불완전해도 normalizeSectionOrder가 항상 완전한 순열로 보정해 준다.
   const sectionNodes: Record<SubPageSectionId, React.ReactNode> = {
     checklistHero: page?.checklistHero ? (
       <ChecklistHero
@@ -344,6 +344,60 @@ export default function SubPageDetail() {
         steps={page.stepProcess.items.map((it) => ({ text: it.text, image: it.image }))}
         note={page.stepProcess.note}
       />
+    ) : null,
+    body: page?.body ? (
+      segments ? (
+        <div
+          ref={bodyRef}
+          className="prose prose-neutral reveal-fade-up max-w-none text-ink-soft"
+          style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em" }}
+        >
+          {segments.map((segment, i) => {
+            if (segment.type === "tabs") return <TabbedPoints key={i} group={segment.group} />;
+            // page.pointCards/stepProcess가 있으면 위에서 이미 구조화 데이터로
+            // 렌더링했으므로, 같은 body 안에 남아있는 richtext 자동 감지 결과는
+            // (아직 마이그레이션되지 않았거나 편집 중인 과도기 상태가 아닌 한)
+            // 중복 렌더링을 피하기 위해 건너뛴다.
+            if (segment.type === "cards") {
+              if (page.pointCards) return null;
+              return (
+                <PointCards
+                  key={i}
+                  points={segment.group.points}
+                  fallbackImage={segment.group.image}
+                  imageAlt={segment.group.imageAlt}
+                />
+              );
+            }
+            if (segment.type === "steps") {
+              if (page.stepProcess) return null;
+              return (
+                <StepProcess
+                  key={i}
+                  title={segment.group.title}
+                  intro={segment.group.intro}
+                  steps={segment.group.steps.map((text) => ({ text, image: null }))}
+                  fallbackImage={segment.group.image}
+                  imageAlt={segment.group.imageAlt}
+                />
+              );
+            }
+            return <div key={i} dangerouslySetInnerHTML={{ __html: segment.html }} />;
+          })}
+        </div>
+      ) : (
+        <p
+          className="text-ink-soft"
+          style={{
+            fontSize: "1.05rem",
+            lineHeight: 2,
+            letterSpacing: "-0.01em",
+            whiteSpace: "pre-line",
+          }}
+        >
+          {page.body}
+        </p>
+      )
     ) : null,
   };
   const orderedSectionIds = normalizeSectionOrder(page?.sectionOrder);
@@ -421,63 +475,10 @@ export default function SubPageDetail() {
       <section className="pt-10 pb-20 md:pt-16 md:pb-32">
         <div className="container-default">
           <div className="max-w-5xl mx-auto">
-            {orderedSectionIds.map((sectionId) => (
-              <Fragment key={sectionId}>{sectionNodes[sectionId]}</Fragment>
-            ))}
-
-            {page.body ? (
-              segments ? (
-                <div
-                  ref={bodyRef}
-                  className="prose prose-neutral reveal-fade-up max-w-none text-ink-soft"
-                  style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em" }}
-                >
-                  {segments.map((segment, i) => {
-                    if (segment.type === "tabs") return <TabbedPoints key={i} group={segment.group} />;
-                    // page.pointCards/stepProcess가 있으면 위에서 이미 구조화 데이터로
-                    // 렌더링했으므로, 같은 body 안에 남아있는 richtext 자동 감지 결과는
-                    // (아직 마이그레이션되지 않았거나 편집 중인 과도기 상태가 아닌 한)
-                    // 중복 렌더링을 피하기 위해 건너뛴다.
-                    if (segment.type === "cards") {
-                      if (page.pointCards) return null;
-                      return (
-                        <PointCards
-                          key={i}
-                          points={segment.group.points}
-                          fallbackImage={segment.group.image}
-                          imageAlt={segment.group.imageAlt}
-                        />
-                      );
-                    }
-                    if (segment.type === "steps") {
-                      if (page.stepProcess) return null;
-                      return (
-                        <StepProcess
-                          key={i}
-                          title={segment.group.title}
-                          intro={segment.group.intro}
-                          steps={segment.group.steps.map((text) => ({ text, image: null }))}
-                          fallbackImage={segment.group.image}
-                          imageAlt={segment.group.imageAlt}
-                        />
-                      );
-                    }
-                    return <div key={i} dangerouslySetInnerHTML={{ __html: segment.html }} />;
-                  })}
-                </div>
-              ) : (
-                <p
-                  className="text-ink-soft"
-                  style={{
-                    fontSize: "1.05rem",
-                    lineHeight: 2,
-                    letterSpacing: "-0.01em",
-                    whiteSpace: "pre-line",
-                  }}
-                >
-                  {page.body}
-                </p>
-              )
+            {orderedSectionIds.some((sectionId) => sectionNodes[sectionId]) ? (
+              orderedSectionIds.map((sectionId) => (
+                <Fragment key={sectionId}>{sectionNodes[sectionId]}</Fragment>
+              ))
             ) : (
               <p className="text-ink-muted text-center py-12">{t("subpage.comingSoon")}</p>
             )}

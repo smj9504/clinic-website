@@ -84,7 +84,7 @@ const FIXED_TABS = [
   { id: "images", label: "이미지" },
 ] as const;
 
-/** 공개 페이지에 실제 표시 영역을 갖는 6개 구조화 섹션 — 여기 순서가 아니라 draft.sectionOrder가 실제 표시 순서를 결정한다 */
+/** 공개 페이지에 실제 표시 영역을 갖는 구조화 섹션(6개) + 본문 — 여기 순서가 아니라 draft.sectionOrder가 실제 표시 순서를 결정한다 */
 const SECTION_TAB_LABELS: Record<SubPageSectionId, string> = {
   areaMap: "부위 맵",
   stepProcess: "순서 안내",
@@ -92,6 +92,7 @@ const SECTION_TAB_LABELS: Record<SubPageSectionId, string> = {
   checklist: "추천 체크리스트",
   checklistHero: "사진 위 체크리스트",
   checklistBlocks: "체크리스트 블록",
+  body: "본문",
 };
 
 /** 내용 유무를 점 하나로 표시 — 채워짐(초록)·비어 있음(주황) 두 상태만 필요해서 색만으로 구분한다 */
@@ -371,9 +372,10 @@ export default function SubPageEditPage() {
     checklist: effectiveChecklist.items.length > 0,
     checklistHero: effectiveChecklistHero.items.length > 0,
     checklistBlocks: effectiveChecklistBlocks.length > 0,
+    body: Boolean(draft.body?.trim()),
   };
   const imagesHaveContent = Boolean(draft.image);
-  const basicHasContent = Boolean(draft.title?.trim()) && Boolean(draft.body?.trim());
+  const basicHasContent = Boolean(draft.title?.trim());
 
   const save = async () => {
     setSaving(true);
@@ -521,12 +523,15 @@ export default function SubPageEditPage() {
           >
             <TextArea rows={4} value={draft.intro ?? ""} onChange={(e) => patch({ intro: e.target.value })} />
           </Field>
-          <Field
-            label="본문"
-            hint="아래 순서 안내·포인트 카드·추천 체크리스트에 속하지 않는 자유 서술(서론, 마무리 안내 등)을 씁니다. 제목, 목록, 인용, 이미지 등의 서식을 넣을 수 있습니다"
-          >
-            <RichEditor value={draft.body ?? ""} onChange={(html) => patch({ body: html })} />
-          </Field>
+        </TabPanel>
+
+        <TabPanel id="body" active={activeTab}>
+          <p className="text-sm text-ink-muted mb-5">
+            다른 구조화 섹션(순서 안내·포인트 카드·추천 체크리스트 등)에 속하지 않는 자유 서술(서론,
+            마무리 안내 등)을 씁니다. 제목, 목록, 인용, 이미지 등의 서식을 넣을 수 있습니다. 공개 페이지
+            표시 위치는 위 탭 줄의 ←→ 버튼으로 조정합니다.
+          </p>
+          <RichEditor value={draft.body ?? ""} onChange={(html) => patch({ body: html })} />
         </TabPanel>
 
         <TabPanel id="images" active={activeTab}>
