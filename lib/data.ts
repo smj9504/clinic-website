@@ -9,6 +9,13 @@ export type Event = {
   subtitle: string;
   description: string;
   image: string;
+  /**
+   * 좁고 세로가 긴 화면(모바일 팝업 4:5, 모바일 목록 카드)에서 image 대신 쓰는
+   * 이미지 (선택 사항). 가로로 넓은 배너 이미지 안에 글씨가 있으면 세로 비율로
+   * crop할 때 양옆이 잘려나갈 수 있어, 그 화면들만 별도 이미지로 대체할 수 있게
+   * 한다. 비어 있으면 image를 그대로 사용한다(기존 이벤트와 완전히 호환).
+   */
+  mobileImage?: string;
   date: string;
   startDate?: string; // "2026-05-01"
   endDate?: string;   // "2026-05-31"

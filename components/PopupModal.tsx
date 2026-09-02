@@ -58,14 +58,18 @@ export default function PopupModal() {
           title: stripHtml(`${ev.title}\n${ev.subtitle}`),
           body: stripHtml(ev.description),
           image: ev.image || item.image,
+          mobileImage: ev.mobileImage || undefined,
         };
       });
   }, [popup, events]);
 
   const eventActive = popup?.isActive && popupItems.length > 0;
 
-  // Preload popup images before the modal opens
-  const imageUrls = useMemo(() => popupItems.map((item) => item.image).filter(Boolean), [popupItems]);
+  // Preload popup images before the modal opens (both desktop and mobile variants)
+  const imageUrls = useMemo(
+    () => popupItems.flatMap((item) => [item.image, item.mobileImage]).filter((u): u is string => Boolean(u)),
+    [popupItems]
+  );
   usePreloadImages(imageUrls);
 
   // 이미 한 번 열렸으면 재트리거 방지 (DB fetch 후 데이터 갱신 시 다시 열리는 버그 수정)
@@ -179,9 +183,21 @@ export default function PopupModal() {
                     sizes="1024px"
                     priority={i === slideIndex}
                     quality={75}
-                    className="object-cover"
+                    className={`object-cover ${item.mobileImage ? "hidden sm:block" : ""}`}
                     style={{ ...getImageCropStyle(item.image || fallbackImage) }}
                   />
+                  {item.mobileImage && (
+                    <Image
+                      src={stripImagePosition(item.mobileImage)}
+                      alt={item.categoryLabel || item.title}
+                      fill
+                      sizes="1024px"
+                      priority={i === slideIndex}
+                      quality={75}
+                      className="object-cover sm:hidden"
+                      style={{ ...getImageCropStyle(item.mobileImage) }}
+                    />
+                  )}
                   {(item.imageOverlay ?? true) && (
                     <div
                       className="absolute inset-0"

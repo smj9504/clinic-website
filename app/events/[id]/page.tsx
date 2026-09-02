@@ -134,6 +134,7 @@ export default function EventDetailPage() {
                 ratio={16 / 10}
                 wrapperClassName="rounded overflow-hidden mb-12 bg-bg-alt"
                 src={event.image || fallbackImage}
+                mobileSrc={event.mobileImage || undefined}
                 alt={event.title}
                 sizes="(max-width: 1024px) 100vw, 60vw"
                 quality={75}

@@ -267,6 +267,8 @@ export type PopupItem = {
   title: string;
   body: string;
   image: string;
+  /** 모바일(4:5) 팝업 슬라이드에서 image 대신 쓸 이미지. PopupModal이 연결된 이벤트의 mobileImage로 채운다 — 비어 있으면 image를 그대로 쓴다 */
+  mobileImage?: string;
   linkUrl: string;
   /** 이미지 위 어두운 브랜드 틴트 오버레이 표시 여부 (미지정 시 true = 기존 동작) */
   imageOverlay?: boolean;
@@ -591,7 +593,7 @@ export async function syncImages(locale: Locale) {
     })),
     events: current.events.map((ce) => {
       const oe = other.events.find((o) => o.id === ce.id);
-      return oe ? { ...oe, image: ce.image } : { ...ce };
+      return oe ? { ...oe, image: ce.image, mobileImage: ce.mobileImage } : { ...ce };
     }),
     treatments: other.treatments.map((t, i) => ({
       ...t,

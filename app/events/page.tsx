@@ -88,6 +88,7 @@ export default function EventsPage() {
                     wrapperClassName="overflow-hidden rounded mb-6 bg-bg-alt"
                     className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                     src={event.image || fallbackImage}
+                    mobileSrc={event.mobileImage || undefined}
                     alt={event.title}
                     sizes="(max-width: 768px) 100vw, 50vw"
                     quality={75}

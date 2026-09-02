@@ -42,6 +42,7 @@ const emptyEvent: Omit<Event, "id"> = {
   subtitle: "",
   description: "",
   image: "",
+  mobileImage: "",
   date: "EVENT · 2026.05",
   startDate: todayStr(),
   endDate: "",
@@ -86,6 +87,7 @@ export default function EventsAdminPage() {
       subtitle: e.subtitle,
       description: e.description,
       image: e.image,
+      mobileImage: e.mobileImage || "",
       date: e.date,
       startDate: e.startDate || "",
       endDate: e.endDate || "",
@@ -246,16 +248,23 @@ export default function EventsAdminPage() {
             <div>
               <Field
                 label="이벤트 이미지"
-                hint="이벤트 목록·상세(16:10)와 팝업(모바일 4:5 · PC 16:9)에 같은 사진이 쓰입니다. 크롭 위치는 한 지점으로 모든 화면에 적용되니, 아래 미리보기를 모두 확인하며 위치를 정하세요. 권장 크기 1200×900 이상"
+                hint="이벤트 목록·상세(16:10)와 팝업 PC(16:9), 그리고 모바일용 이미지를 따로 넣지 않았을 때의 모바일 화면 전반에 쓰입니다. 크롭 위치는 한 지점으로 이 미리보기들에 모두 적용되니, 아래 미리보기를 확인하며 위치를 정하세요. 권장 크기 1200×900 이상"
               >
                 <ImageInput
                   value={draft.image}
                   onChange={(v) => setDraft((p) => ({ ...p, image: v }))}
                   aspectRatio="16 / 10"
-                  extraRatios={[
-                    { label: "팝업 · 모바일 4:5", ratio: "4 / 5" },
-                    { label: "팝업 · PC 16:9", ratio: "16 / 9" },
-                  ]}
+                  extraRatios={[{ label: "팝업 · PC 16:9", ratio: "16 / 9" }]}
+                />
+              </Field>
+              <Field
+                label="모바일용 이미지 (선택)"
+                hint="가로로 넓은 배너 사진 안에 글씨가 있으면, 모바일 팝업(4:5)이나 모바일 목록 카드처럼 세로로 좁은 화면에서 양옆 글씨가 잘릴 수 있습니다. 그럴 때만 세로형(4:5에 가까운) 이미지를 따로 넣으세요. 비워두면 위 이벤트 이미지를 그대로 씁니다."
+              >
+                <ImageInput
+                  value={draft.mobileImage ?? ""}
+                  onChange={(v) => setDraft((p) => ({ ...p, mobileImage: v }))}
+                  aspectRatio="4 / 5"
                 />
               </Field>
               <Field

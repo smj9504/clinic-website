@@ -42,6 +42,7 @@ export default function EventsSection() {
         wrapperClassName="overflow-hidden bg-bg-alt"
         className="transition-transform duration-700 ease-out group-hover:scale-[1.06]"
         src={event.image || fallbackImage}
+        mobileSrc={event.mobileImage || undefined}
         alt={event.title}
         sizes="(max-width: 768px) 78vw, (max-width: 1024px) 42vw, 24vw"
         quality={75}
