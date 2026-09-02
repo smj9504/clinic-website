@@ -3,13 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * POST /api/reservations
  *
- * 원내 예약 서버(POST /external/v2/reservations)로 예약 생성을 중계한다.
+ * 원내 예약 서버(시그마, POST /external/v2/reservations)로 예약 생성을 중계한다.
  * 브라우저는 이 라우트만 호출하므로 API 키가 클라이언트로 노출되지 않는다.
+ * 이 앱은 병원 내부 서버에서 실행되므로 baseUrl은 내부망 사설 IP(예: 192.168.x.x)라도 무방하다.
  *
- * 필요한 환경변수 (Vercel 프로젝트 설정에 등록):
- *   RESERVATION_API_BASE_URL  예) https://api.example.com   ← 외부에서 접근 가능한 주소여야 함
- *   RESERVATION_API_KEY       예) sigma_...
- *   RESERVATION_API_SOURCE    (선택) 아래 ALLOWED_SOURCES 중 하나. 미설정 시 안 보냄
+ * 필요한 환경변수 (.env.local):
+ *   SIGMA_API_BASE_URL  예) 192.168.0.8:57443
+ *   SIGMA_API_KEY       예) sigma_...
+ *   SIGMA_API_SOURCE    (선택) 아래 ALLOWED_SOURCES 중 하나. 미설정 시 안 보냄
  */
 
 const UPSTREAM_PATH = "/external/v2/reservations";
@@ -22,7 +23,7 @@ const RESERVATION_DT_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
  * 예약 서버가 허용하는 reservation_source 값 (2026-08 실측).
  * "homepage" 같은 임의 값을 보내면 400으로 거부된다. 목록에 홈페이지용 값이 없어
  * 기본적으로는 이 필드를 아예 보내지 않고 서버 기본값(internal)에 맡긴다.
- * 업체가 홈페이지용 값을 추가해 주면 RESERVATION_API_SOURCE만 바꾸면 된다.
+ * 업체가 홈페이지용 값을 추가해 주면 SIGMA_API_SOURCE만 바꾸면 된다.
  */
 const ALLOWED_SOURCES = ["internal", "naver", "kakao", "daangn", "doctalk"];
 
@@ -81,8 +82,8 @@ function bad(message: string, status: number) {
 }
 
 export async function POST(request: NextRequest) {
-  const baseUrl = process.env.RESERVATION_API_BASE_URL;
-  const apiKey = process.env.RESERVATION_API_KEY;
+  const baseUrl = process.env.SIGMA_API_BASE_URL;
+  const apiKey = process.env.SIGMA_API_KEY;
 
   if (!baseUrl || !apiKey) {
     return bad("예약 기능이 아직 설정되지 않았습니다.", 503);
@@ -118,11 +119,11 @@ export async function POST(request: NextRequest) {
 
   // reservation_source는 클라이언트가 정하지 않는다. 이 라우트를 거친 예약은 항상
   // 홈페이지 유입이고, 값을 열어두면 naver/kakao 등으로 위장할 수 있기 때문이다.
-  const configured = process.env.RESERVATION_API_SOURCE?.trim();
+  const configured = process.env.SIGMA_API_SOURCE?.trim();
   const source = configured && ALLOWED_SOURCES.includes(configured) ? configured : undefined;
   if (configured && !source) {
     console.warn(
-      `[reservations] RESERVATION_API_SOURCE="${configured}"는 예약 서버가 받지 않는 값이라 생략합니다`
+      `[reservations] SIGMA_API_SOURCE="${configured}"는 예약 서버가 받지 않는 값이라 생략합니다`
     );
   }
 
@@ -139,11 +140,16 @@ export async function POST(request: NextRequest) {
     ...(source && { reservation_source: source }),
   };
 
+  // SIGMA_API_BASE_URL이 프로토콜 없이 "192.168.0.8:57443" 형태로 설정된 경우를
+  // 대비해 https://를 기본으로 보정한다 — 프로토콜 없는 URL은 fetch()가 상대
+  // 경로로 오인해 요청 자체가 실패한다.
+  const normalizedBaseUrl = /^https?:\/\//i.test(baseUrl) ? baseUrl : `https://${baseUrl}`;
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
 
   try {
-    const upstream = await fetch(`${baseUrl.replace(/\/+$/, "")}${UPSTREAM_PATH}`, {
+    const upstream = await fetch(`${normalizedBaseUrl.replace(/\/+$/, "")}${UPSTREAM_PATH}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

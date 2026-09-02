@@ -174,20 +174,23 @@ clinic-website/
 
 ## 예약 API 연동 (`/api/reservations`)
 
-원내 예약 서버로 예약 생성을 중계하는 서버 라우트입니다. 브라우저는 이 라우트만
-호출하므로 API 키가 클라이언트에 노출되지 않습니다.
+원내 예약 서버(시그마)로 예약 생성을 중계하는 서버 라우트입니다. 브라우저는 이
+라우트만 호출하므로 API 키가 클라이언트에 노출되지 않습니다.
 
 ```
-환자 브라우저 → /api/reservations (Vercel, 키 보관) → 예약 서버 POST /external/v2/reservations
+환자 브라우저 → /api/reservations (병원 내부 서버, 키 보관) → 예약 서버 POST /external/v2/reservations
 ```
 
-Vercel 프로젝트 환경변수에 아래 두 개를 등록해야 동작합니다. 미설정 시 503을 반환합니다.
+이 앱은 Vercel이 아니라 병원 내부 PC/서버에서 실행되므로, 예약 서버가 내부망
+사설 IP(`192.168.x.x` 등)여도 문제없이 접근할 수 있습니다.
+
+`.env.local`에 아래 두 개를 등록해야 동작합니다. 미설정 시 503을 반환합니다.
 
 | 환경변수 | 필수 | 설명 |
 |---|---|---|
-| `RESERVATION_API_BASE_URL` | 필수 | 예약 서버 주소. **외부에서 접근 가능한 주소여야 합니다** (`192.168.x.x` 같은 사설 IP는 Vercel에서 닿지 않음) |
-| `RESERVATION_API_KEY` | 필수 | 예약 서버 API 키 (`sigma_...`) |
-| `RESERVATION_API_SOURCE` | 선택 | 아래 허용값 중 하나. 미설정 시 전송하지 않아 예약 서버 기본값(`internal`)이 적용됨 |
+| `SIGMA_API_BASE_URL` | 필수 | 예약 서버 주소 (예: `192.168.0.8:57443`). 프로토콜을 생략하면 자동으로 `https://`가 붙습니다 |
+| `SIGMA_API_KEY` | 필수 | 예약 서버 API 키 (`sigma_...`) |
+| `SIGMA_API_SOURCE` | 선택 | 아래 허용값 중 하나. 미설정 시 전송하지 않아 예약 서버 기본값(`internal`)이 적용됨 |
 
 요청 본문은 `reservation_dt`(`YYYY-MM-DD HH:MM`)가 필수이고,
 `patient_uuid` · `reservation_name` · `reservation_phone` 중 최소 하나가 필요합니다.
@@ -203,7 +206,7 @@ internal, naver, kakao, daangn, doctalk
 
 홈페이지용 값이 목록에 없어서 **기본적으로 이 필드를 보내지 않습니다.** 임의 값
 (`homepage` 등)을 보내면 예약이 400으로 거부되기 때문입니다. 업체가 홈페이지용 값을
-추가해 주면 `RESERVATION_API_SOURCE`만 설정하면 되고, 허용되지 않는 값이 들어오면
+추가해 주면 `SIGMA_API_SOURCE`만 설정하면 되고, 허용되지 않는 값이 들어오면
 경고 로그를 남기고 생략해 예약 자체는 성공시킵니다.
 
 그동안 접수 화면에서 홈페이지 예약을 구분할 수 있도록 **메모 앞에 `[홈페이지]`를
@@ -221,7 +224,7 @@ internal, naver, kakao, daangn, doctalk
 | 503 | 위 환경변수 미설정 |
 
 > 이 라우트는 인증 없이 공개됩니다. 실제 오픈 전에는 캡차 등 추가 방어를 붙이세요.
-> 현재 IP당 분당 5회 제한은 서버리스 인스턴스 메모리 기반이라 best-effort입니다.
+> 현재 IP당 분당 5회 제한은 프로세스 메모리 기반이라 서버 재시작 시 초기화되는 best-effort입니다.
 
 ## 추후 백엔드 연동
 
