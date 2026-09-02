@@ -57,6 +57,33 @@ export function isPastClinicHoursToday(dateStr: string, hours: { weekday: string
   return nowKST() >= closes;
 }
 
+/**
+ * 주어진 날짜의 진료 시간을 30분 간격 "HH:MM" 슬롯 배열로 반환한다.
+ * 평일(월~금)은 hours.weekday, 토요일은 hours.saturday를 파싱해서 쓰고,
+ * 일요일이거나 hours 텍스트 형식이 안 맞으면 빈 배열(=선택 가능한 슬롯 없음).
+ * 종료 시각(closes) 자체는 슬롯에 포함하지 않는다 — 예: 10:00–18:00이면
+ * 마지막 슬롯은 17:30(30분 진료가 종료 시각 안에 들어가는 마지막 시작 시각).
+ */
+export function generateTimeSlots(dateStr: string, hours: { weekday: string; saturday: string }): string[] {
+  const weekday = weekdayOf(dateStr);
+  if (weekday === 0) return []; // 일요일 휴진
+  const range = weekday === 6 ? parseHoursRange(hours.saturday) : parseHoursRange(hours.weekday);
+  if (!range) return [];
+
+  const [openH, openM] = range.opens.split(":").map(Number);
+  const [closeH, closeM] = range.closes.split(":").map(Number);
+  const openMinutes = openH * 60 + openM;
+  const closeMinutes = closeH * 60 + closeM;
+
+  const slots: string[] = [];
+  for (let t = openMinutes; t < closeMinutes; t += 30) {
+    const h = Math.floor(t / 60);
+    const m = t % 60;
+    slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+  }
+  return slots;
+}
+
 /** "YYYY-MM-DD"에 days를 더한 날짜를 "YYYY-MM-DD"로 반환 (UTC 자정 기준 순수 달력 연산, 시간대 영향 없음) */
 export function addDays(dateStr: string, days: number): string {
   const [y, m, d] = dateStr.split("-").map(Number);

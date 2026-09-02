@@ -11,6 +11,14 @@ import {
 } from "@/lib/reservationsApi";
 import { isValidSigmaDateTime, type ReservationRequest, type ReservationStatus } from "@/lib/reservations";
 import { formatKRW } from "@/lib/price";
+import { useSiteData } from "@/lib/useSiteData";
+import ReservationSlotPicker from "@/components/admin/ReservationSlotPicker";
+
+/** "YYYY-MM-DD HH:MM" → { date, time } — 슬롯 피커의 초기값으로 쓰기 위해 분리한다 */
+function splitReservationDt(value: string): { date: string; time?: string } {
+  const [date, time] = value.trim().split(" ");
+  return { date: date || "", time: time || undefined };
+}
 
 /** "2026-09-01" → "2026-09" — 월별 필터 키 */
 function monthKey(desiredDate: string): string {
@@ -43,6 +51,7 @@ export default function ReservationsAdminPage() {
 }
 
 function ReservationsAdminPageInner() {
+  const { clinicInfo } = useSiteData();
   const searchParams = useSearchParams();
   const focusId = searchParams.get("id");
   const [reservations, setReservations] = useState<ReservationRequest[] | null>(null);
@@ -325,32 +334,35 @@ function ReservationsAdminPageInner() {
 
               {confirmingId === r.id && (
                 <div className="mt-4 pt-4 border-t border-line bg-bg-alt -mx-5 px-5 pb-1">
-                  <Field
-                    label="확정 예약 일시 (병원 시스템에 등록할 정확한 시각)"
-                    hint="YYYY-MM-DD HH:MM 형식 — 예: 2026-09-01 14:30"
-                  >
-                    <div className="flex gap-2">
-                      <TextInput
-                        value={reservationDtDrafts[r.id] ?? ""}
-                        onChange={(e) =>
-                          setReservationDtDrafts((p) => ({ ...p, [r.id]: e.target.value }))
-                        }
-                        placeholder="2026-09-01 14:30"
-                      />
-                      <Button size="sm" onClick={() => submitConfirm(r.id)} disabled={confirming}>
-                        {confirming ? "확정 중..." : "확정 확인"}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={cancelConfirming} disabled={confirming}>
-                        취소
-                      </Button>
-                    </div>
+                  <Field label="확정 예약 일시 (병원 시스템에 등록할 정확한 시각)">
+                    {(() => {
+                      const { date, time } = splitReservationDt(reservationDtDrafts[r.id] ?? r.desiredDate);
+                      return (
+                        <ReservationSlotPicker
+                          initialDate={date}
+                          initialTime={time}
+                          clinicHours={clinicInfo.hours}
+                          onChange={(reservationDt) =>
+                            setReservationDtDrafts((p) => ({ ...p, [r.id]: reservationDt ?? "" }))
+                          }
+                        />
+                      );
+                    })()}
                   </Field>
+                  <div className="flex gap-2 mt-3">
+                    <Button size="sm" onClick={() => submitConfirm(r.id)} disabled={confirming}>
+                      {confirming ? "확정 중..." : "확정 확인"}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={cancelConfirming} disabled={confirming}>
+                      취소
+                    </Button>
+                  </div>
                   {confirmError && (
-                    <p className="text-sm text-red-600 -mt-3 mb-2" role="alert">
+                    <p className="text-sm text-red-600 mt-2" role="alert">
                       {confirmError}
                     </p>
                   )}
-                  <p className="text-xs text-ink-muted -mt-3 mb-2">
+                  <p className="text-xs text-ink-muted mt-2">
                     확정하면 이 일시로 한의원 예약 시스템(시그마)에 실제 예약이 생성되고, 병원 시스템이
                     환자에게 확정 문자를 자동으로 보냅니다.
                   </p>

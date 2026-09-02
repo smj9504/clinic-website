@@ -91,6 +91,17 @@ export async function deleteReservationRequest(id: string): Promise<boolean> {
   return res?.success === true;
 }
 
+/**
+ * 특정 날짜에 병원 시스템(시그마)에 이미 잡혀 있는 예약 시각("HH:MM") 목록을 조회한다.
+ * upstreamFailed가 true면 시그마 조회에 실패한 것 — 호출부는 이 경우 슬롯을
+ * 제한 없이 보여주는 폴백으로 처리해야 한다.
+ */
+export async function fetchAvailableSlots(
+  date: string
+): Promise<{ bookedTimes: string[]; upstreamFailed?: boolean } | null> {
+  return request(`/api/admin/available-slots?date=${encodeURIComponent(date)}`, "GET");
+}
+
 /** 공개 예약 신청 폼에서 사용 — 인증 헤더 불필요 */
 export async function submitReservationRequest(
   draft: ReservationDraft

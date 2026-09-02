@@ -142,3 +142,77 @@ export async function createSigmaReservation(
     },
   };
 }
+
+export type SigmaReservationListItem = {
+  reservationDt: string;
+  reservationStatus: string;
+};
+
+export type SigmaListResult =
+  | { ok: true; reservations: SigmaReservationListItem[] }
+  | { ok: false; error: string; status?: number };
+
+/**
+ * 특정 날짜(from_date === to_date)에 잡혀 있는 예약 목록을 조회한다.
+ * 관리자가 확정 처리 시 "이미 찬 시간"을 골라주기 위해 쓰인다(app/api/admin/available-slots).
+ *
+ * reservation_status 파라미터는 일부러 보내지 않는다 — 명세서에 "생략 시
+ * 예약중, 예약변경 조회"라고 되어 있어, 취소된 건은 서버가 이미 걸러서
+ * 응답에서 빼준다. 즉 이 함수가 돌려주는 항목은 전부 "그 시간이 실제로
+ * 차 있다"는 뜻이라, 클라이언트에서 status 값으로 다시 판단할 필요가 없다.
+ *
+ * 명세서상 limit 기본값은 50이며 has_next/next_cursor로 페이지네이션한다.
+ * 하루에 50건을 넘는 예약은 실제로는 없겠지만, 안전하게 다음 페이지까지 이어서 모은다.
+ */
+export async function listSigmaReservations(date: string): Promise<SigmaListResult> {
+  const baseUrl = getBaseUrl();
+  const apiKey = getApiKey();
+
+  const rejectUnauthorized = process.env.SIGMA_TLS_REJECT_UNAUTHORIZED !== "0";
+  const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+  if (!rejectUnauthorized) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
+
+  try {
+    const items: SigmaReservationListItem[] = [];
+    let cursor: string | undefined;
+
+    // 페이지가 계속 이어지는 상황(예: 업스트림 응답 형식 이상으로 next_cursor가
+    // 무한 반복되는 경우)을 방어하기 위해 최대 페이지 수를 제한한다.
+    for (let page = 0; page < 20; page++) {
+      const params = new URLSearchParams({ from_date: date, to_date: date, limit: "50" });
+      if (cursor) params.set("cursor", cursor);
+
+      const response = await fetch(`${baseUrl}/external/v2/reservations?${params}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+
+      if (!response.ok) {
+        const problem = (await response.json().catch(() => null)) as SigmaProblemDetails | null;
+        const detail = problem?.detail || problem?.title || `요청이 거부되었습니다 (${response.status})`;
+        return { ok: false, status: response.status, error: detail };
+      }
+
+      const data = await response.json().catch(() => null);
+      const results = Array.isArray(data?.results) ? data.results : [];
+      for (const r of results) {
+        if (typeof r?.reservation_dt === "string" && typeof r?.reservation_status === "string") {
+          items.push({ reservationDt: r.reservation_dt, reservationStatus: r.reservation_status });
+        }
+      }
+
+      if (!data?.pagination?.has_next || !data?.pagination?.next_cursor) break;
+      cursor = data.pagination.next_cursor;
+    }
+
+    return { ok: true, reservations: items };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: `시그마 서버에 연결할 수 없습니다. (${message})` };
+  } finally {
+    if (!rejectUnauthorized) {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousTlsSetting;
+    }
+  }
+}
