@@ -30,7 +30,7 @@ export default function TreatmentsSection() {
           {treatments.map((item) => (
             <Link
               key={item.id}
-              href={`/treatments#${item.slug}`}
+              href={item.linkUrl || "/treatments"}
               className="group treatment-cell bg-bg p-10 min-h-[280px] flex flex-col justify-between"
               data-reveal-item
             >

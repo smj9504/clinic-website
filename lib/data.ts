@@ -22,6 +22,8 @@ export type Treatment = {
   longDescription?: string;
   slug: string;
   image?: string;
+  /** 카드 클릭 시 이동할 실제 경로 (예: /subpages/pain-treatment, /skin-beauty). 미지정 시 /treatments로 이동. */
+  linkUrl?: string;
 };
 
 export type Director = {

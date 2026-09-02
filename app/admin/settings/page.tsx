@@ -608,6 +608,14 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
                 </Button>
               </div>
             </div>
+            <div className="mb-3">
+              <label className="block text-xs text-ink-muted mb-1">연결 링크 (클릭 시 이동 경로, 예: /subpages/pain-treatment)</label>
+              <TextInput
+                value={t.linkUrl || ""}
+                onChange={(e) => update(t.id, { linkUrl: e.target.value })}
+                placeholder="/subpages/pain-treatment"
+              />
+            </div>
             <div>
               <label className="block text-xs text-ink-muted mb-1">진료 이미지</label>
               <ImageInput
