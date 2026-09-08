@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { stripImagePosition, getImageCropStyle, setImagePosition } from "@/lib/imagePosition";
 import ImagePositionModal from "@/components/admin/ImagePositionModal";
+import { getSupabaseClient } from "@/lib/supabase";
 import {
   MAX_REQUEST_BYTES,
   MAX_UPLOAD_BYTES,
@@ -186,18 +187,50 @@ export function ImageInput({
       return;
     }
 
+    const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
+
     setUploading(true);
     try {
+      // 동영상은 병원 내부 서버(또는 그 앞단)의 요청 본문 크기 제한에 걸리기
+      // 쉬워(수십MB 클립이 흔함) 서버를 거치지 않는다 — /api/upload-url에서
+      // 서명된 업로드 URL만 받아 브라우저가 Supabase Storage에 직접 전송한다.
+      if (isVideo) {
+        const urlRes = await fetch("/api/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type,
+            size: file.size,
+            password,
+          }),
+        });
+        const urlJson = await urlRes.json();
+        if (!urlRes.ok) {
+          alert(`업로드 실패: ${urlJson.error || urlRes.statusText}`);
+          return;
+        }
+
+        const { error: uploadError } = await getSupabaseClient()
+          .storage.from("site-assets")
+          .uploadToSignedUrl(urlJson.path, urlJson.token, file, { contentType: file.type });
+        if (uploadError) {
+          alert(`업로드 실패: ${uploadError.message}`);
+          return;
+        }
+
+        onChange(urlJson.publicUrl);
+        return;
+      }
+
       // 이미지는 전송 전에 1920px WebP로 축소 — 서버가 어차피 같은 크기로 변환하므로
-      // 최종 화질은 그대로면서 요청 본문 크기 제한에 걸리지 않는다. 동영상은
-      // 브라우저에서 재인코딩할 수 없어 원본 그대로 보낸다.
-      const upload = isVideo ? file : await shrinkForUpload(file);
-      if (!isVideo && upload.size > MAX_REQUEST_BYTES) {
+      // 최종 화질은 그대로면서 요청 본문 크기 제한에 걸리지 않는다.
+      const upload = await shrinkForUpload(file);
+      if (upload.size > MAX_REQUEST_BYTES) {
         alert("이미지를 압축하지 못했습니다. JPG 또는 PNG로 변환한 뒤 다시 시도해주세요.");
         return;
       }
 
-      const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
       const formData = new FormData();
       formData.append("file", upload);
       formData.append("password", password);

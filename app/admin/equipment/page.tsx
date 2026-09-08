@@ -194,13 +194,14 @@ export default function EquipmentAdminPage() {
                   />
                 </Field>
                 <Field
-                  label="와이드 이미지 (선택)"
-                  hint="피부미용 페이지 장비 탭 하단 전체폭 영역 전용 고화질 사진입니다. 권장 비율 21:9, 고해상도(2000px 이상) 권장. 비워두면 위 대표 이미지가 대신 쓰입니다"
+                  label="와이드 이미지/동영상 (선택)"
+                  hint="피부미용 페이지 장비 탭 하단 전체폭 영역 전용 고화질 사진 또는 동영상입니다. 권장 비율 21:9, 고해상도(2000px 이상) 권장. 비워두면 위 대표 이미지가 대신 쓰입니다"
                 >
                   <ImageInput
                     value={draft.showcaseImage ?? eq.showcaseImage ?? ""}
                     onChange={(v) => setDraft((p) => ({ ...p, showcaseImage: v }))}
                     aspectRatio="21 / 9"
+                    allowVideo
                   />
                 </Field>
                 <div className="flex gap-2 mt-4">
