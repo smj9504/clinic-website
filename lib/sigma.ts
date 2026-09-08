@@ -50,6 +50,14 @@ function getBaseUrl(): string {
   if (!url) {
     throw new Error("SIGMA_API_BASE_URL 환경변수가 설정되지 않았습니다.");
   }
+  // http(s):// 스킴이 빠지면 fetch가 "Failed to parse URL"로 실패하는데, 에러
+  // 메시지만 보면 원인(스킴 누락)을 바로 알아채기 어렵다. 여기서 먼저 걸러서
+  // 무엇이 잘못됐는지 바로 알 수 있게 한다.
+  if (!/^https?:\/\//i.test(url)) {
+    throw new Error(
+      `SIGMA_API_BASE_URL에 http:// 또는 https:// 스킴이 없습니다: "${url}"`
+    );
+  }
   return url.replace(/\/$/, "");
 }
 
