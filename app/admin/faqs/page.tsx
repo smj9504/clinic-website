@@ -13,6 +13,7 @@ import {
   Card,
   Toast,
 } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 
 const emptyFaq: Omit<FaqItem, "id" | "sortOrder"> = {
   category: "진료",
@@ -21,6 +22,7 @@ const emptyFaq: Omit<FaqItem, "id" | "sortOrder"> = {
 };
 
 export default function FaqsAdminPage() {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { faqs } = useSiteDataForLocale(editingLocale);
   const update = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
@@ -66,7 +68,7 @@ export default function FaqsAdminPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("이 FAQ를 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 FAQ를 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await update((d) => ({ ...d, faqs: d.faqs.filter((f) => f.id !== id) }));
     if (ok) setToast("FAQ가 삭제되었습니다");
   };

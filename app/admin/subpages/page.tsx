@@ -7,6 +7,7 @@ import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
 import { updateSiteData, generateId, type SiteData } from "@/lib/storage";
 import { PageHeader, Button, Card, Toast } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 
 const GROUPS: { parentMenuId: string; title: string }[] = [
   { parentMenuId: "m7", title: "피부미용" },
@@ -14,6 +15,7 @@ const GROUPS: { parentMenuId: string; title: string }[] = [
 ];
 
 export default function SubPagesAdminPage() {
+  const confirm = useConfirm();
   const router = useRouter();
   const { editingLocale } = useAdminLocale();
   const { subPages } = useSiteDataForLocale(editingLocale);
@@ -46,7 +48,7 @@ export default function SubPagesAdminPage() {
   };
 
   const removePage = async (id: string) => {
-    if (!confirm("이 시술 페이지를 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 시술 페이지를 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await update((d) => ({
       ...d,
       subPages: (d.subPages ?? []).filter((sp) => sp.id !== id),

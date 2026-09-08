@@ -3,6 +3,7 @@
 import { useState } from "react";
 import RichEditor from "@/components/admin/RichEditor";
 import { Button, ImageInput, TextArea, TextInput } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import {
   BLOCK_PRESETS,
   createBlock,
@@ -231,6 +232,7 @@ export type ServiceBlockEditorProps = {
 };
 
 export default function ServiceBlockEditor({ blocks, locale, onChange }: ServiceBlockEditorProps) {
+  const confirm = useConfirm();
   const [newType, setNewType] = useState<ServiceBlockType>("richtext");
 
   const updateBlock = (id: string, patch: Partial<ServiceBlock>) =>
@@ -276,8 +278,13 @@ export default function ServiceBlockEditor({ blocks, locale, onChange }: Service
                   type="button"
                   size="sm"
                   variant="danger"
-                  onClick={() => {
-                    if (!confirm("이 블록을 삭제하시겠습니까?")) return;
+                  onClick={async () => {
+                    const ok = await confirm({
+                      message: "이 블록을 삭제하시겠습니까?",
+                      confirmText: "삭제",
+                      danger: true,
+                    });
+                    if (!ok) return;
                     onChange(blocks.filter((b) => b.id !== block.id));
                   }}
                 >

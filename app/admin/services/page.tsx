@@ -25,6 +25,7 @@ import {
 } from "@/lib/services";
 import { computePrice, formatKRW } from "@/lib/price";
 import { PageHeader, Button, Card, TextInput, Toast, ImageInput } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 
 type Sortable = { id: string; sortOrder: number };
 
@@ -79,6 +80,7 @@ function EmptyNote({ children }: { children: React.ReactNode }) {
 }
 
 export default function ServicesAdminPage() {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { categories, subcategories, services, loading, setupRequired, error, reload } =
     useServiceCatalog({ includeHidden: true });
@@ -224,7 +226,13 @@ export default function ServicesAdminPage() {
         ? `하위 서브카테고리 ${subs.length}개와 시술 ${svcCount}개가 함께 삭제됩니다.`
         : `이 서브카테고리의 시술 ${svcCount}개가 함께 삭제됩니다.`;
 
-    if (!confirm(`"${name}"을(를) 삭제하시겠습니까?\n\n${detail}\n이 작업은 되돌릴 수 없습니다.`)) return;
+    const ok = await confirm({
+      title: `"${name}" 삭제`,
+      message: `${detail}\n이 작업은 되돌릴 수 없습니다.\n\n삭제하시겠습니까?`,
+      confirmText: "삭제",
+      danger: true,
+    });
+    if (!ok) return;
 
     setBusy(true);
     const result = await deleteTaxonomy(kind, item.id);
@@ -262,7 +270,13 @@ export default function ServicesAdminPage() {
 
   const removeService = async (service: Service) => {
     const { name } = serviceText(service, editingLocale);
-    if (!confirm(`"${name || "이름 없는 시술"}"을(를) 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    const ok = await confirm({
+      title: `"${name || "이름 없는 시술"}" 삭제`,
+      message: "이 작업은 되돌릴 수 없습니다.\n\n삭제하시겠습니까?",
+      confirmText: "삭제",
+      danger: true,
+    });
+    if (!ok) return;
     run(() => deleteService(service.id), "시술이 삭제되었습니다");
   };
 

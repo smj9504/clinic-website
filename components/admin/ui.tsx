@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { stripImagePosition, getImageCropStyle, setImagePosition } from "@/lib/imagePosition";
 import ImagePositionModal from "@/components/admin/ImagePositionModal";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -100,14 +100,42 @@ export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
   );
 }
 
-export function Button({
-  variant = "primary",
-  size = "md",
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "danger" | "ghost";
-  size?: "sm" | "md" | "icon";
-}) {
+/**
+ * onClick이 Promise를 돌려주면 그것이 끝날 때까지 버튼을 자동으로 비활성화한다.
+ * 삭제·저장처럼 네트워크를 타는 버튼을 연타해 같은 요청이 여러 번 나가는 것을 막는다.
+ * (호출부에서 별도 busy 상태를 만들 필요가 없다. 이미 disabled를 직접 넘기는 곳은
+ *  그 값이 우선한다 — 둘 중 하나라도 true면 비활성.)
+ */
+export const Button = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: "primary" | "secondary" | "danger" | "ghost";
+    size?: "sm" | "md" | "icon";
+  }
+>(function Button({ variant = "primary", size = "md", onClick, disabled, ...props }, ref) {
+  const [pending, setPending] = useState(false);
+  // 비동기 작업이 끝나기 전에 버튼이 사라질 수 있다(목록에서 삭제된 행 등).
+  // 언마운트 후 setState를 호출하지 않도록 살아 있는지 추적한다.
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  const handleClick = onClick
+    ? (e: React.MouseEvent<HTMLButtonElement>) => {
+        const result = onClick(e) as unknown;
+        if (result && typeof (result as Promise<unknown>).then === "function") {
+          setPending(true);
+          (result as Promise<unknown>).finally(() => {
+            if (alive.current) setPending(false);
+          });
+        }
+      }
+    : undefined;
+
   const variantClass =
     variant === "primary"
       ? "bg-ink text-ink-inverse hover:bg-ink-soft"
@@ -126,14 +154,17 @@ export function Button({
 
   return (
     <button
+      ref={ref}
       {...props}
+      onClick={handleClick}
+      disabled={disabled || pending}
       className={`inline-flex items-center gap-1.5 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variantClass} ${sizeClass} ${
         props.className || ""
       }`}
       style={{ letterSpacing: "-0.02em", ...(props.style || {}) }}
     />
   );
-}
+});
 
 const VIDEO_EXT_RE = /\.(mp4|webm|mov)(\?|#|$)/i;
 

@@ -17,6 +17,7 @@ import {
   ImageInput,
   Toast,
 } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import RichEditor from "@/components/admin/RichEditor";
 import LinkedServicesPicker from "@/components/admin/equipment/LinkedServicesPicker";
 
@@ -43,12 +44,14 @@ const emptyEvent: Omit<Event, "id"> = {
   description: "",
   image: "",
   mobileImage: "",
+  detailImage: "",
   date: "EVENT · 2026.05",
   startDate: todayStr(),
   endDate: "",
 };
 
 export default function EventsAdminPage() {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { events, eventEndedHide, clinicInfo } = useSiteDataForLocale(editingLocale);
   const fallbackImage = clinicInfo.defaultImage || "/gowoonbit.jpg";
@@ -88,6 +91,7 @@ export default function EventsAdminPage() {
       description: e.description,
       image: e.image,
       mobileImage: e.mobileImage || "",
+      detailImage: e.detailImage || "",
       date: e.date,
       startDate: e.startDate || "",
       endDate: e.endDate || "",
@@ -150,7 +154,7 @@ export default function EventsAdminPage() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("이 이벤트를 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 이벤트를 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await update((d) => ({
       ...d,
       events: d.events.filter((e) => e.id !== id),
@@ -265,6 +269,16 @@ export default function EventsAdminPage() {
                   value={draft.mobileImage ?? ""}
                   onChange={(v) => setDraft((p) => ({ ...p, mobileImage: v }))}
                   aspectRatio="4 / 5"
+                />
+              </Field>
+              <Field
+                label="상세페이지 전용 이미지 (선택)"
+                hint="가격표처럼 이미지 안에 금액·조건이 적혀 있어 한 글자도 잘리면 안 될 때 사용합니다. 여기에 이미지를 넣으면 이벤트 상세페이지에서 자르거나 글씨를 덮지 않고 원본 그대로 전부 보여주고, 상단 제목 배경도 이 이미지 대신 단색으로 처리해 금액이 가려지지 않습니다. 비워두면 위 이벤트 이미지를 그대로 씁니다."
+              >
+                <ImageInput
+                  value={draft.detailImage ?? ""}
+                  onChange={(v) => setDraft((p) => ({ ...p, detailImage: v }))}
+                  aspectRatio="auto"
                 />
               </Field>
               <Field

@@ -16,6 +16,7 @@ import {
   ImageInput,
   Toast,
 } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import LinkedServicesPicker from "@/components/admin/equipment/LinkedServicesPicker";
 
 type Draft = Partial<Omit<Equipment, "tags">> & { tagsText?: string };
@@ -31,6 +32,7 @@ function textToTags(text: string) {
 }
 
 export default function EquipmentAdminPage() {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { equipment, equipmentPageBanner } = useSiteDataForLocale(editingLocale);
   const { categories, subcategories, services } = useServiceCatalog({ includeHidden: true });
@@ -86,7 +88,7 @@ export default function EquipmentAdminPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("이 장비를 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 장비를 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await update((d) => ({
       ...d,
       equipment: (d.equipment ?? []).filter((eq) => eq.id !== id).map((eq, i) => ({ ...eq, sortOrder: i })),

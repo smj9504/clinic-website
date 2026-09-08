@@ -17,6 +17,7 @@ import {
   Toast,
   isVideoUrl,
 } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 
 const HERO_EFFECT_OPTIONS: { value: HeroSlideEffect; label: string }[] = [
   { value: "pan-right", label: "우측 팬" },
@@ -297,6 +298,7 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
 
 // ─── Hero Slides Tab ───
 function HeroSlidesTab({ onSave }: { onSave: () => void }) {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { heroSlides } = useSiteDataForLocale(editingLocale);
   const updateData = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
@@ -314,7 +316,7 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("이 슬라이드를 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 슬라이드를 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await updateData((d) => ({
       ...d,
       heroSlides: d.heroSlides.filter((s) => s.id !== id),
@@ -491,6 +493,7 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
 
 // ─── Treatments Tab ───
 function TreatmentsTab({ onSave }: { onSave: () => void }) {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { treatments } = useSiteDataForLocale(editingLocale);
   const updateData = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
@@ -507,7 +510,7 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("이 진료 항목을 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 진료 항목을 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await updateData((d) => ({
       ...d,
       treatments: d.treatments.filter((t) => t.id !== id),

@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader, Card, Button, TextArea, Field, TextInput } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import {
   fetchReservationRequests,
   updateReservationStatus,
@@ -54,6 +55,7 @@ export default function ReservationsAdminPage() {
 }
 
 function ReservationsAdminPageInner() {
+  const confirm = useConfirm();
   const { clinicInfo } = useSiteData();
   const searchParams = useSearchParams();
   const focusId = searchParams.get("id");
@@ -178,7 +180,7 @@ function ReservationsAdminPageInner() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("이 예약 신청을 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 예약 신청을 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await deleteReservationRequest(id);
     if (ok) {
       setReservations((prev) => prev?.filter((r) => r.id !== id) ?? prev);

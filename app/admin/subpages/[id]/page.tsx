@@ -34,6 +34,7 @@ import {
   Toast,
   TabPanel,
 } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import RichEditor from "@/components/admin/RichEditor";
 import AreaMapPicker from "@/components/admin/subpages/AreaMapPicker";
 import ChecklistHeroPicker from "@/components/admin/subpages/ChecklistHeroPicker";
@@ -180,6 +181,7 @@ function ChecklistBlockEditor({
 }
 
 export default function SubPageEditPage() {
+  const confirm = useConfirm();
   const params = useParams();
   const router = useRouter();
   const id = typeof params?.id === "string" ? params.id : "";
@@ -392,7 +394,7 @@ export default function SubPageEditPage() {
   };
 
   const remove = async () => {
-    if (!confirm("이 시술 페이지를 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 시술 페이지를 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await updateSiteData(
       (d) => ({ ...d, subPages: (d.subPages ?? []).filter((sp) => sp.id !== id) }),
       editingLocale

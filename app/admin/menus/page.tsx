@@ -13,6 +13,7 @@ import {
   ImageInput,
   Toast,
 } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 
 /** 최상위 또는 자식(1단계) 메뉴 항목을 id로 찾아 patch를 적용한다 */
 function updateMenuTree(menus: MenuItem[], id: string, patch: Partial<MenuItem>): MenuItem[] {
@@ -29,6 +30,7 @@ function updateMenuTree(menus: MenuItem[], id: string, patch: Partial<MenuItem>)
 }
 
 export default function MenusAdminPage() {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { menus, subPages } = useSiteDataForLocale(editingLocale);
   const [editing, setEditing] = useState<string | null>(null);
@@ -122,7 +124,7 @@ export default function MenusAdminPage() {
   };
 
   const deleteChild = async (parentId: string, childId: string) => {
-    if (!confirm("이 하위 메뉴를 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 하위 메뉴를 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await update((d) => ({
       ...d,
       menus: d.menus.map((m) => {
