@@ -19,7 +19,14 @@ const POS_RE = /#pos=(-?[\d.]+),(-?[\d.]+)(?:,(-?[\d.]+))?$/;
 export type ImagePosition = { x: number; y: number; scale: number };
 
 const clamp01to100 = (n: number) => Math.min(100, Math.max(0, n));
-const MIN_SCALE = 1;
+/**
+ * 1 미만(축소)도 허용한다 — 세로로 긴 이미지를 가로형 박스에 억지로 꽉
+ * 채우지(cover) 않고, 전체가 잘리지 않게 줄여서(letterbox 여백과 함께)
+ * 보여주고 싶을 때 쓴다. getImageCropStyle이 scale<1이면 object-fit을
+ * contain으로 전환해 실제로 이미지 전체가 보이게 한다(1 이상에서는
+ * 기존처럼 cover 위에서 확대).
+ */
+export const MIN_SCALE = 0.3;
 const MAX_SCALE = 3;
 const clampScale = (n: number) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, n));
 
@@ -43,12 +50,20 @@ export function stripImagePosition(url: string): string {
 
 /**
  * object-cover 프레임 안에서 크롭 위치·확대를 함께 적용하는 style 객체.
- * scale은 object-position만으로 표현할 수 없어(object-fit: cover는 확대를
- * 지원하지 않음) transform: scale()을 함께 써야 한다 — transform-origin을
+ * scale >= 1(확대)은 object-position만으로 표현할 수 없어(object-fit: cover는
+ * 확대를 지원하지 않음) transform: scale()을 함께 쓴다 — transform-origin을
  * object-position과 동일하게 맞춰야 확대 중심이 사용자가 고른 초점과 일치한다.
  * 배율이 1(기본값)이면 transform을 아예 넣지 않아 기존 렌더링과 100% 동일하다.
+ *
+ * scale < 1(축소)은 다르게 처리한다 — cover 위에서 그대로 축소하면 이미
+ * cover가 잘라낸 결과물을 한 번 더 줄이는 것뿐이라 "전체 보이기"가 안 된다.
+ * 대신 object-fit 자체를 contain으로 바꿔 이미지 전체가 프레임 안에 들어가게
+ * 하고(모자란 자리는 배경색 여백), objectPosition은 그 안에서 이미지가
+ * 붙는 위치로 쓰인다. 세로로 긴 이미지를 가로형 박스에 잘리지 않게 넣고
+ * 싶을 때(예: 인물 전신 사진) 이 경로를 쓴다.
  */
 export function getImageCropStyle(url: string | null | undefined): {
+  objectFit?: "contain";
   objectPosition: string;
   transform?: string;
   transformOrigin?: string;
@@ -56,6 +71,7 @@ export function getImageCropStyle(url: string | null | undefined): {
   const pos = parseImagePosition(url);
   if (!pos) return { objectPosition: "50% 50%" };
   const objectPosition = `${pos.x}% ${pos.y}%`;
+  if (pos.scale < 1) return { objectFit: "contain", objectPosition };
   if (pos.scale === 1) return { objectPosition };
   return { objectPosition, transform: `scale(${pos.scale})`, transformOrigin: objectPosition };
 }

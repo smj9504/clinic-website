@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { parseImagePosition, stripImagePosition } from "@/lib/imagePosition";
+import {
+  MIN_SCALE,
+  getImageCropStyle,
+  parseImagePosition,
+  setImagePosition,
+  stripImagePosition,
+} from "@/lib/imagePosition";
 
-const MIN_SCALE = 1;
 const MAX_SCALE = 3;
 const SCALE_STEP = 0.05;
 
@@ -94,6 +99,12 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
     setScale(1);
   };
 
+  // 드래그 중인 pos/scale을 실제 렌더링 지점(getImageCropStyle)과 동일한
+  // 스타일로 변환해 미리보기가 저장 후 결과와 정확히 일치하게 한다 —
+  // scale<1이면 object-fit이 contain으로 바뀌어야 "전체 보이기"가 실제로 보인다.
+  const previewStyle = getImageCropStyle(setImagePosition(cleanUrl, pos.x, pos.y, scale));
+  const previewObjectFit = previewStyle.objectFit ?? "cover";
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md"
@@ -143,24 +154,16 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
               autoPlay
               loop
               playsInline
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-              style={{
-                objectPosition: `${pos.x}% ${pos.y}%`,
-                transform: scale !== 1 ? `scale(${scale})` : undefined,
-                transformOrigin: `${pos.x}% ${pos.y}%`,
-              }}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ ...previewStyle, objectFit: previewObjectFit }}
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={cleanUrl}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-              style={{
-                objectPosition: `${pos.x}% ${pos.y}%`,
-                transform: scale !== 1 ? `scale(${scale})` : undefined,
-                transformOrigin: `${pos.x}% ${pos.y}%`,
-              }}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ ...previewStyle, objectFit: previewObjectFit }}
             />
           )}
 
@@ -182,7 +185,7 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
 
         <div className="flex items-center gap-3 mt-4">
           <label className="text-xs text-ink-muted shrink-0" style={{ letterSpacing: "-0.01em" }}>
-            확대
+            확대/축소
           </label>
           <input
             type="range"
@@ -195,6 +198,11 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
           />
           <span className="text-xs text-ink-muted w-10 text-right font-mono">{scale.toFixed(2)}x</span>
         </div>
+        {scale < 1 && (
+          <p className="text-xs text-ink-muted mt-1.5" style={{ letterSpacing: "-0.01em" }}>
+            1.00x 미만으로 줄이면 사진 전체가 잘리지 않고 다 보이는 대신, 남는 자리에 여백이 생깁니다.
+          </p>
+        )}
 
         {extraRatios.length > 0 && (
           <div className="flex gap-3 mt-4 flex-wrap">
@@ -211,24 +219,16 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
                       autoPlay
                       loop
                       playsInline
-                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                      style={{
-                        objectPosition: `${pos.x}% ${pos.y}%`,
-                        transform: scale !== 1 ? `scale(${scale})` : undefined,
-                        transformOrigin: `${pos.x}% ${pos.y}%`,
-                      }}
+                      className="absolute inset-0 w-full h-full pointer-events-none"
+                      style={{ ...previewStyle, objectFit: previewObjectFit }}
                     />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={cleanUrl}
                       alt=""
-                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                      style={{
-                        objectPosition: `${pos.x}% ${pos.y}%`,
-                        transform: scale !== 1 ? `scale(${scale})` : undefined,
-                        transformOrigin: `${pos.x}% ${pos.y}%`,
-                      }}
+                      className="absolute inset-0 w-full h-full pointer-events-none"
+                      style={{ ...previewStyle, objectFit: previewObjectFit }}
                     />
                   )}
                 </div>
