@@ -142,7 +142,7 @@ export default function PopupModal() {
       onClick={() => close()}
     >
       <div
-        className="bg-bg w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-lg relative flex flex-col"
+        className="bg-bg w-full max-w-5xl max-h-[92dvh] overflow-hidden rounded-lg relative flex flex-col"
         style={{ animation: "scaleIn 400ms cubic-bezier(0.16, 1, 0.3, 1)" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -155,10 +155,14 @@ export default function PopupModal() {
         </button>
 
         {/* Image — no text, slides left/right between events */}
+        {/*
+          이미지 영역은 고정 비율 대신 "모달에 남은 높이 전부"를 차지한다.
+          고정 aspect + object-cover 조합에서는 세로로 긴 이미지(가격표 등)의
+          위아래가 잘려나갔다. min-h로 최소 높이만 보장하고 나머지는 flex-1로
+          늘려, 화면이 허락하는 만큼 이미지를 크게 보여준다.
+        */}
         {currentItem && (
-          <div
-            className="relative w-full bg-accent overflow-hidden aspect-[4/5] sm:aspect-[16/9]"
-          >
+          <div className="relative w-full bg-bg-alt overflow-hidden flex-1 min-h-[50vh] sm:min-h-[380px]">
             {popupItems.map((item, i) => {
               // 다음 카테고리로 넘어갈 때 항상 왼쪽으로 미끄러지도록, 순환을 고려한 최단 상대 위치를 구한다.
               const count = popupItems.length;
@@ -182,8 +186,8 @@ export default function PopupModal() {
                     fill
                     sizes="1024px"
                     priority={i === slideIndex}
-                    quality={75}
-                    className={`object-cover ${item.mobileImage ? "hidden sm:block" : ""}`}
+                    quality={90}
+                    className={`object-contain ${item.mobileImage ? "hidden sm:block" : ""}`}
                     style={{ ...getImageCropStyle(item.image || fallbackImage) }}
                   />
                   {item.mobileImage && (
@@ -193,8 +197,8 @@ export default function PopupModal() {
                       fill
                       sizes="1024px"
                       priority={i === slideIndex}
-                      quality={75}
-                      className="object-cover sm:hidden"
+                      quality={90}
+                      className="object-contain sm:hidden"
                       style={{ ...getImageCropStyle(item.mobileImage) }}
                     />
                   )}

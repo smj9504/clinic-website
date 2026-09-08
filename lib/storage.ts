@@ -454,7 +454,12 @@ function stripBase64Images(data: SiteData): SiteData {
   return {
     ...data,
     heroSlides: data.heroSlides.map((s) => ({ ...s, image: strip(s.image) })),
-    events: data.events.map((e) => ({ ...e, image: strip(e.image) })),
+    events: data.events.map((e) => ({
+      ...e,
+      image: strip(e.image),
+      mobileImage: e.mobileImage ? strip(e.mobileImage) : e.mobileImage,
+      detailImage: e.detailImage ? strip(e.detailImage) : e.detailImage,
+    })),
     treatments: data.treatments.map((t) => ({ ...t, image: strip(t.image ?? "") })),
     director: { ...data.director, image: strip(data.director.image) },
     about: {
@@ -593,7 +598,9 @@ export async function syncImages(locale: Locale) {
     })),
     events: current.events.map((ce) => {
       const oe = other.events.find((o) => o.id === ce.id);
-      return oe ? { ...oe, image: ce.image, mobileImage: ce.mobileImage } : { ...ce };
+      return oe
+        ? { ...oe, image: ce.image, mobileImage: ce.mobileImage, detailImage: ce.detailImage }
+        : { ...ce };
     }),
     treatments: other.treatments.map((t, i) => ({
       ...t,
@@ -799,6 +806,8 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
         description: next(),
         date: next(),
         image: e.image,
+        mobileImage: e.mobileImage,
+        detailImage: e.detailImage,
         startDate: e.startDate,
         endDate: e.endDate,
       })),
