@@ -5,6 +5,7 @@ import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
 import { updateSiteData, syncImages } from "@/lib/storage";
 import { todayKST } from "@/lib/date";
+import { htmlToText } from "@/lib/html";
 import type { Event } from "@/lib/data";
 import { useServiceCatalog } from "@/lib/useServices";
 import { patchServices } from "@/lib/servicesApi";
@@ -352,7 +353,7 @@ export default function EventsAdminPage() {
                   {ev.title}
                 </h3>
                 <p className="text-xs text-ink-muted line-clamp-2 mb-2">
-                  {ev.description.replace(/<[^>]*>/g, "")}
+                  {htmlToText(ev.description, " · ")}
                 </p>
                 <div className="flex gap-1 flex-wrap">
                   <Button

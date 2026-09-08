@@ -5,6 +5,7 @@ import EventImage from "@/components/EventImage";
 import SlideCarousel from "@/components/sections/SlideCarousel";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+import { htmlToText } from "@/lib/html";
 import { useScrollReveal } from "@/lib/useScrollReveal";
 
 const BLUR_PLACEHOLDER =
@@ -76,7 +77,7 @@ export default function EventsSection() {
           className="text-ink-soft mb-5 line-clamp-2"
           style={{ fontSize: "0.95rem", lineHeight: 1.7 }}
         >
-          {event.description.replace(/<[^>]*>/g, "")}
+          {htmlToText(event.description, " · ")}
         </p>
         <span
           className="inline-flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all"

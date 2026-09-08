@@ -5,6 +5,7 @@ import Link from "next/link";
 import EventImage from "@/components/EventImage";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+import { htmlToText } from "@/lib/html";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
@@ -121,7 +122,7 @@ export default function EventsPage() {
                     className="text-ink-soft mb-4"
                     style={{ fontSize: "1rem", lineHeight: 1.8 }}
                   >
-                    {event.description.replace(/<[^>]*>/g, "")}
+                    {htmlToText(event.description, " · ")}
                   </p>
                   <span
                     className="inline-flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all"
