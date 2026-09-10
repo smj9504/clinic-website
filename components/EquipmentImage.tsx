@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { hasRealEquipmentImage, isVideoUrl } from "@/lib/services";
-import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+import { stripImagePosition } from "@/lib/imagePosition";
+import { useMeasuredCropStyle } from "@/lib/useMeasuredCropStyle";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNGM0VGRTgiLz48L3N2Zz4=";
@@ -30,6 +31,12 @@ type EquipmentImageProps = {
  * 자동으로 동영상을 지원하게 한다.
  */
 export default function EquipmentImage({ src, alt, sizes, className = "", quality = 75, fill = true }: EquipmentImageProps) {
+  // 훅은 조건부로 호출할 수 없어 fallback 분기보다 먼저 부른다. 축소(1.00x
+  // 미만) 배율이 경계에서 튀지 않고 연속적으로 줄어들게 하려면 실제 그려지는
+  // 요소의 크기가 필요하다(useMeasuredCropStyle 주석 참고).
+  const video = useMeasuredCropStyle<HTMLVideoElement>(src);
+  const image = useMeasuredCropStyle<HTMLImageElement>(src);
+
   if (!hasRealEquipmentImage(src)) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-bg-alt">
@@ -44,6 +51,7 @@ export default function EquipmentImage({ src, alt, sizes, className = "", qualit
     return (
       <video
         key={src}
+        ref={video.ref}
         src={stripImagePosition(src)}
         muted
         autoPlay
@@ -52,18 +60,21 @@ export default function EquipmentImage({ src, alt, sizes, className = "", qualit
         // object-cover를 항상 강제 — 호출부가 className을 안 넘기면 fill 모드 기본값(object-fit: fill)이
         // 적용돼 비율이 찌그러진다. 호출부는 추가 효과(hover 확대 등)만 얹는다.
         className={`absolute inset-0 w-full h-full object-cover ${className}`}
-        style={{ ...getImageCropStyle(src) }}
+        style={{ ...video.style }}
+        onLoadedMetadata={video.onLoad}
       />
     );
   }
 
   return (
     <Image
+      ref={image.ref}
       src={stripImagePosition(src)}
       alt={alt}
       fill={fill}
       className={`object-cover ${className}`}
-      style={{ ...getImageCropStyle(src) }}
+      style={{ ...image.style }}
+      onLoad={image.onLoad}
       sizes={sizes}
       quality={quality}
       placeholder="blur"

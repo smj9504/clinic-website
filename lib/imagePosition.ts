@@ -49,6 +49,33 @@ export function stripImagePosition(url: string): string {
 
 
 /**
+ * 프레임과 이미지의 실제 크기. scale<1(축소) 구간을 연속적으로 그리려면
+ * "얼마나 줄여야 전체가 보이는가"를 알아야 하는데, 그 값이 이미지 비율과
+ * 프레임 비율의 관계에서만 나오기 때문에 필요하다.
+ */
+export type CropFrameMetrics = {
+  frameWidth: number;
+  frameHeight: number;
+  imageWidth: number;
+  imageHeight: number;
+};
+
+/**
+ * contain 기준에서 cover와 똑같이 보이게 만드는 배율.
+ * contain은 두 축 중 작은 fit 배율을, cover는 큰 fit 배율을 쓰므로
+ * 그 비(比)가 곧 "contain을 cover로 만드는 확대율"이다. 프레임과 이미지
+ * 비율이 같으면 1이 되어 축소해도 여백이 생기지 않는다(정상).
+ */
+function coverOverContain(m: CropFrameMetrics): number | null {
+  const { frameWidth, frameHeight, imageWidth, imageHeight } = m;
+  if (!(frameWidth > 0 && frameHeight > 0 && imageWidth > 0 && imageHeight > 0)) return null;
+  const fitX = frameWidth / imageWidth;
+  const fitY = frameHeight / imageHeight;
+  const ratio = Math.max(fitX, fitY) / Math.min(fitX, fitY);
+  return Number.isFinite(ratio) && ratio > 0 ? ratio : null;
+}
+
+/**
  * object-cover 프레임 안에서 크롭 위치·확대를 함께 적용하는 style 객체.
  * scale >= 1(확대)은 object-position만으로 표현할 수 없어(object-fit: cover는
  * 확대를 지원하지 않음) transform: scale()을 함께 쓴다 — transform-origin을
@@ -59,10 +86,23 @@ export function stripImagePosition(url: string): string {
  * cover가 잘라낸 결과물을 한 번 더 줄이는 것뿐이라 "전체 보이기"가 안 된다.
  * 대신 object-fit 자체를 contain으로 바꿔 이미지 전체가 프레임 안에 들어가게
  * 하고(모자란 자리는 배경색 여백), objectPosition은 그 안에서 이미지가
- * 붙는 위치로 쓰인다. 세로로 긴 이미지를 가로형 박스에 잘리지 않게 넣고
- * 싶을 때(예: 인물 전신 사진) 이 경로를 쓴다.
+ * 붙는 위치로 쓰인다.
+ *
+ * 다만 contain으로 "전환"만 하면 1.00x → 0.99x에서 이미지가 갑자기 전체
+ * 크기로 튀어나온다(cover와 contain 사이가 끊겨 있다). metrics가 주어지면
+ * 그 사이를 연속적으로 잇는다 — contain을 기준 레이아웃으로 두되 scale 1.00x
+ * 에서는 cover와 똑같아지도록 transform으로 확대해 두고, scale이 MIN_SCALE로
+ * 갈수록 그 확대를 1(=순수 contain, 전체 보임)까지 서서히 푼다. 따라서
+ * 1.00x에서 여백이 0이고, 슬라이더를 내리는 만큼만 조금씩 여백이 생긴다.
+ *
+ * metrics가 없으면(이미지 크기를 알 수 없는 서버 렌더링·HTML 직렬화 지점 등)
+ * 기존과 동일하게 contain으로 전환하기만 한다 — 호출부를 고치지 않아도
+ * 지금까지의 동작이 그대로 유지된다.
  */
-export function getImageCropStyle(url: string | null | undefined): {
+export function getImageCropStyle(
+  url: string | null | undefined,
+  metrics?: CropFrameMetrics | null
+): {
   objectFit?: "contain";
   objectPosition: string;
   transform?: string;
@@ -71,9 +111,25 @@ export function getImageCropStyle(url: string | null | undefined): {
   const pos = parseImagePosition(url);
   if (!pos) return { objectPosition: "50% 50%" };
   const objectPosition = `${pos.x}% ${pos.y}%`;
-  if (pos.scale < 1) return { objectFit: "contain", objectPosition };
   if (pos.scale === 1) return { objectPosition };
-  return { objectPosition, transform: `scale(${pos.scale})`, transformOrigin: objectPosition };
+  if (pos.scale > 1) {
+    return { objectPosition, transform: `scale(${pos.scale})`, transformOrigin: objectPosition };
+  }
+
+  // 여기부터 scale < 1 — 축소 구간
+  const ratio = metrics ? coverOverContain(metrics) : null;
+  if (ratio === null) return { objectFit: "contain", objectPosition };
+
+  // scale 1 → ratio(=cover와 동일), scale MIN_SCALE → 1(=contain, 전체 보임)
+  const t = (pos.scale - MIN_SCALE) / (1 - MIN_SCALE);
+  const zoom = 1 + (ratio - 1) * t;
+  if (zoom <= 1.0001) return { objectFit: "contain", objectPosition };
+  return {
+    objectFit: "contain",
+    objectPosition,
+    transform: `scale(${zoom.toFixed(4)})`,
+    transformOrigin: objectPosition,
+  };
 }
 
 /** 순수 URL에 새 크롭 위치·배율을 붙인다. 중앙(50,50)·배율 1이면 프래그먼트를 굳이 남기지 않는다. */

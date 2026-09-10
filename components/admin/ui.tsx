@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { stripImagePosition, getImageCropStyle, setImagePosition } from "@/lib/imagePosition";
+import { useMeasuredCropStyle } from "@/lib/useMeasuredCropStyle";
 import ImagePositionModal from "@/components/admin/ImagePositionModal";
 import { getSupabaseClient } from "@/lib/supabase";
 import {
@@ -201,6 +202,12 @@ export function ImageInput({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [positionModalOpen, setPositionModalOpen] = useState(false);
+  // 메인 미리보기는 실제 크기를 재서 축소(1.00x 미만)가 연속적으로 보이게 한다.
+  // 아래 extraRatios 썸네일들은 프레임 비율이 서로 달라 같은 metrics를 쓸 수 없어
+  // 기존 동작(경계에서 contain 전환)을 그대로 둔다 — 그 칸의 목적은 "이 초점이
+  // 다른 비율에서도 괜찮은가"를 보는 것이라 축소 곡선까지 맞출 필요는 없다.
+  const previewVideo = useMeasuredCropStyle<HTMLVideoElement>(value);
+  const previewImage = useMeasuredCropStyle<HTMLImageElement>(value);
 
   const maxVideoSize = 100 * 1024 * 1024;
   const maxSizeLabel = allowVideo ? `이미지 ${MAX_UPLOAD_LABEL} · 동영상 100MB` : MAX_UPLOAD_LABEL;
@@ -294,17 +301,21 @@ export function ImageInput({
           >
             {preview ? (
               <video
+                ref={previewVideo.ref}
                 src={cleanValue}
                 controls
                 className="w-full h-full object-cover"
-                style={{ ...getImageCropStyle(value) }}
+                style={{ ...previewVideo.style }}
+                onLoadedMetadata={previewVideo.onLoad}
               />
             ) : (
               <img
+                ref={previewImage.ref}
                 src={cleanValue}
                 alt="preview"
                 className="w-full h-full object-cover"
-                style={{ ...getImageCropStyle(value) }}
+                style={{ ...previewImage.style }}
+                onLoad={previewImage.onLoad}
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.opacity = "0.3";
                 }}

@@ -51,9 +51,31 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
   const [pos, setPos] = useState({ x: initial.x, y: initial.y });
   const [scale, setScale] = useState(initial.scale);
   const [isDragging, setIsDragging] = useState(false);
+  /**
+   * 축소(scale<1)를 연속적으로 그리려면 프레임과 미디어의 실제 크기가 필요하다
+   * (getImageCropStyle 주석 참고). 로드 시점에 한 번 재고, 창 크기가 바뀌면
+   * 프레임 폭이 달라지므로 다시 잰다.
+   */
+  const [mediaSize, setMediaSize] = useState<{ width: number; height: number } | null>(null);
+  const [frameSize, setFrameSize] = useState<{ width: number; height: number } | null>(null);
 
   useEffect(() => {
     closeButtonRef.current?.focus();
+  }, []);
+
+  // 프레임 실제 픽셀 크기 — aspectRatio 문자열만으론 알 수 없고, 창 크기에
+  // 따라 달라지므로 ResizeObserver로 따라간다.
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) setFrameSize({ width: r.width, height: r.height });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
@@ -102,8 +124,29 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
   // 드래그 중인 pos/scale을 실제 렌더링 지점(getImageCropStyle)과 동일한
   // 스타일로 변환해 미리보기가 저장 후 결과와 정확히 일치하게 한다 —
   // scale<1이면 object-fit이 contain으로 바뀌어야 "전체 보이기"가 실제로 보인다.
-  const previewStyle = getImageCropStyle(setImagePosition(cleanUrl, pos.x, pos.y, scale));
+  // 프레임·미디어 크기를 함께 넘겨야 축소가 1.00x에서 끊기지 않고 연속적으로
+  // 줄어든다(안 넘기면 예전처럼 경계에서 한 번에 전환된다).
+  const positionedUrl = setImagePosition(cleanUrl, pos.x, pos.y, scale);
+  const metrics =
+    frameSize && mediaSize
+      ? {
+          frameWidth: frameSize.width,
+          frameHeight: frameSize.height,
+          imageWidth: mediaSize.width,
+          imageHeight: mediaSize.height,
+        }
+      : null;
+  const previewStyle = getImageCropStyle(positionedUrl, metrics);
   const previewObjectFit = previewStyle.objectFit ?? "cover";
+
+  const onMediaLoad = (w: number, h: number) => {
+    if (w > 0 && h > 0) setMediaSize({ width: w, height: h });
+  };
+
+  // extraRatios 썸네일용 — metrics 없이(=주 프레임의 확대율을 물려받지 않게)
+  // 계산해, 다른 비율 프레임에 엉뚱한 배율이 적용되는 걸 막는다.
+  const thumbStyle = getImageCropStyle(positionedUrl);
+  const thumbObjectFit = thumbStyle.objectFit ?? "cover";
 
   return (
     <div
@@ -156,6 +199,10 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
               playsInline
               className="absolute inset-0 w-full h-full pointer-events-none"
               style={{ ...previewStyle, objectFit: previewObjectFit }}
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget;
+                onMediaLoad(v.videoWidth, v.videoHeight);
+              }}
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -164,6 +211,10 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
               alt=""
               className="absolute inset-0 w-full h-full pointer-events-none"
               style={{ ...previewStyle, objectFit: previewObjectFit }}
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                onMediaLoad(img.naturalWidth, img.naturalHeight);
+              }}
             />
           )}
 
@@ -208,6 +259,13 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
           <div className="flex gap-3 mt-4 flex-wrap">
             {extraRatios.map((extra) => (
               <div key={extra.label} className="flex-1 min-w-[7rem]">
+                {/*
+                  이 썸네일들은 주 프레임과 비율·크기가 다르므로 주 프레임의
+                  metrics를 그대로 쓰면 축소량이 틀어진다. 각자 재게 하려면
+                  프레임마다 관측이 필요한데, 여기 목적은 "이 초점이 다른
+                  비율에서도 괜찮은가"를 보는 것이라 축소 구간은 기존
+                  동작(contain 전환)으로 둔다.
+                */}
                 <div
                   className="relative w-full rounded overflow-hidden bg-bg-alt border border-line"
                   style={{ aspectRatio: extra.ratio }}
@@ -220,7 +278,7 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
                       loop
                       playsInline
                       className="absolute inset-0 w-full h-full pointer-events-none"
-                      style={{ ...previewStyle, objectFit: previewObjectFit }}
+                      style={{ ...thumbStyle, objectFit: thumbObjectFit }}
                     />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -228,7 +286,7 @@ export default function ImagePositionModal({ url, aspectRatio, isVideo, onConfir
                       src={cleanUrl}
                       alt=""
                       className="absolute inset-0 w-full h-full pointer-events-none"
-                      style={{ ...previewStyle, objectFit: previewObjectFit }}
+                      style={{ ...thumbStyle, objectFit: thumbObjectFit }}
                     />
                   )}
                 </div>
