@@ -63,7 +63,7 @@ export default function ServiceDetailPage() {
 
   return (
     <>
-      <div className="min-w-0 lg:[grid-column:2]">
+      <div className="min-w-0 order-2 lg:order-none lg:[grid-column:2]">
         <div
           aria-busy={loading}
           className={`transition-opacity duration-200 ${loading ? "opacity-40 pointer-events-none" : ""}`}
@@ -149,10 +149,15 @@ export default function ServiceDetailPage() {
         </div>
       </div>
 
-      {/* 가격 — 폭 고정, 스크롤 동안 화면에 고정 */}
+      {/*
+        가격 — 폭 고정, 스크롤 동안 화면에 고정.
+        모바일(grid-cols-1)에서는 DOM 순서상 본문 뒤에 오지만 order-1로 본문(order-2)보다
+        앞에 올려 금액 선택이 먼저 보이게 한다. lg부터는 order를 해제해
+        grid-column/gridRow 지정이 그대로 배치를 결정하게 둔다.
+      */}
       <aside
         aria-busy={loading}
-        className="lg:[grid-column:3] lg:sticky bg-bg-alt rounded p-6"
+        className="order-1 mb-6 lg:order-none lg:mb-0 lg:[grid-column:3] lg:sticky bg-bg-alt rounded p-6"
         style={{ top: "104px" }}
       >
         <div className={`transition-opacity duration-200 ${loading ? "opacity-40 pointer-events-none" : ""}`}>
@@ -194,13 +199,13 @@ export default function ServiceDetailPage() {
 function ServiceDetailSkeleton() {
   return (
     <>
-      <div className="min-w-0 lg:[grid-column:2]">
+      <div className="min-w-0 order-2 lg:order-none lg:[grid-column:2]">
         <div className="bg-bg-alt rounded animate-pulse" style={{ aspectRatio: "16 / 10" }} />
         <div className="h-8 w-2/3 rounded bg-bg-alt animate-pulse mt-6" />
         <div className="h-4 w-full rounded bg-bg-alt animate-pulse mt-4" />
         <div className="h-4 w-4/5 rounded bg-bg-alt animate-pulse mt-2" />
       </div>
-      <div className="lg:[grid-column:3] bg-bg-alt rounded p-6 space-y-4">
+      <div className="order-1 mb-6 lg:order-none lg:mb-0 lg:[grid-column:3] bg-bg-alt rounded p-6 space-y-4">
         {Array.from({ length: 2 }).map((_, i) => (
           <div key={i} className="h-16 rounded bg-surface animate-pulse" />
         ))}
