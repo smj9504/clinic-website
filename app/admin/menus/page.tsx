@@ -174,11 +174,15 @@ export default function MenusAdminPage() {
         </Field>
       </div>
       {!isChild && (
-        <Field label="배너 이미지" hint="해당 페이지 상단에 표시되는 배경 이미지 (권장 1920×600)">
+        <Field
+          label="배너 이미지 / 동영상"
+          hint="해당 페이지 상단에 표시되는 배경 (권장 1920×600). 동영상은 소리 없이 자동 반복 재생됩니다."
+        >
           <ImageInput
             value={draft.bannerImage ?? item.bannerImage ?? ""}
             onChange={(v) => setDraft((p) => ({ ...p, bannerImage: v }))}
             aspectRatio="16 / 5"
+            allowVideo
           />
         </Field>
       )}

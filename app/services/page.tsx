@@ -7,7 +7,7 @@ import CategoryFilter, { ALL, EVENT_FILTER } from "@/components/services/Categor
 import ServiceCard from "@/components/services/ServiceCard";
 import CartSummaryBar from "@/components/services/CartSummaryBar";
 import { useServiceCatalog } from "@/lib/useServices";
-import { sortServicesForDisplay } from "@/lib/services";
+import { isVideoUrl, sortServicesForDisplay } from "@/lib/services";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
@@ -88,17 +88,33 @@ function ServicesPageInner() {
       >
         {banner && (
           <div className="absolute inset-0 opacity-30">
-            <Image
-              src={stripImagePosition(banner)}
-              alt="고운빛한의원 시술 안내"
-              fill
-              className="object-cover"
-              style={{ ...getImageCropStyle(banner) }}
-              sizes="100vw"
-              quality={75}
-              placeholder="blur"
-              blurDataURL={BLUR_PLACEHOLDER}
-            />
+            {/* 배너는 제목 뒤에 깔리는 배경이라 동영상이어도 조작 UI 없이
+                소리 없이 반복 재생한다 — 메인 히어로와 같은 방식 */}
+            {isVideoUrl(banner) ? (
+              <video
+                // 동영상 URL이 바뀔 때 이전 재생 상태가 남지 않도록 key로 강제 재마운트
+                key={banner}
+                src={stripImagePosition(banner)}
+                muted
+                autoPlay
+                loop
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ ...getImageCropStyle(banner) }}
+              />
+            ) : (
+              <Image
+                src={stripImagePosition(banner)}
+                alt="고운빛한의원 시술 안내"
+                fill
+                className="object-cover"
+                style={{ ...getImageCropStyle(banner) }}
+                sizes="100vw"
+                quality={75}
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
+              />
+            )}
           </div>
         )}
         <div className="container-default relative text-ink-inverse">

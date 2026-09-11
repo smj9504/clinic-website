@@ -46,18 +46,37 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
         이벤트 카드처럼 원본 비율을 살리는 대신, 4:3으로 잘라 통일한다.
       */}
       <div className="relative bg-bg-alt overflow-hidden" style={{ aspectRatio: "4 / 3" }}>
-        {/* 대표 미디어가 동영상이면 카드에서는 재생하지 않고 폴백 이미지를 보여준다 — 재생은 상세 페이지에서만 */}
-        <Image
-          src={stripImagePosition(isVideoUrl(service.image) ? fallbackImage : service.image || fallbackImage)}
-          alt={name}
-          fill
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-          style={{ ...getImageCropStyle(isVideoUrl(service.image) ? fallbackImage : service.image || fallbackImage) }}
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          quality={75}
-          placeholder="blur"
-          blurDataURL={BLUR_PLACEHOLDER}
-        />
+        {/*
+          대표 미디어가 동영상이면 카드에서도 재생한다. 다만 카드는 목록에 여러 개가
+          동시에 깔리므로 조작 UI 없이 소리 없는 반복 재생으로만 쓰고, preload는
+          하지 않는다 — 스크롤로 지나치는 카드까지 전부 내려받지 않도록.
+        */}
+        {isVideoUrl(service.image) ? (
+          <video
+            key={service.image}
+            src={stripImagePosition(service.image)}
+            muted
+            autoPlay
+            loop
+            playsInline
+            preload="none"
+            poster={stripImagePosition(fallbackImage)}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+            style={{ ...getImageCropStyle(service.image) }}
+          />
+        ) : (
+          <Image
+            src={stripImagePosition(service.image || fallbackImage)}
+            alt={name}
+            fill
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+            style={{ ...getImageCropStyle(service.image || fallbackImage) }}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            quality={75}
+            placeholder="blur"
+            blurDataURL={BLUR_PLACEHOLDER}
+          />
+        )}
         {(service.badges.length > 0 || isEventService(service)) && (
           <div className="absolute right-0 bottom-0 flex">
             {/* EVENT는 admin이 badges 배열에 직접 넣는 게 아니라 eventIds 연결 여부로만
