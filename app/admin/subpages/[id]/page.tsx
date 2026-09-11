@@ -20,6 +20,8 @@ import type {
   SubPageChecklistHeroItem,
   SubPageChecklistBlock,
   SubPageChecklistBlockItem,
+  SubPageTabs,
+  SubPageTabItem,
   SubPageSectionId,
 } from "@/lib/data";
 import { normalizeSectionOrder } from "@/lib/data";
@@ -55,6 +57,7 @@ const DEFAULT_POINT_CARDS: SubPagePointCards = { title: "", items: [] };
 const DEFAULT_SEQUENTIAL_CHECKLIST: SubPageSequentialChecklist = { title: "", items: [] };
 const DEFAULT_CHECKLIST_HERO: SubPageChecklistHero = { eyebrow: "Check List", title: "", items: [] };
 const DEFAULT_CHECKLIST_BLOCKS: SubPageChecklistBlock[] = [];
+const DEFAULT_TABS: SubPageTabs = { title: "", intro: "", image: null, imageAlt: "", items: [] };
 
 /** 새 카드를 추가할 때 순환 배정하는 기본 좌표 — 공개 페이지의 4개 프리셋
  * 위치(top-left/right-mid/bottom-left/bottom-right)와 대략 대응해, 처음
@@ -85,7 +88,7 @@ const FIXED_TABS = [
   { id: "images", label: "이미지" },
 ] as const;
 
-/** 공개 페이지에 실제 표시 영역을 갖는 구조화 섹션(6개) + 본문 — 여기 순서가 아니라 draft.sectionOrder가 실제 표시 순서를 결정한다 */
+/** 공개 페이지에 실제 표시 영역을 갖는 구조화 섹션(7개) + 본문 — 여기 순서가 아니라 draft.sectionOrder가 실제 표시 순서를 결정한다 */
 const SECTION_TAB_LABELS: Record<SubPageSectionId, string> = {
   areaMap: "부위 맵",
   stepProcess: "순서 안내",
@@ -93,6 +96,7 @@ const SECTION_TAB_LABELS: Record<SubPageSectionId, string> = {
   checklist: "추천 체크리스트",
   checklistHero: "사진 위 체크리스트",
   checklistBlocks: "체크리스트 블록",
+  tabs: "치료법 탭",
   body: "본문",
 };
 
@@ -223,6 +227,9 @@ export default function SubPageEditPage() {
   const checklistBlockDrag = useReorderDrag(draft?.checklistBlocks ?? [], (blocks) =>
     patch({ checklistBlocks: blocks })
   );
+  const tabDrag = useReorderDrag(draft?.tabs?.items ?? [], (items) =>
+    patch({ tabs: { ...(draft?.tabs ?? DEFAULT_TABS), items } })
+  );
 
   if (loaded && !source) {
     return (
@@ -352,6 +359,21 @@ export default function SubPageEditPage() {
   const setChecklistBlockItems = (blockIndex: number, items: SubPageChecklistBlockItem[]) =>
     updateChecklistBlock(blockIndex, { items });
 
+  // 치료법 탭 (한약 치료 / 약침 치료 / 추나요법 …)
+  const effectiveTabs = draft.tabs ?? DEFAULT_TABS;
+  const updateTabs = (p: Partial<SubPageTabs>) => patch({ tabs: { ...effectiveTabs, ...p } });
+  const updateTabItem = (i: number, p: Partial<SubPageTabItem>) =>
+    updateTabs({ items: effectiveTabs.items.map((it, idx) => (idx === i ? { ...it, ...p } : it)) });
+  const addTabItem = () =>
+    updateTabs({
+      items: [
+        ...effectiveTabs.items,
+        { id: generateId("tab"), title: "", body: "", tags: [], benefits: [], image: null },
+      ],
+    });
+  const removeTabItem = (i: number) =>
+    updateTabs({ items: effectiveTabs.items.filter((_, idx) => idx !== i) });
+
   // 섹션 표시 순서 — 항상 6개 id 전부를 포함한 완전한 순열로 정규화해서 쓴다.
   // 탭 옆 ↑↓ 버튼으로만 바꾸고(이 저장소 전반의 기존 순서 변경 관례와 동일), 드래그는 쓰지 않는다.
   const effectiveSectionOrder = normalizeSectionOrder(draft.sectionOrder);
@@ -374,6 +396,7 @@ export default function SubPageEditPage() {
     checklist: effectiveChecklist.items.length > 0,
     checklistHero: effectiveChecklistHero.items.length > 0,
     checklistBlocks: effectiveChecklistBlocks.length > 0,
+    tabs: effectiveTabs.items.length > 0,
     body: Boolean(draft.body?.trim()),
   };
   const imagesHaveContent = Boolean(draft.image);
@@ -1048,6 +1071,112 @@ export default function SubPageEditPage() {
             ))}
             <Button type="button" size="sm" variant="secondary" onClick={addChecklistBlock}>+ 블록 추가</Button>
           </div>
+        </TabPanel>
+
+        <TabPanel id="tabs" active={activeTab}>
+          <p className="text-sm text-ink-muted mb-5">
+            "한약 치료 / 약침 치료 / 추나요법"처럼 치료법을 탭으로 전환해 보여주는 섹션입니다. 탭이 3개
+            이상일 때 가장 자연스럽게 보입니다. 비워두면 본문에 탭 패턴(소제목+설명+목록 2개)이 있을 때
+            그걸로 대신 표시됩니다.
+          </p>
+
+          <Field label="제목" hint='탭 위에 표시되는 섹션 제목입니다. 예: "고운빛한의원의 교통사고 후유증 치료"'>
+            <TextInput value={effectiveTabs.title} onChange={(e) => updateTabs({ title: e.target.value })} />
+          </Field>
+          <Field label="소개" hint="제목 아래에 표시되는 안내 문단입니다 (선택 사항)">
+            <TextArea rows={3} value={effectiveTabs.intro} onChange={(e) => updateTabs({ intro: e.target.value })} />
+          </Field>
+          <Field
+            label="공용 사진"
+            hint="탭마다 사진을 따로 지정하지 않았을 때 공통으로 쓰이는 사진입니다. 권장 비율 4:5(세로로 긴 사진)"
+          >
+            <ImageInput
+              value={effectiveTabs.image ?? ""}
+              onChange={(v) => updateTabs({ image: v || null })}
+              aspectRatio="4 / 5"
+            />
+          </Field>
+          {effectiveTabs.image && (
+            <Field label="이미지 대체 텍스트" hint="스크린 리더 및 이미지 로드 실패 시 표시됩니다">
+              <TextInput
+                value={effectiveTabs.imageAlt}
+                onChange={(e) => updateTabs({ imageAlt: e.target.value })}
+              />
+            </Field>
+          )}
+
+          <Field label="탭 목록">
+            <div className="space-y-3">
+              {effectiveTabs.items.map((item, i) => (
+                <div
+                  key={item.id}
+                  {...tabDrag.getItemProps(i)}
+                  className={`border rounded-lg p-4 transition-colors ${
+                    tabDrag.dragOverIndex === i ? "border-accent bg-bg-alt" : "border-line"
+                  } ${tabDrag.draggingIndex === i ? "opacity-40" : ""}`}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span
+                      {...tabDrag.getHandleProps(i)}
+                      className="cursor-grab active:cursor-grabbing text-ink-muted shrink-0 touch-none"
+                      title="드래그해서 순서 변경"
+                    >
+                      <DragHandleIcon />
+                    </span>
+                    <span className="text-xs text-ink-muted font-mono w-5 shrink-0">{i + 1}</span>
+                    <div className="flex-1" />
+                    <Button size="icon" variant="danger" onClick={() => removeTabItem(i)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </Button>
+                  </div>
+                  <TextInput
+                    className="mb-2"
+                    placeholder="탭 이름 (예: 추나요법)"
+                    value={item.title}
+                    onChange={(e) => updateTabItem(i, { title: e.target.value })}
+                  />
+                  <TextArea
+                    className="mb-2"
+                    rows={3}
+                    placeholder="설명 (예: 사고 충격으로 틀어진 척추와 관절의 불균형을 손으로 교정하는 수기 치료입니다)"
+                    value={item.body}
+                    onChange={(e) => updateTabItem(i, { body: e.target.value })}
+                  />
+                  <TextArea
+                    className="mb-2"
+                    rows={2}
+                    placeholder={"해시태그 — 한 줄에 하나씩 (예: 관절교정)\n근육이완"}
+                    value={item.tags.join("\n")}
+                    onChange={(e) =>
+                      updateTabItem(i, {
+                        tags: e.target.value.split("\n").map((t) => t.replace(/^#/, "").trim()).filter(Boolean),
+                      })
+                    }
+                  />
+                  <TextArea
+                    className="mb-3"
+                    rows={3}
+                    placeholder={"장점 — 한 줄에 하나씩 (예: 사고로 어긋난 관절·근육의 밸런스를 회복)"}
+                    value={item.benefits.join("\n")}
+                    onChange={(e) =>
+                      updateTabItem(i, {
+                        benefits: e.target.value.split("\n").map((t) => t.trim()).filter(Boolean),
+                      })
+                    }
+                  />
+                  <ImageInput
+                    value={item.image ?? ""}
+                    onChange={(v) => updateTabItem(i, { image: v || null })}
+                    aspectRatio="4 / 5"
+                  />
+                </div>
+              ))}
+              <Button type="button" size="sm" variant="secondary" onClick={addTabItem}>+ 탭 추가</Button>
+            </div>
+          </Field>
+          <Field label="보충 설명" hint="탭 아래에 표시되는 자유 서술입니다 (선택 사항). 제목, 목록, 인용, 이미지 등의 서식을 넣을 수 있습니다">
+            <RichEditor value={effectiveTabs.note ?? ""} onChange={(html) => updateTabs({ note: html })} />
+          </Field>
         </TabPanel>
       </Card>
 

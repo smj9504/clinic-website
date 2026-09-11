@@ -13,6 +13,7 @@ import {
   extractChecklistHero,
   extractH2Checklist,
   type ProseTabGroup,
+  type ProseTabPoint,
 } from "@/lib/proseCards";
 import ChecklistHero from "@/components/subpages/ChecklistHero";
 import TreatmentAreaMap from "@/components/subpages/TreatmentAreaMap";
@@ -70,9 +71,19 @@ const SEQUENTIAL_CHECKLIST_HEADINGS: Record<string, string> = {
  * 달리, 본문을 정독하는 흐름에서 마우스가 스치기만 해도 내용이 바뀌면
  * 오히려 읽던 자리를 잃게 만든다.
  */
-function TabbedPoints({ group }: { group: ProseTabGroup }) {
+type TabbedPointsItem = ProseTabPoint & { image?: string | null };
+
+function TabbedPoints({
+  group,
+}: {
+  group: Omit<ProseTabGroup, "points"> & { points: TabbedPointsItem[] };
+}) {
   const [activeIndex, setActiveIndex] = useState(0);
   const active = group.points[activeIndex];
+  // 탭별 사진이 지정돼 있으면 그걸, 없으면 섹션 공용 사진을 쓴다 — richtext
+  // 자동 감지 경로는 공용 사진 한 장뿐이라 항상 폴백을 타고, admin 구조화
+  // 필드에서만 탭마다 다른 사진이 들어올 수 있다.
+  const activeImage = active?.image ?? group.image;
 
   return (
     <div className="my-10">
@@ -103,13 +114,13 @@ function TabbedPoints({ group }: { group: ProseTabGroup }) {
         className="anim-tab-panel grid grid-cols-1 md:grid-cols-[5fr_7fr] gap-10 md:gap-14 items-start"
       >
         <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-line">
-          {group.image && (
+          {activeImage && (
             <Image
-              src={stripImagePosition(group.image)}
+              src={stripImagePosition(activeImage)}
               alt={group.imageAlt || active.title}
               fill
               className="object-cover"
-              style={{ ...getImageCropStyle(group.image) }}
+              style={{ ...getImageCropStyle(activeImage) }}
               sizes="(max-width: 768px) 100vw, 40vw"
               quality={75}
             />
@@ -267,7 +278,7 @@ export default function SubPageDetail() {
     [bodyForSegments]
   );
 
-  // 구조화 섹션 6개 + 본문(body)을 id별로 미리 만들어 두고, page.sectionOrder
+  // 구조화 섹션 7개 + 본문(body)을 id별로 미리 만들어 두고, page.sectionOrder
   // (관리자가 admin에서 조정한 순서)를 따라 순서대로 렌더링한다. 순서가 없거나
   // 불완전해도 normalizeSectionOrder가 항상 완전한 순열로 보정해 준다.
   const sectionNodes: Record<SubPageSectionId, React.ReactNode> = {
@@ -330,6 +341,45 @@ export default function SubPageDetail() {
       page?.checklistBlocks && page.checklistBlocks.length > 0 ? (
         <ChecklistBlocks blocks={page.checklistBlocks} />
       ) : null,
+    tabs:
+      page?.tabs && page.tabs.items.length > 0 ? (
+        <div className="my-10">
+          {page.tabs.title && (
+            <h2
+              className="font-display mb-4"
+              style={{ fontSize: "1.9rem", fontWeight: 700, letterSpacing: "-0.03em" }}
+            >
+              {page.tabs.title}
+            </h2>
+          )}
+          {page.tabs.intro && (
+            <p
+              className="text-ink-soft mb-2"
+              style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em" }}
+            >
+              {page.tabs.intro}
+            </p>
+          )}
+          <TabbedPoints
+            group={{
+              title: page.tabs.title,
+              intro: page.tabs.intro,
+              image: page.tabs.image,
+              imageAlt: page.tabs.imageAlt,
+              points: page.tabs.items.map((it) => ({
+                title: it.title,
+                body: it.body,
+                tags: it.tags,
+                benefits: it.benefits,
+                image: it.image,
+              })),
+            }}
+          />
+          {page.tabs.note && (
+            <div className="prose prose-neutral max-w-none text-ink-soft" dangerouslySetInnerHTML={{ __html: page.tabs.note }} />
+          )}
+        </div>
+      ) : null,
     pointCards: page?.pointCards ? (
       <PointCards
         title={page.pointCards.title}
@@ -353,7 +403,10 @@ export default function SubPageDetail() {
           style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em" }}
         >
           {segments.map((segment, i) => {
-            if (segment.type === "tabs") return <TabbedPoints key={i} group={segment.group} />;
+            if (segment.type === "tabs") {
+              if (page.tabs) return null;
+              return <TabbedPoints key={i} group={segment.group} />;
+            }
             // page.pointCards/stepProcess가 있으면 위에서 이미 구조화 데이터로
             // 렌더링했으므로, 같은 body 안에 남아있는 richtext 자동 감지 결과는
             // (아직 마이그레이션되지 않았거나 편집 중인 과도기 상태가 아닌 한)

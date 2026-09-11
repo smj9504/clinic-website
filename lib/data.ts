@@ -139,6 +139,37 @@ export type SubPagePointCards = {
   note?: string;
 };
 
+export type SubPageTabItem = {
+  id: string;
+  /** 탭 버튼에 표시되는 이름 (예: "추나요법") */
+  title: string;
+  body: string;
+  /** 본문 위 해시태그 — "#"은 공개 페이지에서 붙이므로 여기엔 넣지 않는다 */
+  tags: string[];
+  /** 체크 아이콘이 붙는 장점 목록 */
+  benefits: string[];
+  /** 이 탭 전용 사진 (선택 사항) — 없으면 아래 image(공용 사진)를 쓴다 */
+  image: string | null;
+};
+
+/**
+ * "한약 치료 / 약침 치료 / 추나요법 …"처럼 여러 치료법을 탭으로 전환해 하나씩
+ * 깊이 읽는 섹션. 예전에는 본문 richtext 안에 h3+p+ul+ul 마크업을 정확한
+ * 순서로 직접 써야만 탭으로 승격됐고(lib/proseCards.ts의 tabs 패턴), admin에
+ * 전용 UI가 없어 편집하려면 HTML 구조를 알아야 했다. 구조화 필드가 있으면
+ * 그 자동 감지보다 이쪽이 우선한다.
+ */
+export type SubPageTabs = {
+  title: string;
+  intro: string;
+  /** 탭별 사진이 없을 때 공통으로 쓰이는 사진 */
+  image: string | null;
+  imageAlt: string;
+  items: SubPageTabItem[];
+  /** 탭 아래에 표시되는 자유 서식 보충 설명 (선택 사항, richtext) */
+  note?: string;
+};
+
 export type SubPageChecklistItem = {
   id: string;
   text: string;
@@ -223,9 +254,11 @@ export type SubPage = {
   checklistHero?: SubPageChecklistHero;
   /** 소제목+본문+번호 목록 반복 블록 (선택 사항) — 순서대로 렌더링되며, 본문(body) 상단에 표시된다 */
   checklistBlocks?: SubPageChecklistBlock[];
+  /** 치료법 탭 전환 섹션 (선택 사항) — 있으면 본문 richtext의 자동 감지 탭 패턴보다 우선한다 */
+  tabs?: SubPageTabs;
   /**
-   * 구조화 섹션 6개(areaMap · stepProcess · pointCards · checklist ·
-   * checklistHero · checklistBlocks) + 본문(body)의 공개 페이지 표시 순서.
+   * 구조화 섹션 7개(areaMap · stepProcess · pointCards · checklist ·
+   * checklistHero · checklistBlocks · tabs) + 본문(body)의 공개 페이지 표시 순서.
    * 값이 없거나 일부 id가 빠져 있으면 이 기본 순서로 취급한다 —
    * DEFAULT_SUBPAGE_SECTION_ORDER 참고.
    */
@@ -240,6 +273,7 @@ export type SubPageSectionId =
   | "checklist"
   | "checklistHero"
   | "checklistBlocks"
+  | "tabs"
   | "body";
 
 /** sectionOrder가 비어 있거나 불완전할 때 쓰는 기본 순서. 기존(리팩터링 전) 공개 페이지의 하드코딩 렌더 순서와 동일하게 맞춰, 이 필드가 없는 기존 서브페이지들의 화면이 바뀌지 않게 한다 — body는 항상 구조화 섹션들 다음에 오던 예전 위치 그대로 맨 뒤에 둔다 */
@@ -250,6 +284,7 @@ export const DEFAULT_SUBPAGE_SECTION_ORDER: SubPageSectionId[] = [
   "checklistBlocks",
   "pointCards",
   "stepProcess",
+  "tabs",
   "body",
 ];
 
