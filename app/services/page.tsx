@@ -23,7 +23,7 @@ function SkeletonGrid() {
     <div className={GRID} aria-hidden="true">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="bg-surface border border-line rounded overflow-hidden">
-          <div className="bg-bg-alt animate-pulse" style={{ aspectRatio: "4 / 3" }} />
+          <div className="bg-bg-alt animate-pulse" style={{ aspectRatio: "16 / 10" }} />
           <div className="p-4 space-y-2">
             <div className="h-4 bg-bg-alt rounded animate-pulse w-3/4" />
             <div className="h-3 bg-bg-alt rounded animate-pulse w-full" />

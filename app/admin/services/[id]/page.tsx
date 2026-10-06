@@ -305,12 +305,12 @@ export default function ServiceEditPage() {
           <div>
             <Field
               label="대표 이미지 / 동영상"
-              hint="목록 카드는 4:3, 상세 페이지는 16:10으로 표시됩니다. 동영상은 상세 페이지에서만 재생됩니다."
+              hint="목록 카드와 상세 페이지 모두 16:10으로 표시됩니다. 동영상은 소리 없이 자동 반복 재생됩니다."
             >
               <ImageInput
                 value={draft.image}
                 onChange={(image) => patch({ image })}
-                aspectRatio="4 / 3"
+                aspectRatio="16 / 10"
                 allowVideo
               />
             </Field>

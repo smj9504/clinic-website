@@ -75,11 +75,17 @@ export default function ServiceDetailPage() {
             {loading && (
               <div className="absolute inset-0 animate-pulse bg-bg-alt" aria-hidden="true" />
             )}
+            {/* 대표 동영상은 배경 영상처럼 조작 UI 없이 소리 없이 반복 재생한다 */}
             {isVideoUrl(service.image) ? (
               <video
+                key={service.image}
                 src={stripImagePosition(service.image)}
-                controls
+                muted
+                autoPlay
+                loop
                 playsInline
+                disablePictureInPicture
+                aria-hidden="true"
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{ ...getImageCropStyle(service.image) }}
               />

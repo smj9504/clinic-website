@@ -43,9 +43,10 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
     >
       {/*
         카탈로그는 카드 높이가 고르게 맞아야 한 줄 안에서 제목·가격이 나란히 읽힌다.
-        이벤트 카드처럼 원본 비율을 살리는 대신, 4:3으로 잘라 통일한다.
+        이벤트 카드처럼 원본 비율을 살리는 대신, 상세 페이지와 같은 16:10으로 잘라
+        통일한다 — 대표 미디어 하나로 목록·상세가 똑같이 보이도록.
       */}
-      <div className="relative bg-bg-alt overflow-hidden" style={{ aspectRatio: "4 / 3" }}>
+      <div className="relative bg-bg-alt overflow-hidden" style={{ aspectRatio: "16 / 10" }}>
         {/*
           대표 미디어가 동영상이면 카드에서도 재생한다. 다만 카드는 목록에 여러 개가
           동시에 깔리므로 조작 UI 없이 소리 없는 반복 재생으로만 쓰고, preload는
