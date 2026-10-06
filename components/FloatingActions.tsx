@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { useCart } from "@/lib/cart";
 import { useSiteData } from "@/lib/useSiteData";
-import { useT } from "@/lib/i18n";
+import { useLocale, useT } from "@/lib/i18n";
+import type { ChatAnswer, ChatLink } from "@/lib/chatbot";
 
 /** CartSummaryBar가 화면 하단에 뜨는 페이지 — 이 경로에서만 FAB 스택을 그만큼 밀어올린다 */
 function showsCartSummaryBar(pathname: string): boolean {
@@ -16,87 +17,13 @@ type Message = {
   id: string;
   role: "bot" | "user";
   text: string;
+  links?: ChatLink[];
 };
 
-function findAnswer(
-  query: string,
-  faqs: { question: string; answer: string }[],
-  clinicInfo: {
-    name: string;
-    phone: string;
-    address: string;
-    hours: { weekday: string; saturday: string; closed: string };
-    reservationUrl: string;
-  }
-): string | null {
-  const q = query.toLowerCase().trim();
-  if (!q) return null;
-
-  // Keyword-based clinic info matching
-  const keywords: { patterns: string[]; answer: string }[] = [
-    {
-      patterns: ["시간", "몇시", "언제", "hours", "open", "when"],
-      answer: `진료 시간 안내입니다.\n\n• ${clinicInfo.hours.weekday}\n• ${clinicInfo.hours.saturday}\n• ${clinicInfo.hours.closed}`,
-    },
-    {
-      patterns: ["전화", "번호", "연락", "phone", "call", "contact"],
-      answer: `전화번호: ${clinicInfo.phone}\n\n언제든 편하게 문의해 주세요.`,
-    },
-    {
-      patterns: ["주소", "위치", "어디", "찾아", "address", "location", "where"],
-      answer: `주소: ${clinicInfo.address}\n\n네이버 지도에서 '${clinicInfo.name}'을 검색하시면 쉽게 찾으실 수 있습니다.`,
-    },
-    {
-      patterns: ["예약", "접수", "신청", "book", "reservation", "appointment"],
-      answer: `네이버를 통해 온라인 예약이 가능합니다.\n\n홈페이지에서 상담·예약을 간단히 신청하실 수도 있습니다. (상단 '상담 신청' 메뉴)\n\n전화 예약도 가능합니다: ${clinicInfo.phone}`,
-    },
-    {
-      patterns: ["주차", "parking"],
-      answer: "건물 지하에 무료 주차 공간이 있습니다. 진료 환자분께는 2시간 무료 주차를 지원합니다.",
-    },
-    {
-      patterns: ["보험", "자동차", "교통사고", "insurance", "auto"],
-      answer: "네, 자동차보험 진료가 가능합니다. 교통사고 후 통증·후유증 치료에 대해 자동차보험 적용이 가능하며, 보험사를 통한 진료비 청구를 도와드립니다.",
-    },
-  ];
-
-  for (const kw of keywords) {
-    if (kw.patterns.some((p) => q.includes(p))) {
-      return kw.answer;
-    }
-  }
-
-  // FAQ fuzzy matching: score each FAQ by keyword overlap
-  let bestScore = 0;
-  let bestAnswer = "";
-
-  for (const faq of faqs) {
-    const faqQ = faq.question.toLowerCase();
-    const faqWords = faqQ.split(/\s+/).filter((w) => w.length > 1);
-    const queryWords = q.split(/\s+/).filter((w) => w.length > 1);
-
-    let score = 0;
-    for (const w of queryWords) {
-      if (faqQ.includes(w)) score += 2;
-      for (const fw of faqWords) {
-        if (fw.includes(w) || w.includes(fw)) score += 1;
-      }
-    }
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestAnswer = faq.answer;
-    }
-  }
-
-  if (bestScore >= 2) return bestAnswer;
-
-  return null;
-}
-
 export default function FloatingActions() {
-  const { clinicInfo, faqs } = useSiteData();
+  const { clinicInfo } = useSiteData();
   const t = useT();
+  const { locale } = useLocale();
   const pathname = usePathname() || "/";
   const { count: cartCount } = useCart();
   // CartSummaryBar(높이 80px)가 화면 하단에 떠 있는 동안은 FAB 스택이 그 위에 겹치므로,
@@ -105,6 +32,7 @@ export default function FloatingActions() {
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [pending, setPending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -127,33 +55,35 @@ export default function FloatingActions() {
     }
   }, [chatOpen]);
 
-  const addBotReply = (text: string) => {
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { id: `b${Date.now()}`, role: "bot", text },
-      ]);
-    }, 400);
-  };
+  const handleQuestion = async (question: string) => {
+    if (pending) return;
+    setMessages((prev) => [...prev, { id: `u${Date.now()}`, role: "user", text: question }]);
+    setPending(true);
 
-  const handleQuestion = (question: string) => {
-    const userMsg: Message = {
-      id: `u${Date.now()}`,
-      role: "user",
-      text: question,
-    };
-    setMessages((prev) => [...prev, userMsg]);
-
-    const answer = findAnswer(question, faqs, clinicInfo);
-    addBotReply(
-      answer ||
-        `죄송합니다. 해당 질문에 대한 답변을 찾지 못했습니다.\n\n자세한 상담은 전화(${clinicInfo.phone})로 문의해 주세요.`
-    );
+    let reply: Message;
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, locale }),
+      });
+      if (!res.ok) throw new Error(`chat ${res.status}`);
+      const answer = (await res.json()) as ChatAnswer;
+      reply = { id: `b${Date.now()}`, role: "bot", text: answer.text, links: answer.links };
+    } catch {
+      reply = {
+        id: `b${Date.now()}`,
+        role: "bot",
+        text: t("chat.error").replace("{phone}", clinicInfo.phone),
+      };
+    }
+    setMessages((prev) => [...prev, reply]);
+    setPending(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || pending) return;
     handleQuestion(input.trim());
     setInput("");
   };
@@ -294,9 +224,47 @@ export default function FloatingActions() {
                   }}
                 >
                   {msg.text}
+                  {msg.links && msg.links.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {msg.links.map((link) =>
+                        link.external ? (
+                          <a
+                            key={link.href}
+                            href={link.href}
+                            target={link.href.startsWith("tel:") ? undefined : "_blank"}
+                            rel="noopener noreferrer"
+                            className="inline-flex px-3 py-1.5 rounded-full border border-accent text-accent text-xs font-semibold hover:bg-accent hover:text-white transition-colors"
+                          >
+                            {link.label}
+                          </a>
+                        ) : (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            onClick={() => setChatOpen(false)}
+                            className="inline-flex px-3 py-1.5 rounded-full border border-accent text-accent text-xs font-semibold hover:bg-accent hover:text-white transition-colors"
+                          >
+                            {link.label}
+                          </Link>
+                        )
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
+
+            {pending && (
+              <div className="flex justify-start">
+                <div
+                  className="rounded-lg px-4 py-3 bg-bg border border-line text-ink-muted"
+                  style={{ fontSize: "0.9rem" }}
+                  aria-label={t("chat.typing")}
+                >
+                  …
+                </div>
+              </div>
+            )}
 
             {/* FAQ quick buttons — show only at start */}
             {messages.length <= 1 && (

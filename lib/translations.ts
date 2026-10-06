@@ -162,6 +162,8 @@ const ko = {
   "chat.placeholder": "질문을 입력하세요...",
   "chat.close": "닫기",
   "chat.open": "문의하기",
+  "chat.typing": "답변을 찾고 있습니다",
+  "chat.error": "일시적인 오류로 답변을 불러오지 못했습니다.\n\n전화({phone})로 문의해 주세요.",
 
   // Slide
   "slide.label": "슬라이드",
@@ -340,6 +342,8 @@ const en: Record<keyof typeof ko, string> = {
   "chat.placeholder": "Type your question...",
   "chat.close": "Close",
   "chat.open": "Contact",
+  "chat.typing": "Looking for an answer",
+  "chat.error": "Something went wrong while loading the answer.\n\nPlease call us at {phone}.",
 
   // Slide
   "slide.label": "Slide",
