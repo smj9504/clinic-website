@@ -14,6 +14,7 @@ import {
   Card,
   Toast,
 } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import RichEditor from "@/components/admin/RichEditor";
 
 const today = () => todayKST().replace(/-/g, ".");
@@ -44,6 +45,7 @@ const emptyNotice: Omit<Notice, "id"> = {
 };
 
 export default function NoticesAdminPage() {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { notices, noticeEndedHide } = useSiteDataForLocale(editingLocale);
   const update = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
@@ -94,7 +96,7 @@ export default function NoticesAdminPage() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("이 공지를 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 공지를 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await update((d) => ({ ...d, notices: d.notices.filter((n) => n.id !== id) }));
     if (ok) setToast("공지가 삭제되었습니다");
   };

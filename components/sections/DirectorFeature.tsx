@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -16,7 +17,7 @@ export default function DirectorFeature() {
   const textRef = useScrollReveal<HTMLDivElement>({ rootMargin: "0px 0px -80px 0px" });
 
   return (
-    <section className="py-20 md:py-36">
+    <section className="py-20 md:py-36 overflow-x-hidden">
       <div className="container-default">
         <div ref={headerRef} className="reveal-fade-up mb-16">
           <span className="section-label block mb-4">Director</span>
@@ -31,10 +32,11 @@ export default function DirectorFeature() {
               style={{ filter: "saturate(0.9)" }}
             >
               <Image
-                src={director.image}
+                src={stripImagePosition(director.image)}
                 alt={director.name}
                 fill
                 className="object-cover"
+                style={{ ...getImageCropStyle(director.image) }}
                 sizes="(max-width: 768px) 100vw, 40vw"
                 quality={75}
                 placeholder="blur"

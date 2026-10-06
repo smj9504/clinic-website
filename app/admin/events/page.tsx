@@ -5,7 +5,10 @@ import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
 import { updateSiteData, syncImages } from "@/lib/storage";
 import { todayKST } from "@/lib/date";
+import { htmlToText } from "@/lib/html";
 import type { Event } from "@/lib/data";
+import { useServiceCatalog } from "@/lib/useServices";
+import { patchServices } from "@/lib/servicesApi";
 import {
   PageHeader,
   Field,
@@ -15,7 +18,9 @@ import {
   ImageInput,
   Toast,
 } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import RichEditor from "@/components/admin/RichEditor";
+import LinkedServicesPicker from "@/components/admin/equipment/LinkedServicesPicker";
 
 const todayStr = todayKST;
 
@@ -39,12 +44,15 @@ const emptyEvent: Omit<Event, "id"> = {
   subtitle: "",
   description: "",
   image: "",
+  mobileImage: "",
+  detailImage: "",
   date: "EVENT · 2026.05",
   startDate: todayStr(),
   endDate: "",
 };
 
 export default function EventsAdminPage() {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { events, eventEndedHide, clinicInfo } = useSiteDataForLocale(editingLocale);
   const fallbackImage = clinicInfo.defaultImage || "/gowoonbit.jpg";
@@ -57,6 +65,13 @@ export default function EventsAdminPage() {
   const [draft, setDraft] = useState<Omit<Event, "id">>(emptyEvent);
   const [toast, setToast] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
+
+  // 시술 ↔ 이벤트 연결: 소스 오브 트루스는 services 테이블의 event_ids다.
+  // 이벤트 목록 자체엔 저장하지 않고, 편집 중일 때만 현재 연결 상태를 계산해 보여준다.
+  const { categories, subcategories, services, reload: reloadServices } = useServiceCatalog({
+    includeHidden: true,
+  });
+  const [linkedServiceIds, setLinkedServiceIds] = useState<string[]>([]);
 
   const filteredEvents = filter === "all"
     ? events
@@ -76,15 +91,39 @@ export default function EventsAdminPage() {
       subtitle: e.subtitle,
       description: e.description,
       image: e.image,
+      mobileImage: e.mobileImage || "",
+      detailImage: e.detailImage || "",
       date: e.date,
       startDate: e.startDate || "",
       endDate: e.endDate || "",
     });
+    setLinkedServiceIds(services.filter((s) => (s.eventIds ?? []).includes(e.id)).map((s) => s.id));
   };
 
   const startNew = () => {
     setEditing("new");
     setDraft(emptyEvent);
+    setLinkedServiceIds([]);
+  };
+
+  /** 선택된 시술 목록과 실제 저장된 event_ids의 차이만 골라 필요한 시술만 patch한다 */
+  const syncLinkedServices = async (eventId: number, nextServiceIds: string[]) => {
+    const nextSet = new Set(nextServiceIds);
+    const updates: { id: string; eventIds: number[] }[] = [];
+    for (const s of services) {
+      const current = s.eventIds ?? [];
+      const shouldHave = nextSet.has(s.id);
+      const has = current.includes(eventId);
+      if (shouldHave === has) continue;
+      updates.push({
+        id: s.id,
+        eventIds: shouldHave ? [...current, eventId] : current.filter((id) => id !== eventId),
+      });
+    }
+    if (updates.length === 0) return true;
+    const ok = await patchServices(updates);
+    if (ok) reloadServices();
+    return ok;
   };
 
   const save = async () => {
@@ -93,9 +132,11 @@ export default function EventsAdminPage() {
       return;
     }
     const wasNew = editing === "new";
+    let newId: number | null = null;
     const ok = await update((d) => {
       if (editing === "new") {
         const nextId = Math.max(0, ...d.events.map((e) => e.id)) + 1;
+        newId = nextId;
         return { ...d, events: [{ ...draft, id: nextId }, ...d.events] };
       }
       return {
@@ -105,12 +146,16 @@ export default function EventsAdminPage() {
         ),
       };
     });
+    if (ok) {
+      const eventId = wasNew ? newId! : (editing as number);
+      await syncLinkedServices(eventId, linkedServiceIds);
+    }
     setEditing(null);
     if (ok) setToast(wasNew ? "이벤트가 추가되었습니다" : "이벤트가 저장되었습니다");
   };
 
   const remove = async (id: number) => {
-    if (!confirm("이 이벤트를 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 이벤트를 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await update((d) => ({
       ...d,
       events: d.events.filter((e) => e.id !== id),
@@ -119,7 +164,11 @@ export default function EventsAdminPage() {
         items: (d.popup.items ?? []).filter((it) => it.eventId !== id),
       },
     }));
-    if (ok) setToast("이벤트가 삭제되었습니다");
+    if (ok) {
+      // 삭제된 이벤트를 참조하던 시술들의 event_ids에서도 정리한다 (고아 참조 방지)
+      await syncLinkedServices(id, []);
+      setToast("이벤트가 삭제되었습니다");
+    }
   };
 
   const move = (id: number, dir: -1 | 1) => {
@@ -204,12 +253,46 @@ export default function EventsAdminPage() {
             <div>
               <Field
                 label="이벤트 이미지"
-                hint="권장 비율 4:3 · 권장 크기 800×600 이상"
+                hint="이벤트 목록·상세(16:10)와 팝업 PC(16:9), 그리고 모바일용 이미지를 따로 넣지 않았을 때의 모바일 화면 전반에 쓰입니다. 크롭 위치는 한 지점으로 이 미리보기들에 모두 적용되니, 아래 미리보기를 확인하며 위치를 정하세요. 권장 크기 1200×900 이상"
               >
                 <ImageInput
                   value={draft.image}
                   onChange={(v) => setDraft((p) => ({ ...p, image: v }))}
-                  aspectRatio="4 / 3"
+                  aspectRatio="16 / 10"
+                  extraRatios={[{ label: "팝업 · PC 16:9", ratio: "16 / 9" }]}
+                />
+              </Field>
+              <Field
+                label="모바일용 이미지 (선택)"
+                hint="가로로 넓은 배너 사진 안에 글씨가 있으면, 모바일 팝업(4:5)이나 모바일 목록 카드처럼 세로로 좁은 화면에서 양옆 글씨가 잘릴 수 있습니다. 그럴 때만 세로형(4:5에 가까운) 이미지를 따로 넣으세요. 비워두면 위 이벤트 이미지를 그대로 씁니다."
+              >
+                <ImageInput
+                  value={draft.mobileImage ?? ""}
+                  onChange={(v) => setDraft((p) => ({ ...p, mobileImage: v }))}
+                  aspectRatio="4 / 5"
+                />
+              </Field>
+              <Field
+                label="상세페이지 전용 이미지 (선택)"
+                hint="가격표처럼 이미지 안에 금액·조건이 적혀 있어 한 글자도 잘리면 안 될 때 사용합니다. 여기에 이미지를 넣으면 이벤트 상세페이지에서 자르거나 글씨를 덮지 않고 원본 그대로 전부 보여주고, 상단 제목 배경도 이 이미지 대신 단색으로 처리해 금액이 가려지지 않습니다. 비워두면 위 이벤트 이미지를 그대로 씁니다."
+              >
+                <ImageInput
+                  value={draft.detailImage ?? ""}
+                  onChange={(v) => setDraft((p) => ({ ...p, detailImage: v }))}
+                  aspectRatio="auto"
+                />
+              </Field>
+              <Field
+                label="이벤트 적용 시술"
+                hint="이 이벤트가 적용되는 시술을 선택하세요. 이벤트 상세 페이지에 목록으로 표시되고, 시술 목록에서도 '이벤트' 탭으로 모아 볼 수 있습니다."
+              >
+                <LinkedServicesPicker
+                  selectedIds={linkedServiceIds}
+                  onChange={setLinkedServiceIds}
+                  categories={categories}
+                  subcategories={subcategories}
+                  services={services}
+                  locale={editingLocale}
                 />
               </Field>
             </div>
@@ -270,7 +353,7 @@ export default function EventsAdminPage() {
                   {ev.title}
                 </h3>
                 <p className="text-xs text-ink-muted line-clamp-2 mb-2">
-                  {ev.description.replace(/<[^>]*>/g, "")}
+                  {htmlToText(ev.description, " · ")}
                 </p>
                 <div className="flex gap-1 flex-wrap">
                   <Button

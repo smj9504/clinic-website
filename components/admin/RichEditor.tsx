@@ -2,32 +2,41 @@
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import {
   MAX_REQUEST_BYTES,
   MAX_UPLOAD_BYTES,
   MAX_UPLOAD_LABEL,
+  MAX_VIDEO_BYTES,
+  MAX_VIDEO_LABEL,
   shrinkForUpload,
 } from "@/lib/imageUpload";
+import { getSupabaseClient } from "@/lib/supabase";
+import CropImage from "@/components/admin/richEditor/CropImage";
+import ImageRow from "@/components/admin/richEditor/ImageRow";
+import Video from "@/components/admin/richEditor/Video";
+import { insertTrailingParagraph } from "@/components/admin/richEditor/insertTrailingParagraph";
 
 function ToolbarButton({
   onClick,
   active,
   children,
   title,
+  disabled,
 }: {
   onClick: () => void;
   active?: boolean;
   children: React.ReactNode;
   title?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={title}
-      className={`min-h-[2.25rem] px-2.5 py-2 text-xs font-medium rounded transition-colors ${
+      disabled={disabled}
+      className={`min-h-[2.25rem] px-2.5 py-2 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
         active
           ? "bg-accent text-white"
           : "bg-bg-alt text-ink-muted hover:text-ink hover:bg-bg-alt/80"
@@ -45,15 +54,20 @@ export default function RichEditor({
   value: string;
   onChange: (html: string) => void;
 }) {
+  // 동영상은 수십MB라 업로드가 몇 초 걸린다 — 버튼에 진행 중임을 표시해
+  // 반응이 없다고 오해하거나 여러 번 누르는 것을 막는다.
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
       }),
-      Image.configure({
+      CropImage.configure({
         inline: false,
         allowBase64: false,
       }),
+      ImageRow,
+      Video,
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -105,12 +119,82 @@ export default function RichEditor({
           alert(`업로드 실패: ${json.error || res.statusText}`);
           return;
         }
-        editor.chain().focus().setImage({ src: json.url }).run();
+        editor.chain().focus().setImage({ src: json.url }).command(insertTrailingParagraph).run();
       } catch {
         alert("이미지 업로드에 실패했습니다.");
       }
     };
     input.click();
+  }, [editor]);
+
+  const insertVideo = useCallback(() => {
+    if (!editor) return;
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "video/mp4,video/webm,video/quicktime";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      if (file.size > MAX_VIDEO_BYTES) {
+        alert(`${MAX_VIDEO_LABEL} 이하 동영상만 업로드 가능합니다.`);
+        return;
+      }
+
+      const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
+
+      setUploadingVideo(true);
+      try {
+        // 동영상은 서버를 거치지 않는다 — 병원 내부 서버의 요청 본문 크기
+        // 제한에 걸려 수십MB 파일이 413으로 실패한다. 서명된 URL을 받아
+        // 브라우저에서 Supabase Storage로 직접 올린다. (ImageInput과 같은 방식)
+        const urlRes = await fetch("/api/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type,
+            size: file.size,
+            password,
+          }),
+        });
+        const urlJson = await urlRes.json();
+        if (!urlRes.ok) {
+          alert(`업로드 실패: ${urlJson.error || urlRes.statusText}`);
+          return;
+        }
+
+        const { error: uploadError } = await getSupabaseClient()
+          .storage.from("site-assets")
+          .uploadToSignedUrl(urlJson.path, urlJson.token, file, { contentType: file.type });
+        if (uploadError) {
+          alert(`업로드 실패: ${uploadError.message}`);
+          return;
+        }
+
+        editor
+          .chain()
+          .focus()
+          .setVideo({ src: urlJson.publicUrl })
+          .command(insertTrailingParagraph)
+          .run();
+      } catch {
+        alert("동영상 업로드에 실패했습니다.");
+      } finally {
+        setUploadingVideo(false);
+      }
+    };
+    input.click();
+  }, [editor]);
+
+  const insertImageRow = useCallback(() => {
+    if (!editor) return;
+    editor
+      .chain()
+      .focus()
+      .insertContent({ type: "imageRow", attrs: { slots: [{ src: "" }, { src: "" }] } })
+      .command(insertTrailingParagraph)
+      .run();
   }, [editor]);
 
   if (!editor) return null;
@@ -193,6 +277,16 @@ export default function RichEditor({
         <ToolbarButton onClick={insertImage} title={`이미지 삽입 (최대 ${MAX_UPLOAD_LABEL})`}>
           🖼 이미지
         </ToolbarButton>
+        <ToolbarButton onClick={insertImageRow} title="이미지 2~3장을 가로로 나란히 배치">
+          🖼🖼 가로 배치
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={insertVideo}
+          disabled={uploadingVideo}
+          title={`동영상 삽입 (mp4 · webm · mov, 최대 ${MAX_VIDEO_LABEL}) — 소리 없이 자동 반복 재생됩니다`}
+        >
+          {uploadingVideo ? "⏳ 업로드 중..." : "▶ 동영상"}
+        </ToolbarButton>
       </div>
 
       {/* Editor */}
@@ -248,6 +342,19 @@ export default function RichEditor({
         }
         .ProseMirror:focus {
           outline: none;
+        }
+        .service-image-row {
+          display: grid;
+          grid-template-columns: repeat(var(--image-row-count, 2), 1fr);
+          gap: 0.75rem;
+          margin: 0.8em 0;
+        }
+        .service-image-row__img {
+          width: 100%;
+          aspect-ratio: 4 / 3;
+          object-fit: cover;
+          border-radius: 0.375rem;
+          display: block;
         }
       `}</style>
     </div>

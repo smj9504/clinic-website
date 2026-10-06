@@ -3,6 +3,13 @@ export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 export const MAX_UPLOAD_LABEL = "25MB";
 
 /**
+ * 동영상 최대 용량 — app/api/upload-url/route.ts의 MAX_VIDEO_SIZE와 같은 값이어야
+ * 한다. 여기서 미리 걸러 업로드를 시작하기 전에 안내하고, 서버는 최종 방어선이다.
+ */
+export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+export const MAX_VIDEO_LABEL = "100MB";
+
+/**
  * Vercel Functions는 요청 본문이 4.5MB를 넘으면 라우트 핸들러가 실행되기도 전에
  * 413(FUNCTION_PAYLOAD_TOO_LARGE)으로 끊는다. 여유를 두고 4MB를 전송 상한으로 잡고,
  * 원본이 그보다 크면 아래 shrinkForUpload()로 미리 줄여서 보낸다.

@@ -96,6 +96,15 @@ export default function PopupAdminPage() {
     }));
   };
 
+  const setCategoryLabel = (eventId: number, value: string) => {
+    setDraft((p) => ({
+      ...p,
+      items: (p.items ?? []).map((it) =>
+        it.eventId === eventId ? { ...it, categoryLabel: value } : it
+      ),
+    }));
+  };
+
   const moveItem = (eventId: number, dir: -1 | 1) => {
     setDraft((p) => {
       const list = [...(p.items ?? [])];
@@ -133,7 +142,7 @@ export default function PopupAdminPage() {
     <>
       <PageHeader
         title="이벤트 팝업 관리"
-        description="팝업에 표시할 이벤트를 선택하세요. 여러 개 선택 시 좌/우로 넘겨볼 수 있습니다."
+        description="팝업에 표시할 이벤트를 선택하세요. 이벤트 하나당 하단 카테고리 탭이 하나씩 생기고, 개수 제한 없이 추가할 수 있습니다."
         actions={<Button onClick={save}>저장</Button>}
       />
 
@@ -248,16 +257,30 @@ export default function PopupAdminPage() {
                   >
                     {item.title.replace("\n", " — ")}
                   </div>
-                  <label className="flex items-center gap-1.5 mt-1 cursor-pointer w-fit">
-                    <input
-                      type="checkbox"
-                      checked={item.imageOverlay ?? true}
-                      onChange={() => toggleOverlay(item.eventId)}
-                      style={{ accentColor: "var(--color-accent)" }}
-                      className="w-3.5 h-3.5"
-                    />
-                    <span className="text-[0.7rem] text-ink-muted">이미지 어둡게 표시</span>
-                  </label>
+                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                    <label className="flex items-center gap-1.5 cursor-pointer w-fit">
+                      <input
+                        type="checkbox"
+                        checked={item.imageOverlay ?? true}
+                        onChange={() => toggleOverlay(item.eventId)}
+                        style={{ accentColor: "var(--color-accent)" }}
+                        className="w-3.5 h-3.5"
+                      />
+                      <span className="text-[0.7rem] text-ink-muted">이미지 어둡게 표시</span>
+                    </label>
+                    <label className="flex items-center gap-1.5">
+                      <span className="text-[0.7rem] text-ink-muted whitespace-nowrap">
+                        카테고리 라벨
+                      </span>
+                      <input
+                        type="text"
+                        value={item.categoryLabel ?? ""}
+                        onChange={(e) => setCategoryLabel(item.eventId, e.target.value)}
+                        placeholder={item.title.split("\n")[0]}
+                        className="text-xs px-2 py-1 rounded border border-line bg-bg w-40"
+                      />
+                    </label>
+                  </div>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
                   <Button
@@ -290,9 +313,10 @@ export default function PopupAdminPage() {
       <Card className="mt-6 bg-yellow-50 border-yellow-200">
         <p className="text-sm text-yellow-900" style={{ lineHeight: 1.6 }}>
           💡 팝업은 사이트 진입 후 2초 뒤에 표시됩니다.
-          {items.length > 1 && " 여러 이벤트 선택 시 좌/우 화살표로 넘겨볼 수 있습니다."}
+          {items.length > 1 && " 여러 이벤트 선택 시 하단 카테고리 탭으로 넘겨볼 수 있고, 6초마다 자동으로 다음 이벤트로 전환됩니다."}
           {" "}사용자가 &ldquo;오늘 하루 보지 않기&rdquo;를 선택하면 같은 날 다시 보이지 않습니다.
           {" "}&ldquo;이미지 어둡게 표시&rdquo;는 이미지 위에 브랜드 색 틴트를 살짝 얹어 버튼 대비를 높이는 옵션입니다 — 이미지 자체가 충분히 어둡거나 대비가 좋다면 꺼도 됩니다.
+          {" "}&ldquo;카테고리 라벨&rdquo;은 팝업 하단 탭에 표시할 짧은 이름입니다 (비워두면 이벤트 제목을 사용합니다).
         </p>
       </Card>
 

@@ -8,6 +8,13 @@ type RevealOptions = {
   once?: boolean;
 };
 
+type RevealGroupOptions = RevealOptions & {
+  /** 자식 카드 사이 등장 간격(ms). 기본 100ms — 카드 수가 적고 시각적으로
+   * 눈에 띄어야 하는 경우(예: 사진 위에 겹쳐 뜨는 체크리스트 히어로)는
+   * 더 크게 줘서 순차 등장이 뚜렷하게 읽히게 한다. */
+  staggerMs?: number;
+};
+
 /**
  * 콜백 ref를 사용한다: 이벤트/공지 섹션처럼 DB 로드 전에는 `return null`로
  * 아무것도 렌더링하지 않다가 데이터가 도착한 뒤에야 실제 DOM이 붙는 경우,
@@ -53,9 +60,9 @@ export function useScrollReveal<T extends HTMLElement = HTMLDivElement>(
 
 // For staggered children reveals
 export function useScrollRevealGroup<T extends HTMLElement = HTMLDivElement>(
-  options: RevealOptions = {}
+  options: RevealGroupOptions = {}
 ) {
-  const { threshold = 0.1, rootMargin = "0px 0px -40px 0px", once = true } = options;
+  const { threshold = 0.1, rootMargin = "0px 0px -40px 0px", once = true, staggerMs = 100 } = options;
   const cleanupRef = useRef<() => void>(() => {});
 
   const setRef = useCallback(
@@ -70,7 +77,7 @@ export function useScrollRevealGroup<T extends HTMLElement = HTMLDivElement>(
         const children = container.querySelectorAll<HTMLElement>("[data-reveal-item]");
         children.forEach((child, i) => {
           if (child.classList.contains("revealed")) return;
-          child.style.transitionDelay = `${i * 100}ms`;
+          child.style.transitionDelay = `${i * staggerMs}ms`;
           child.classList.add("revealed");
         });
       };
@@ -104,7 +111,7 @@ export function useScrollRevealGroup<T extends HTMLElement = HTMLDivElement>(
         mo.disconnect();
       };
     },
-    [threshold, rootMargin, once]
+    [threshold, rootMargin, once, staggerMs]
   );
 
   useEffect(() => () => cleanupRef.current(), []);

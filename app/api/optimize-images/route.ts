@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/adminAuth";
 import sharp from "sharp";
 
 const MAX_WIDTH = 1920;
@@ -13,9 +14,8 @@ const WEBP_QUALITY = 80;
  */
 export async function POST(request: NextRequest) {
   const { password } = await request.json();
-  if (password !== "admin1234") {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdmin(password);
+  if (denied) return denied;
 
   const supabase = getServiceClient();
 

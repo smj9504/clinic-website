@@ -1,7 +1,12 @@
 const ko = {
+  // Common
+  "common.close": "닫기",
+
   // Nav
   "nav.reservation": "예약하기",
+  "nav.reservationRequest": "상담 신청",
   "nav.menuOpen": "메뉴 열기",
+  "nav.submenuToggle": "하위 메뉴 열기/닫기",
 
   // Loading
   "loading.status": "페이지를 불러오는 중입니다",
@@ -17,6 +22,14 @@ const ko = {
   "section.notices": "공지사항",
   "section.more": "더 보기 →",
   "section.detail": "자세히",
+
+  // Signature services
+  "signature.label": "Signature",
+  "signature.title": "시그니처 시술",
+  "signature.subtitle": "토닝 · 리프팅 · 관리를 하나로 묶어,\n가장 합리적인 가격에 만나보세요",
+  "signature.cta": "시그니처 시술 예약하기",
+  "signature.compose": "구성",
+  "signature.priceFrom": "패키지가",
 
   // Badges
   "badge.event": "이벤트",
@@ -49,9 +62,45 @@ const ko = {
   "events.period": "이벤트 기간",
   "events.contact": "문의",
   "events.ongoing": "진행중",
+  "events.linkedServices": "이벤트 적용 시술",
+  "events.linkedServicesHint": "이 이벤트로 만나볼 수 있는 시술입니다.",
 
   // Treatments page
   "treatments.title": "진료 내용",
+
+  // Skin beauty / Korean treatment hub pages
+  "skinBeauty.title": "피부미용",
+  "koreanTreatment.title": "한방치료",
+  "hub.moreDetail": "자세히 보기 →",
+  "hub.equipmentCta": "장비소개 더 보기 →",
+
+  // Skin beauty — equipment showcase
+  "skinBeauty.showcase.label": "전부 같은 관리가 아닙니다.",
+  "skinBeauty.showcase.title": "고운빛 시그니처 케어",
+  "skinBeauty.showcase.body":
+    "잡티·처짐·노화는 각각 다른 원인과 다른 피부층에서 일어납니다.\n고운빛한의원은 이 다양한 증상의 원인을 정확하게 진단하고,\n가장 정밀한 장비와 가장 섬세한 손길로 관리를 완성합니다.",
+  "skinBeauty.showcase.cta": "장비소개 더 보기",
+  "skinBeauty.feature.label": "정확한 진단과 꼼꼼한 시술",
+
+  // Skin beauty — equipment carousel
+  "skinBeauty.carousel.title": "고운빛의",
+  "skinBeauty.carousel.titleHighlight": "시술 장비",
+  "skinBeauty.carousel.subtitle":
+    "HIFU·고주파부터 레이저 케어까지,\n고민에 맞춰 장비를 선택해 관리합니다.",
+  "skinBeauty.carousel.prev": "이전 장비",
+  "skinBeauty.carousel.next": "다음 장비",
+
+  // Equipment catalog
+  "equipment.title": "장비소개",
+  "equipment.intro": "고운빛한의원의 시술 장비를 안내드립니다.",
+  "equipment.empty": "등록된 장비가 없습니다.",
+  "equipment.linkedServicesTitle": "가능한 시술",
+  "equipment.closeModal": "닫기",
+
+  // SubPage detail
+  "subpage.notFound": "페이지를 찾을 수 없습니다.",
+  "subpage.comingSoon": "콘텐츠 준비 중입니다.",
+  "subpage.back": "목록으로",
 
   // Community
   "notice.title": "공지사항",
@@ -61,12 +110,43 @@ const ko = {
   "faq.tab": "FAQ",
   "faq.empty": "등록된 FAQ가 없습니다.",
 
+  // Services (시술 안내 · 가격)
+  "services.title": "시술 안내",
+  "services.all": "전체보기",
+  "services.loading": "시술 정보를 불러오는 중입니다",
+  "services.empty": "등록된 시술이 없습니다.",
+  "services.emptyFiltered": "해당 분류에 등록된 시술이 없습니다.",
+  "services.error": "시술 정보를 불러오지 못했습니다.",
+  "services.retry": "다시 시도",
+  "services.untilPrefix": "",
+  "services.untilSuffix": "까지",
+  "services.detail": "자세히 보기",
+  "services.option": "옵션",
+  "services.eventPrice": "이벤트가",
+  "services.originalPrice": "정가",
+  "services.discount": "할인",
+  "services.salePrice": "판매가",
+  "services.note": "비고",
+  "services.priceNotice": "표시된 금액은 부가세 포함 여부·시술 부위에 따라 달라질 수 있습니다. 자세한 사항은 내원 상담 시 안내해 드립니다.",
+  "services.related": "같은 분류의 다른 시술",
+  "services.otherInCategorySuffix": "의 다른 시술",
+  "services.notFound": "시술을 찾을 수 없습니다.",
+  "services.backToList": "시술 목록",
+  "services.reserve": "예약 상담하기",
+  "services.generalTreatment": "일반 시술",
+  "services.estimatedAmount": "예상금액 (부가세 별도)",
+  "services.vatSeparate": "부가세 별도",
+  "services.reserveSelected": "선택한 시술 예약하기",
+  "services.selectedCount": "개 선택됨",
+
   // Popup
   "popup.label": "이 달의 이벤트",
   "popup.scheduleLabel": "진료 일정",
   "popup.dismiss": "오늘 하루 보지 않기",
   "popup.detail": "자세히 →",
   "popup.close": "팝업 닫기",
+  "popup.dismissTodayShort": "오늘은 그만 볼래요",
+  "popup.closeShort": "닫기",
 
   // Chat
   "chat.title": "무엇을 도와드릴까요?",
@@ -95,9 +175,14 @@ const ko = {
 } as const;
 
 const en: Record<keyof typeof ko, string> = {
+  // Common
+  "common.close": "Close",
+
   // Nav
   "nav.reservation": "Book Now",
+  "nav.reservationRequest": "Request",
   "nav.menuOpen": "Open menu",
+  "nav.submenuToggle": "Toggle submenu",
 
   // Loading
   "loading.status": "Loading the page",
@@ -113,6 +198,14 @@ const en: Record<keyof typeof ko, string> = {
   "section.notices": "Notices",
   "section.more": "See More →",
   "section.detail": "Details",
+
+  // Signature services
+  "signature.label": "Signature",
+  "signature.title": "Signature Treatments",
+  "signature.subtitle": "Toning, lifting, and care in one package —\nat our most reasonable price",
+  "signature.cta": "Book a Signature Treatment",
+  "signature.compose": "Included",
+  "signature.priceFrom": "Package price",
 
   // Badges
   "badge.event": "Event",
@@ -145,9 +238,45 @@ const en: Record<keyof typeof ko, string> = {
   "events.period": "Period",
   "events.contact": "Contact",
   "events.ongoing": "Ongoing",
+  "events.linkedServices": "Treatments in This Event",
+  "events.linkedServicesHint": "Treatments available through this event.",
 
   // Treatments page
   "treatments.title": "Treatments",
+
+  // Skin beauty / Korean treatment hub pages
+  "skinBeauty.title": "Skin Beauty",
+  "koreanTreatment.title": "Korean Medicine Treatment",
+  "hub.moreDetail": "Learn more →",
+  "hub.equipmentCta": "See our equipment →",
+
+  // Skin beauty — equipment showcase
+  "skinBeauty.showcase.label": "Not all care is the same.",
+  "skinBeauty.showcase.title": "Gowoonbit Signature Care",
+  "skinBeauty.showcase.body":
+    "Blemishes, sagging, and aging each begin from different causes and different layers of the skin.\nGowoonbit precisely diagnoses the root cause behind each concern,\nand completes your care with the most precise equipment and the most careful hands.",
+  "skinBeauty.showcase.cta": "See our equipment",
+  "skinBeauty.feature.label": "Precise diagnosis, careful treatment",
+
+  // Skin beauty — equipment carousel
+  "skinBeauty.carousel.title": "Gowoonbit's",
+  "skinBeauty.carousel.titleHighlight": "Treatment Equipment",
+  "skinBeauty.carousel.subtitle":
+    "From HIFU and RF to laser care,\nwe select the equipment suited to your needs.",
+  "skinBeauty.carousel.prev": "Previous equipment",
+  "skinBeauty.carousel.next": "Next equipment",
+
+  // Equipment catalog
+  "equipment.title": "Equipment",
+  "equipment.intro": "Introducing Gowoonbit Korean Medicine Clinic's treatment equipment.",
+  "equipment.empty": "No equipment has been added yet.",
+  "equipment.linkedServicesTitle": "Available Treatments",
+  "equipment.closeModal": "Close",
+
+  // SubPage detail
+  "subpage.notFound": "Page not found.",
+  "subpage.comingSoon": "Content coming soon.",
+  "subpage.back": "Back to list",
 
   // Community
   "notice.title": "Notices",
@@ -157,12 +286,43 @@ const en: Record<keyof typeof ko, string> = {
   "faq.tab": "FAQ",
   "faq.empty": "No FAQs available.",
 
+  // Services
+  "services.title": "Treatments & Pricing",
+  "services.all": "All",
+  "services.loading": "Loading treatments",
+  "services.empty": "No treatments have been added yet.",
+  "services.emptyFiltered": "No treatments in this category.",
+  "services.error": "Could not load treatments.",
+  "services.retry": "Try again",
+  "services.untilPrefix": "Until ",
+  "services.untilSuffix": "",
+  "services.detail": "View details",
+  "services.option": "Option",
+  "services.eventPrice": "Event Price",
+  "services.originalPrice": "Regular",
+  "services.discount": "Off",
+  "services.salePrice": "Price",
+  "services.note": "Note",
+  "services.priceNotice": "Prices may vary depending on treatment area and whether VAT is included. Details are provided during your consultation.",
+  "services.related": "Other treatments in this category",
+  "services.otherInCategorySuffix": " — more treatments",
+  "services.notFound": "Treatment not found.",
+  "services.backToList": "All treatments",
+  "services.reserve": "Book a consultation",
+  "services.generalTreatment": "General Treatments",
+  "services.estimatedAmount": "Estimated Total (VAT excluded)",
+  "services.vatSeparate": "VAT excluded",
+  "services.reserveSelected": "Book Selected Treatments",
+  "services.selectedCount": " selected",
+
   // Popup
   "popup.label": "Monthly Event",
   "popup.scheduleLabel": "Schedule",
   "popup.dismiss": "Don't show today",
   "popup.detail": "Details →",
   "popup.close": "Close popup",
+  "popup.dismissTodayShort": "Don't show today",
+  "popup.closeShort": "Close",
 
   // Chat
   "chat.title": "How can we help?",

@@ -2,11 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import EventImage from "@/components/EventImage";
+import ServiceCard from "@/components/services/ServiceCard";
 import { useSiteData, getMenuLabel } from "@/lib/useSiteData";
-import { useT } from "@/lib/i18n";
+import { useServiceCatalog } from "@/lib/useServices";
+import { isServiceVisible } from "@/lib/services";
+import { useLocale, useT } from "@/lib/i18n";
 import { todayKST, formatEventPeriod } from "@/lib/date";
+import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -20,12 +25,19 @@ function isEnded(ev: { endDate?: string }) {
 export default function EventDetailPage() {
   const { id } = useParams();
   const { events, clinicInfo, menus } = useSiteData();
+  const { services } = useServiceCatalog();
+  const { locale } = useLocale();
   const t = useT();
   const fallbackImage = clinicInfo.defaultImage || FALLBACK_IMAGE;
   const eventsLabel = getMenuLabel(menus, "/events", t("events.title"));
 
   const event = events.find((e) => String(e.id) === id);
   const ended = event ? isEnded(event) : false;
+
+  const linkedServices = useMemo(() => {
+    if (!event) return [];
+    return services.filter((s) => (s.eventIds ?? []).includes(event.id) && isServiceVisible(s));
+  }, [services, event]);
 
   if (!event) {
     return (
@@ -41,29 +53,39 @@ export default function EventDetailPage() {
     );
   }
 
-  const otherEvents = events.filter((e) => e.id !== event.id).slice(0, 2);
+  const otherEvents = events.filter((e) => e.id !== event.id).slice(0, 3);
 
   return (
     <>
       {/* Hero */}
       <section className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden">
+        {/*
+          detailImage(가격표 등 "그대로 보여줘야 하는" 이미지)가 지정된 이벤트는
+          그 이미지를 히어로 배경으로 재사용하지 않는다 — 어둡게 덮는 오버레이와
+          제목 글씨에 가려 금액이 읽히지 않기 때문이다. 이때는 단색 배경만 깔고,
+          이미지는 본문에서 원본 그대로 크게 보여준다.
+        */}
         <div className="absolute inset-0">
-          <Image
-            src={event.image || fallbackImage}
-            alt={event.title}
-            fill
-            className="object-cover"
-            sizes="100vw"
-            priority
-            quality={75}
-            placeholder="blur"
-            blurDataURL={BLUR_PLACEHOLDER}
-          />
+          {!event.detailImage && (
+            <Image
+              src={stripImagePosition(event.image || fallbackImage)}
+              alt=""
+              fill
+              className="object-cover"
+              style={{ ...getImageCropStyle(event.image || fallbackImage) }}
+              sizes="100vw"
+              priority
+              quality={75}
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
+            />
+          )}
           <div
             className="absolute inset-0"
             style={{
-              background:
-                "linear-gradient(to bottom, rgba(44,38,32,0.75) 0%, rgba(44,38,32,0.90) 100%)",
+              background: event.detailImage
+                ? "linear-gradient(to bottom, #3A322A 0%, #2C2620 100%)"
+                : "linear-gradient(to bottom, rgba(44,38,32,0.75) 0%, rgba(44,38,32,0.90) 100%)",
             }}
           />
         </div>
@@ -117,20 +139,46 @@ export default function EventDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-16 lg:gap-24">
             {/* Main */}
             <div>
-              <EventImage
-                ratio={16 / 10}
-                wrapperClassName="rounded overflow-hidden mb-12 bg-bg-alt"
-                src={event.image || fallbackImage}
-                alt={event.title}
-                sizes="(max-width: 1024px) 100vw, 60vw"
-                quality={75}
-                placeholder="blur"
-                blurDataURL={BLUR_PLACEHOLDER}
-              />
+              {/*
+                detailImage가 있으면 비율 박스에 맞춰 자르지 않고 원본 비율
+                그대로 전부 보여준다 — 가격표처럼 이미지 안에 금액·조건이
+                적혀 있어 한 글자도 잘리면 안 되는 경우를 위한 경로다.
+                width/height를 0으로 두고 sizes를 주면 Next Image가 실제
+                비율에 맞춰 높이를 잡는다(w-full h-auto).
+              */}
+              {event.detailImage ? (
+                <Image
+                  src={stripImagePosition(event.detailImage)}
+                  alt={`${event.title} ${event.subtitle}`}
+                  width={0}
+                  height={0}
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  className="w-full h-auto rounded mb-12 bg-bg-alt"
+                  quality={95}
+                  priority
+                />
+              ) : (
+                <EventImage
+                  ratio={16 / 10}
+                  wrapperClassName="rounded overflow-hidden mb-12 bg-bg-alt"
+                  src={event.image || fallbackImage}
+                  mobileSrc={event.mobileImage || undefined}
+                  alt={event.title}
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  quality={75}
+                  placeholder="blur"
+                  blurDataURL={BLUR_PLACEHOLDER}
+                />
+              )}
 
               <div className="max-w-2xl">
+                {/*
+                  제목과 부제목은 각각 다른 정보라 한 줄에 이어 붙이지 않고
+                  줄을 나눈다 — 크기(작게)와 색(연하게)으로 위계를 준다.
+                  부제목이 비어 있는 이벤트도 있어 있을 때만 렌더링한다.
+                */}
                 <h2
-                  className="font-display mb-8"
+                  className="font-display mb-3"
                   style={{
                     fontSize: "clamp(1.5rem, 3vw, 2rem)",
                     fontWeight: 600,
@@ -138,10 +186,23 @@ export default function EventDetailPage() {
                     lineHeight: 1.3,
                   }}
                 >
-                  {event.title} &mdash; {event.subtitle}
+                  {event.title}
                 </h2>
+                {event.subtitle && (
+                  <p
+                    className="text-ink-muted"
+                    style={{
+                      fontSize: "clamp(1rem, 1.8vw, 1.2rem)",
+                      fontWeight: 400,
+                      letterSpacing: "-0.02em",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {event.subtitle}
+                  </p>
+                )}
 
-                <div className="w-12 h-0.5 bg-accent mb-10" />
+                <div className="w-12 h-0.5 bg-accent mt-8 mb-10" />
 
                 {event.description.startsWith("<") ? (
                   <div
@@ -221,6 +282,31 @@ export default function EventDetailPage() {
               </div>
             </aside>
           </div>
+
+          {/* 이벤트 적용 시술 */}
+          {linkedServices.length > 0 && (
+            <div className="mt-20 md:mt-28 pt-16 md:pt-20 border-t border-line">
+              <div className="mb-10">
+                <span className="section-label block mb-4">{t("badge.event")}</span>
+                <h2 className="section-title">{t("events.linkedServices")}</h2>
+                <div className="section-divider" />
+                <p className="mt-5 text-ink-muted" style={{ letterSpacing: "-0.01em" }}>
+                  {t("events.linkedServicesHint")}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {linkedServices.map((service) => (
+                  <ServiceCard
+                    key={service.id}
+                    service={service}
+                    locale={locale}
+                    fallbackImage={fallbackImage}
+                    t={t}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -234,7 +320,7 @@ export default function EventDetailPage() {
               <div className="section-divider" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-start gap-8">
               {otherEvents.map((other) => (
                 <Link
                   key={other.id}
@@ -243,17 +329,17 @@ export default function EventDetailPage() {
                 >
                   <EventImage
                     ratio={16 / 10}
-                    wrapperClassName="overflow-hidden rounded mb-6 bg-bg-alt"
+                    wrapperClassName="overflow-hidden rounded mb-5 bg-bg-alt"
                     className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                     src={other.image || fallbackImage}
                     alt={other.title}
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
                     quality={75}
                     placeholder="blur"
                     blurDataURL={BLUR_PLACEHOLDER}
                   />
                   <div
-                    className="text-xs font-semibold uppercase text-ink-muted mb-3"
+                    className="text-xs font-semibold uppercase text-ink-muted mb-2.5"
                     style={{ letterSpacing: "0.15em" }}
                   >
                     {formatEventPeriod(other, t)}
@@ -261,7 +347,7 @@ export default function EventDetailPage() {
                   <h3
                     className="font-display mb-2"
                     style={{
-                      fontSize: "1.35rem",
+                      fontSize: "1.15rem",
                       fontWeight: 600,
                       letterSpacing: "-0.03em",
                       lineHeight: 1.3,
@@ -273,7 +359,7 @@ export default function EventDetailPage() {
                     </span>
                   </h3>
                   <span
-                    className="inline-flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all mt-3"
+                    className="inline-flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all mt-2"
                     style={{ letterSpacing: "-0.02em" }}
                   >
                     {t("section.detail")}

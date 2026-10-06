@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { getAdminPassword } from "@/lib/adminAuth";
 
 const CONFIG_KEY = "admin_password";
-const DEFAULT_PASSWORD = "admin1234";
-
-/** DB에서 현재 비밀번호 조회 (없으면 기본값) */
-async function getStoredPassword(): Promise<string> {
-  const supabase = getServiceClient();
-  const { data } = await supabase
-    .from("site_data")
-    .select("data")
-    .eq("locale", "_config")
-    .single();
-  return data?.data?.[CONFIG_KEY] || DEFAULT_PASSWORD;
-}
 
 /**
  * POST /api/admin-password
@@ -26,7 +15,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "password required" }, { status: 400 });
   }
 
-  const stored = await getStoredPassword();
+  const stored = await getAdminPassword();
   if (password !== stored) {
     return NextResponse.json({ valid: false }, { status: 401 });
   }
@@ -49,7 +38,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "비밀번호는 4자 이상이어야 합니다" }, { status: 400 });
   }
 
-  const stored = await getStoredPassword();
+  const stored = await getAdminPassword();
   if (currentPassword !== stored) {
     return NextResponse.json({ error: "현재 비밀번호가 일치하지 않습니다" }, { status: 401 });
   }

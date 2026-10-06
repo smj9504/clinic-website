@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
-import { updateSiteData, syncImages, changePassword } from "@/lib/storage";
-import type { HeroSlide, Treatment } from "@/lib/data";
+import { updateSiteData, syncImages, changePassword, defaultHomeSections } from "@/lib/storage";
+import type { HeroSlide, HeroSlideEffect, Treatment, HomeSectionConfig, HomeSectionId } from "@/lib/data";
+import { defaultHeroEffect } from "@/lib/data";
 import {
   PageHeader,
   Field,
@@ -14,9 +15,18 @@ import {
   Card,
   ImageInput,
   Toast,
+  isVideoUrl,
 } from "@/components/admin/ui";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 
-type Tab = "clinic" | "hero" | "treatments" | "about" | "password";
+const HERO_EFFECT_OPTIONS: { value: HeroSlideEffect; label: string }[] = [
+  { value: "pan-right", label: "우측 팬" },
+  { value: "pan-left", label: "좌측 팬" },
+  { value: "zoom", label: "줌인" },
+  { value: "none", label: "없음" },
+];
+
+type Tab = "clinic" | "hero" | "treatments" | "layout" | "about" | "password";
 
 export default function SettingsAdminPage() {
   const { editingLocale } = useAdminLocale();
@@ -29,6 +39,7 @@ export default function SettingsAdminPage() {
     { key: "clinic", label: "한의원 기본 정보" },
     { key: "hero", label: "히어로 슬라이드" },
     { key: "treatments", label: "진료 내용" },
+    { key: "layout", label: "메인페이지 구성" },
     { key: "about", label: "한의원 소개" },
     { key: "password", label: "비밀번호 변경" },
   ];
@@ -60,6 +71,7 @@ export default function SettingsAdminPage() {
       {tab === "clinic" && <ClinicInfoTab onSave={() => showToast("저장되었습니다")} />}
       {tab === "hero" && <HeroSlidesTab onSave={() => showToast("저장되었습니다")} />}
       {tab === "treatments" && <TreatmentsTab onSave={() => showToast("저장되었습니다")} />}
+      {tab === "layout" && <HomeLayoutTab onSave={() => showToast("저장되었습니다")} />}
       {tab === "about" && <AboutTab onSave={() => showToast("저장되었습니다")} />}
       {tab === "password" && <PasswordTab onSave={() => showToast("비밀번호가 변경되었습니다")} />}
 
@@ -286,6 +298,7 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
 
 // ─── Hero Slides Tab ───
 function HeroSlidesTab({ onSave }: { onSave: () => void }) {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { heroSlides } = useSiteDataForLocale(editingLocale);
   const updateData = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
@@ -303,7 +316,7 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("이 슬라이드를 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 슬라이드를 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await updateData((d) => ({
       ...d,
       heroSlides: d.heroSlides.filter((s) => s.id !== id),
@@ -324,6 +337,9 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
             title: "새 슬라이드 제목",
             subtitle: "부제목을 입력하세요",
             image: "",
+            mediaType: "image",
+            linkLabel: "",
+            linkUrl: "",
           },
         ],
       };
@@ -405,15 +421,62 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
                     onChange={(e) => update(s.id, { subtitle: e.target.value })}
                   />
                 </Field>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="버튼 텍스트" hint="이 배경에서 보여줄 이동 버튼">
+                    <TextInput
+                      value={s.linkLabel ?? ""}
+                      onChange={(e) => update(s.id, { linkLabel: e.target.value })}
+                      placeholder="예: 진료 안내"
+                    />
+                  </Field>
+                  <Field label="버튼 링크" hint="예: /treatments">
+                    <TextInput
+                      value={s.linkUrl ?? ""}
+                      onChange={(e) => update(s.id, { linkUrl: e.target.value })}
+                      placeholder="/treatments"
+                    />
+                  </Field>
+                </div>
+                <p className="text-xs text-ink-muted -mt-2">
+                  &ldquo;예약하기&rdquo; 버튼은 항상 표시되며, 위 버튼은 이 슬라이드가 보일 때만 함께 표시됩니다. 텍스트나 링크를 비워두면 버튼이 숨겨집니다.
+                </p>
               </div>
               <div>
-                <Field label="배경 이미지" hint="권장 크기 1920×1080 이상">
+                <Field label="배경 이미지 · 동영상" hint="이미지 권장 크기 1920×1080 이상 · 동영상은 mp4/webm/mov, 최대 100MB">
                   <ImageInput
                     value={s.image}
-                    onChange={(v) => update(s.id, { image: v })}
+                    onChange={(v) => {
+                      // 새로 업로드/입력한 파일 확장자로 mediaType을 함께 갱신 — 사용자가 이미지→동영상으로 교체할 때 이전 mediaType이 남지 않도록
+                      update(s.id, { image: v, mediaType: isVideoUrl(v) ? "video" : "image" });
+                    }}
                     aspectRatio="16 / 9"
+                    allowVideo
                   />
                 </Field>
+
+                {s.mediaType !== "video" && (
+                  <Field
+                    label="배경 이펙트"
+                    hint="정지 이미지에 적용할 카메라 움직임을 선택하세요"
+                  >
+                    <div className="flex gap-1 flex-wrap">
+                      {HERO_EFFECT_OPTIONS.map((opt) => {
+                        const active = (s.effect ?? defaultHeroEffect(i)) === opt.value;
+                        return (
+                          <Button
+                            key={opt.value}
+                            type="button"
+                            size="sm"
+                            variant={active ? "primary" : "secondary"}
+                            onClick={() => update(s.id, { effect: opt.value })}
+                          >
+                            {opt.label}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </Field>
+                )}
               </div>
             </div>
           </Card>
@@ -430,6 +493,7 @@ function HeroSlidesTab({ onSave }: { onSave: () => void }) {
 
 // ─── Treatments Tab ───
 function TreatmentsTab({ onSave }: { onSave: () => void }) {
+  const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
   const { treatments } = useSiteDataForLocale(editingLocale);
   const updateData = (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => updateSiteData(fn, editingLocale);
@@ -446,7 +510,7 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("이 진료 항목을 삭제하시겠습니까?")) return;
+    if (!(await confirm({ message: "이 진료 항목을 삭제하시겠습니까?", confirmText: "삭제", danger: true }))) return;
     const ok = await updateData((d) => ({
       ...d,
       treatments: d.treatments.filter((t) => t.id !== id),
@@ -547,6 +611,14 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
                 </Button>
               </div>
             </div>
+            <div className="mb-3">
+              <label className="block text-xs text-ink-muted mb-1">연결 링크 (클릭 시 이동 경로, 예: /subpages/pain-treatment)</label>
+              <TextInput
+                value={t.linkUrl || ""}
+                onChange={(e) => update(t.id, { linkUrl: e.target.value })}
+                placeholder="/subpages/pain-treatment"
+              />
+            </div>
             <div>
               <label className="block text-xs text-ink-muted mb-1">진료 이미지</label>
               <ImageInput
@@ -558,6 +630,87 @@ function TreatmentsTab({ onSave }: { onSave: () => void }) {
           </Card>
         ))}
       </div>
+    </>
+  );
+}
+
+// ─── Home Layout Tab ───
+const HOME_SECTION_LABELS: Record<HomeSectionId, string> = {
+  stats: "통계 (진료 경력·환자 수 등)",
+  signature: "시그니처 시술",
+  events: "이벤트",
+  treatments: "진료 내용",
+  director: "대표원장 소개",
+  notice: "공지사항",
+};
+
+function HomeLayoutTab({ onSave }: { onSave: () => void }) {
+  const { homeSections } = useSiteDataForLocale("ko");
+  const sections: HomeSectionConfig[] = (homeSections && homeSections.length > 0 ? homeSections : defaultHomeSections)
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const updateBoth = (fn: (list: HomeSectionConfig[]) => HomeSectionConfig[]) => {
+    updateSiteData((d) => ({ ...d, homeSections: fn(d.homeSections ?? defaultHomeSections) }), "ko");
+    updateSiteData((d) => ({ ...d, homeSections: fn(d.homeSections ?? defaultHomeSections) }), "en");
+    onSave();
+  };
+
+  const move = (id: HomeSectionId, dir: -1 | 1) => {
+    updateBoth((list) => {
+      const sorted = [...list].sort((a, b) => a.sortOrder - b.sortOrder);
+      const idx = sorted.findIndex((s) => s.id === id);
+      const target = idx + dir;
+      if (idx < 0 || target < 0 || target >= sorted.length) return list;
+      [sorted[idx], sorted[target]] = [sorted[target], sorted[idx]];
+      return sorted.map((s, i) => ({ ...s, sortOrder: i }));
+    });
+  };
+
+  const toggleHide = (id: HomeSectionId, current: boolean) => {
+    updateBoth((list) => list.map((s) => (s.id === id ? { ...s, isHidden: !current } : s)));
+  };
+
+  return (
+    <>
+      <Card className="mb-4">
+        <p className="text-sm text-ink-soft" style={{ lineHeight: 1.7 }}>
+          메인페이지에서 히어로 배너 아래에 표시되는 섹션들의 순서와 표시 여부를 관리합니다.
+          히어로 배너는 항상 최상단에 고정됩니다.
+        </p>
+      </Card>
+      <Card className="p-0 overflow-hidden">
+        {sections.map((s, i) => (
+          <div
+            key={s.id}
+            className="flex items-center gap-2 px-4 py-3 border-b border-line/50 last:border-b-0"
+          >
+            <span className="text-xs text-ink-muted font-mono w-5 text-center shrink-0">{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`font-semibold text-sm ${s.isHidden ? "text-ink-muted line-through" : ""}`}
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  {HOME_SECTION_LABELS[s.id]}
+                </span>
+                {s.isHidden ? (
+                  <span className="text-xs px-1.5 py-0.5 bg-bg-alt rounded text-ink-muted">숨김</span>
+                ) : (
+                  <span className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 rounded">표시</span>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <Button size="icon" variant="ghost" onClick={() => move(s.id, -1)} disabled={i === 0} title="위로">↑</Button>
+              <Button size="icon" variant="ghost" onClick={() => move(s.id, 1)} disabled={i === sections.length - 1} title="아래로">↓</Button>
+              <Button size="sm" variant="ghost" onClick={() => toggleHide(s.id, s.isHidden)}>
+                {s.isHidden ? "표시" : "숨김"}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </Card>
     </>
   );
 }

@@ -1,21 +1,7 @@
 /**
- * Mock data — 실제 운영 시 백엔드 API로 대체됩니다.
- * Admin 페이지에서 수정한 콘텐츠가 이 데이터 구조 그대로 DB에 저장됩니다.
+ * 타입 정의.
+ * 실제 콘텐츠는 전부 Supabase(site_data 테이블)에서 로드된다 — scripts/seed.js로 최초 시딩.
  */
-
-// 폴백용 빈 이미지 객체 — 실제 데이터는 Supabase DB에서 로드
-export const sampleImages = {
-  hero1: "",
-  hero2: "",
-  hero3: "",
-  event1: "",
-  event2: "",
-  event3: "",
-  director: "",
-  facility: "",
-  facility2: "",
-  facility3: "",
-};
 
 export type Event = {
   id: number;
@@ -23,12 +9,26 @@ export type Event = {
   subtitle: string;
   description: string;
   image: string;
+  /**
+   * 좁고 세로가 긴 화면(모바일 팝업 4:5, 모바일 목록 카드)에서 image 대신 쓰는
+   * 이미지 (선택 사항). 가로로 넓은 배너 이미지 안에 글씨가 있으면 세로 비율로
+   * crop할 때 양옆이 잘려나갈 수 있어, 그 화면들만 별도 이미지로 대체할 수 있게
+   * 한다. 비어 있으면 image를 그대로 사용한다(기존 이벤트와 완전히 호환).
+   */
+  mobileImage?: string;
+  /**
+   * 이벤트 상세 페이지 본문에 "있는 그대로" 보여줄 이미지 (선택 사항).
+   * 가격표처럼 이미지 안에 글씨·금액이 들어 있어 잘리면 안 되는 경우를 위한
+   * 필드다. 지정되면 상세 페이지는 이 이미지를 crop 없이 원본 비율 그대로
+   * 전부 보여주고, 상단 히어로의 배경 이미지·어둡게 덮는 오버레이도 생략해
+   * 이미지가 글씨에 가려지지 않게 한다.
+   * 비어 있으면 기존처럼 image를 사용한다(기존 이벤트와 완전히 호환).
+   */
+  detailImage?: string;
   date: string;
   startDate?: string; // "2026-05-01"
   endDate?: string;   // "2026-05-31"
 };
-
-export const events: Event[] = [];
 
 export type Treatment = {
   id: number;
@@ -38,45 +38,9 @@ export type Treatment = {
   longDescription?: string;
   slug: string;
   image?: string;
+  /** 카드 클릭 시 이동할 실제 경로 (예: /subpages/pain-treatment, /skin-beauty). 미지정 시 /treatments로 이동. */
+  linkUrl?: string;
 };
-
-export const treatments: Treatment[] = [
-  {
-    id: 1,
-    number: "01",
-    title: "통증진료",
-    description: "허리·목·관절 등 만성 통증을 근본부터 회복하는 한의 치료",
-    slug: "pain",
-  },
-  {
-    id: 2,
-    number: "02",
-    title: "자동차보험\n진료",
-    description: "교통사고 후 통증·후유증을 보험 적용으로 안심 치료",
-    slug: "insurance",
-  },
-  {
-    id: 3,
-    number: "03",
-    title: "다이어트\n진료",
-    description: "체질 분석 기반 맞춤 처방으로 건강한 체중 감량",
-    slug: "diet",
-  },
-  {
-    id: 4,
-    number: "04",
-    title: "미용시술\n진료",
-    description: "한의 미용 시술로 자연스러운 안면 라인과 피부 관리",
-    slug: "beauty",
-  },
-  {
-    id: 5,
-    number: "05",
-    title: "보약처방",
-    description: "개인 체질에 맞춘 보약으로 기력 회복과 면역력 강화",
-    slug: "tonic",
-  },
-];
 
 export type Director = {
   name: string;
@@ -85,22 +49,6 @@ export type Director = {
   quote: string;
   bio: string[];
   image: string;
-};
-
-export const director: Director = {
-  name: "허은주",
-  nameEn: "HEO EUNJU",
-  title: "대표 원장",
-  quote:
-    "환자분의 몸과 마음을 함께 살피며,\n근본적인 회복을 돕는 진료를 추구합니다.",
-  bio: [
-    "경희대학교 한의과대학 졸업",
-    "경희대학교 대학원 한의학 석·박사 취득",
-    "대한스포츠한의학회 팀닥터 과정 수료",
-    "척추신경추나의학회 정회원 및 인증의",
-    "대한한방내과학회 정회원",
-  ],
-  image: sampleImages.director,
 };
 
 export type Notice = {
@@ -113,42 +61,17 @@ export type Notice = {
   endDate?: string;   // "2026-05-31"
 };
 
-export const notices: Notice[] = [
-  {
-    id: 1,
-    type: "event",
-    title: "5월 다이어트 패키지 30% 할인 이벤트 안내",
-    content: "한의학적 체질 분석을 바탕으로 한 개인 맞춤 다이어트 프로그램을 5월 한 달간 30% 할인된 가격으로 제공합니다.\n\n대상: 체중 감량을 원하시는 모든 분\n기간: 2026년 5월 1일 ~ 5월 31일\n\n예약 및 상담은 전화 또는 네이버 예약을 이용해 주세요.",
-    date: "2026.05.14",
-    startDate: "2026-05-01",
-    endDate: "2026-05-31",
-  },
-  {
-    id: 2,
-    type: "notice",
-    title: "석가탄신일 휴진 안내 (5월 25일)",
-    content: "석가탄신일(5월 25일, 월요일)은 공휴일로 휴진합니다.\n\n5월 26일(화요일)부터 정상 진료합니다.\n불편을 드려 죄송합니다.",
-    date: "2026.05.10",
-    startDate: "2026-05-10",
-    endDate: "2026-05-25",
-  },
-  {
-    id: 3,
-    type: "notice",
-    title: "진료 시간 변경 안내 - 토요일 오후 진료 추가",
-    content: "환자분들의 요청에 따라 토요일 오후 진료를 추가합니다.\n\n변경 전: 토요일 09:00 ~ 13:00\n변경 후: 토요일 09:00 ~ 16:00\n\n적용일: 2026년 5월 3일(토)부터\n점심시간(13:00~14:00)은 동일하게 운영됩니다.",
-    date: "2026.05.02",
-    startDate: "2026-05-02",
-  },
-  {
-    id: 4,
-    type: "notice",
-    title: "신규 한의사 부원장 부임 안내",
-    content: "안녕하세요, 고운빛한의원입니다.\n\n2026년 4월 21일부터 새로운 부원장님이 합류하셨습니다.\n보다 전문적이고 세심한 진료를 위해 최선을 다하겠습니다.\n\n감사합니다.",
-    date: "2026.04.20",
-    startDate: "2026-04-20",
-  },
-];
+/** Ken Burns 이펙트 종류. 미지정 시 슬라이드 인덱스로 자동 배정(기존 동작과 동일). */
+export type HeroSlideEffect = "pan-right" | "pan-left" | "zoom" | "none";
+
+/**
+ * effect 필드가 없는 기존 슬라이드를 위한 인덱스 기반 폴백.
+ * 과거 Hero.tsx에 하드코딩되어 있던 규칙(세 번째 슬라이드는 줌, 나머지는 좌우 번갈아 팬)을 그대로 보존한다.
+ */
+export function defaultHeroEffect(index: number): HeroSlideEffect {
+  if (index === 2) return "zoom";
+  return index % 2 === 0 ? "pan-right" : "pan-left";
+}
 
 export type HeroSlide = {
   id: number;
@@ -156,201 +79,310 @@ export type HeroSlide = {
   title: string;
   subtitle: string;
   image: string;
+  /** "video"면 image 필드에 동영상 URL을 담고 Ken Burns 대신 자동재생한다. 미지정 시 "image". */
+  mediaType?: "image" | "video";
+  /** mediaType이 "video"일 땐 무시된다(동영상엔 Ken Burns 미적용). */
+  effect?: HeroSlideEffect;
+  linkLabel?: string;
+  linkUrl?: string;
 };
 
-export const heroSlides: HeroSlide[] = [
-  {
-    id: 1,
-    label: "Korean Medicine Clinic",
-    title: "지친 마음을 먼저 헤아리는\n한 첩의 위로와 회복",
-    subtitle:
-      "오늘의 아픔이 내일의 걸림돌이 되지 않도록\n잊고 지냈던 건강하고 활기찬 일상을 당신께 돌려드립니다",
-    image: sampleImages.hero1,
-  },
-  {
-    id: 2,
-    label: "Tradition meets Modern",
-    title: "몸과 마음의 쉼표가 되는 곳\n온전한 회복을 처방합니다",
-    subtitle:
-      "전통 한의학의 지혜와 현대 의학의 정밀함을 함께 담아\n당신의 건강한 일상을 처방합니다",
-    image: sampleImages.hero2,
-  },
-  {
-    id: 3,
-    label: "Care from the Root",
-    title: "시간이 빚어낸 정성으로\n건강의 뿌리를 다스립니다",
-    subtitle:
-      "당신의 체질과 일상을 깊이 살피며\n근본적인 회복을 도와드립니다",
-    image: sampleImages.hero3,
-  },
+export type SubPageAreaHotspot = {
+  id: string;
+  /** 핫스팟 위치 — 이미지 기준 백분율 좌표 (0~100) */
+  x: number;
+  y: number;
+  label: string;
+  description: string;
+};
+
+export type SubPageAreaMap = {
+  enabled: boolean;
+  /** face = 얼굴형 맵(3:2), body = 신체형 맵(3:4~4:3 + pulse 애니메이션) */
+  kind: "face" | "body";
+  title: string;
+  highlight: string;
+  image: string | null;
+  imageAlt: string;
+  areas: SubPageAreaHotspot[];
+  /** kind="body"일 때만 사용 — 부위로 표현되지 않는 나머지 항목을 맵 아래에 나열 */
+  footnote?: string[];
+};
+
+export type SubPageStepItem = {
+  id: string;
+  text: string;
+  image: string | null;
+};
+
+/** "OO치료는 이렇게 진행됩니다" 류의 순서 안내 — 스텝마다 개별 사진을 지정할 수 있다 */
+export type SubPageStepProcess = {
+  title: string;
+  intro: string;
+  items: SubPageStepItem[];
+  /** 스텝 목록 아래에 표시되는 자유 서식 보충 설명 (선택 사항, richtext) */
+  note?: string;
+};
+
+export type SubPagePointItem = {
+  id: string;
+  title: string;
+  body: string;
+  image: string | null;
+};
+
+/** "POINT 01/02/03" 류의 3열 카드 — 카드마다 개별 사진을 지정할 수 있다 */
+export type SubPagePointCards = {
+  title: string;
+  items: SubPagePointItem[];
+  /** 카드 목록 아래에 표시되는 자유 서식 보충 설명 (선택 사항, richtext) */
+  note?: string;
+};
+
+export type SubPageTabItem = {
+  id: string;
+  /** 탭 버튼에 표시되는 이름 (예: "추나요법") */
+  title: string;
+  body: string;
+  /** 본문 위 해시태그 — "#"은 공개 페이지에서 붙이므로 여기엔 넣지 않는다 */
+  tags: string[];
+  /** 체크 아이콘이 붙는 장점 목록 */
+  benefits: string[];
+  /** 이 탭 전용 사진 (선택 사항) — 없으면 아래 image(공용 사진)를 쓴다 */
+  image: string | null;
+};
+
+/**
+ * "한약 치료 / 약침 치료 / 추나요법 …"처럼 여러 치료법을 탭으로 전환해 하나씩
+ * 깊이 읽는 섹션. 예전에는 본문 richtext 안에 h3+p+ul+ul 마크업을 정확한
+ * 순서로 직접 써야만 탭으로 승격됐고(lib/proseCards.ts의 tabs 패턴), admin에
+ * 전용 UI가 없어 편집하려면 HTML 구조를 알아야 했다. 구조화 필드가 있으면
+ * 그 자동 감지보다 이쪽이 우선한다.
+ */
+export type SubPageTabs = {
+  title: string;
+  intro: string;
+  /** 탭별 사진이 없을 때 공통으로 쓰이는 사진 */
+  image: string | null;
+  imageAlt: string;
+  items: SubPageTabItem[];
+  /** 탭 아래에 표시되는 자유 서식 보충 설명 (선택 사항, richtext) */
+  note?: string;
+};
+
+export type SubPageChecklistItem = {
+  id: string;
+  text: string;
+  image: string | null;
+};
+
+/** "이런 분들께 추천합니다" 류의 좌측 체크리스트 자동강조 + 우측 사진 전환 */
+export type SubPageSequentialChecklist = {
+  title: string;
+  items: SubPageChecklistItem[];
+  /** 체크리스트 아래에 표시되는 자유 서식 보충 설명 (선택 사항, richtext) */
+  note?: string;
+};
+
+/** ChecklistHero 카드가 사진 위에서 자리잡는 사방 프리셋 위치 — x/y가 없는 구버전 데이터의 폴백으로만 쓰인다 */
+export type SubPageChecklistHeroPosition = "top-left" | "right-mid" | "bottom-left" | "bottom-right";
+
+export type SubPageChecklistHeroItem = {
+  id: string;
+  label: string;
+  detail: string;
+  /** 카드 중심의 사진 기준 백분율 좌표 (0~100). 있으면 position 프리셋보다 우선한다 */
+  x?: number;
+  y?: number;
+  /** x/y가 없는 구버전 데이터에서만 쓰이는 사방 프리셋 폴백 */
+  position?: SubPageChecklistHeroPosition;
+};
+
+/** 인물 사진 위에 체크리스트 카드가 사방에 겹쳐 떠 있는 히어로 섹션 (선택 사항) — 있으면 slug 화이트리스트 기반 richtext 자동 감지보다 우선한다 */
+export type SubPageChecklistHero = {
+  eyebrow: string;
+  title: string;
+  /** 이 히어로 전용 배경 사진 (선택 사항) — 없으면 넓은 배너 이미지, 그것도 없으면 대표 이미지를 재사용한다 */
+  image?: string | null;
+  imageAlt?: string;
+  items: SubPageChecklistHeroItem[];
+};
+
+export type SubPageChecklistBlockItem = {
+  id: string;
+  text: string;
+};
+
+/**
+ * "이런 변화가 느껴진다면 / 고운빛의 리프팅 접근 / 이런 분들께 권해드립니다" 류의
+ * 소제목 + (선택)본문 문단 + (선택)01·02… 번호 목록 반복 블록. 예전에는 본문
+ * richtext 안에 h3+p / h3+ul 마크업으로 직접 작성해야만 했고(.prose h3+ul CSS로만
+ * 스타일링), admin에 전용 UI가 없어 편집하려면 HTML 구조를 알아야 했다.
+ */
+export type SubPageChecklistBlock = {
+  id: string;
+  title: string;
+  /** 목록 위에 표시되는 자유 서술 문단 (선택 사항, plain text) */
+  body?: string;
+  /** 비어 있으면 번호 목록 없이 제목(+본문)만 표시된다 */
+  items: SubPageChecklistBlockItem[];
+};
+
+export type SubPage = {
+  id: string;
+  slug: string;
+  parentMenuId: string;
+  title: string;
+  intro?: string;
+  body: string;
+  image?: string;
+  /** 상세페이지 맨 위 제목 영역의 배경(30% 밝기). 비어 있으면 image로 대체된다 */
+  titleBgImage?: string;
+  /** 허브 페이지(피부미용/한방치료)에서 이 항목 블록 아래에 좌우 꽉 채워 표시하는 이미지 */
+  fullBleedImage?: string;
+  isHidden: boolean;
+  sortOrder: number;
+  /** 사진 위 클릭 가능한 부위 핫스팟을 보여주는 인터랙티브 맵 (선택 사항) */
+  areaMap?: SubPageAreaMap;
+  /** 순서 안내 섹션 (선택 사항) — 있으면 본문 richtext의 자동 감지 STEP 패턴보다 우선한다 */
+  stepProcess?: SubPageStepProcess;
+  /** POINT 카드 섹션 (선택 사항) — 있으면 본문 richtext의 자동 감지 카드 패턴보다 우선한다 */
+  pointCards?: SubPagePointCards;
+  /** 추천 체크리스트 섹션 (선택 사항) — 있으면 slug 화이트리스트 기반 자동 감지보다 우선한다 */
+  sequentialChecklist?: SubPageSequentialChecklist;
+  /** 인물 사진 위에 겹쳐 뜨는 체크리스트 히어로 섹션 (선택 사항) — 있으면 slug 화이트리스트 기반 자동 감지보다 우선한다 */
+  checklistHero?: SubPageChecklistHero;
+  /** 소제목+본문+번호 목록 반복 블록 (선택 사항) — 순서대로 렌더링되며, 본문(body) 상단에 표시된다 */
+  checklistBlocks?: SubPageChecklistBlock[];
+  /** 치료법 탭 전환 섹션 (선택 사항) — 있으면 본문 richtext의 자동 감지 탭 패턴보다 우선한다 */
+  tabs?: SubPageTabs;
+  /**
+   * 구조화 섹션 7개(areaMap · stepProcess · pointCards · checklist ·
+   * checklistHero · checklistBlocks · tabs) + 본문(body)의 공개 페이지 표시 순서.
+   * 값이 없거나 일부 id가 빠져 있으면 이 기본 순서로 취급한다 —
+   * DEFAULT_SUBPAGE_SECTION_ORDER 참고.
+   */
+  sectionOrder?: SubPageSectionId[];
+};
+
+/** app/admin/subpages/[id]/page.tsx의 순서 조정 탭, app/subpages/[slug]/page.tsx의 렌더 순서가 함께 참조하는 섹션 id. body(자유 서술 본문)도 다른 구조화 섹션과 동일하게 순서 이동 대상이다 */
+export type SubPageSectionId =
+  | "areaMap"
+  | "stepProcess"
+  | "pointCards"
+  | "checklist"
+  | "checklistHero"
+  | "checklistBlocks"
+  | "tabs"
+  | "body";
+
+/** sectionOrder가 비어 있거나 불완전할 때 쓰는 기본 순서. 기존(리팩터링 전) 공개 페이지의 하드코딩 렌더 순서와 동일하게 맞춰, 이 필드가 없는 기존 서브페이지들의 화면이 바뀌지 않게 한다 — body는 항상 구조화 섹션들 다음에 오던 예전 위치 그대로 맨 뒤에 둔다 */
+export const DEFAULT_SUBPAGE_SECTION_ORDER: SubPageSectionId[] = [
+  "checklistHero",
+  "areaMap",
+  "checklist",
+  "checklistBlocks",
+  "pointCards",
+  "stepProcess",
+  "tabs",
+  "body",
 ];
 
-export const clinicInfo = {
-  name: "고운빛한의원",
-  phone: "02-XXX-XXXX",
-  address: "서울특별시 ○○구 ○○대로 123",
+/**
+ * 저장된 sectionOrder를 항상 DEFAULT_SUBPAGE_SECTION_ORDER의 모든 id를 포함한
+ * 완전한 순열로 정규화한다. admin에서 새 섹션 id가 추가되거나, 저장 시점 이후
+ * 알 수 없는 값이 섞여도 공개 페이지 렌더링이 깨지지 않도록 여기서 한 번에 방어한다.
+ * 알려진 id는 저장된 순서를 그대로 두고, 목록에 없는 id는 기본 순서상의 상대
+ * 위치를 유지하며 끝에 이어붙인다.
+ */
+export function normalizeSectionOrder(order: SubPageSectionId[] | undefined): SubPageSectionId[] {
+  const known = new Set(DEFAULT_SUBPAGE_SECTION_ORDER);
+  const deduped = [...new Set(order ?? [])].filter((id): id is SubPageSectionId => known.has(id));
+  const missing = DEFAULT_SUBPAGE_SECTION_ORDER.filter((id) => !deduped.includes(id));
+  return [...deduped, ...missing];
+}
+
+/** 메인페이지에 표시되는 섹션 id (Hero 제외 — Hero는 항상 최상단 고정) */
+export type HomeSectionId =
+  | "stats"
+  | "signature"
+  | "events"
+  | "treatments"
+  | "director"
+  | "notice";
+
+export type HomeSectionConfig = {
+  id: HomeSectionId;
+  isHidden: boolean;
+  sortOrder: number;
+};
+
+export type Equipment = {
+  id: string;
+  image: string;
+  /**
+   * /skin-beauty의 EquipmentShowcase 하단 전체폭(16:9 · 데스크톱 21:9) 미디어에만
+   * 쓰이는 고화질 와이드 이미지. 카드 썸네일용 image(4:3)와 비율이 달라 그대로
+   * 재사용하면 화질이 떨어지거나 크롭이 부자연스러워 별도로 관리한다. 비어 있으면
+   * image로 폴백한다.
+   */
+  showcaseImage?: string;
+  title: string;
+  subtitle?: string;
+  tags: string[];
+  /** 이 장비를 사용하는 시술의 id 목록 (services 테이블 참조, locale 무관) */
+  serviceIds?: string[];
+  description: string;
+  isHidden: boolean;
+  sortOrder: number;
+};
+
+/**
+ * /skin-beauty 페이지의 EquipmentShowcase(탭+미디어), EquipmentCarousel
+ * (원형 캐러셀) 두 섹션에 admin에서 직접 입력한 문구·이미지만 표시하기
+ * 위한 필드. 예전에는 lib/translations.ts에 하드코딩된 기본 문구를
+ * 폴백으로 썼으나, admin에 입력하지 않은 텍스트가 화면에 나타나는
+ * 문제(코드 배포 없이는 못 고침)로 그 폴백을 없앴다 — 비어 있으면
+ * (undefined/"") 해당 텍스트 요소를 아예 렌더링하지 않는다.
+ * 장비 구성(showcaseIds/carouselIds)도 "장비소개" admin과 중복 관리되는
+ * 문제가 있어 제거했다 — 두 섹션 모두 항상 장비소개의 전체 목록을
+ * sortOrder 그대로 보여준다.
+ */
+export type SkinBeautyEquipmentSections = {
+  introLabel?: string;
+  introTitle?: string;
+  introBody?: string;
+  introCta?: string;
+  /** 콜라주 6칸 이미지. 비어 있는 칸은 undefined/null로 두면 그 자리만 마스터
+   * 장비 목록의 해당 순번 이미지로 폴백한다 (부분 커스터마이즈 지원). */
+  collageImages?: (string | null | undefined)[];
+  carouselTitle?: string;
+  carouselTitleHighlight?: string;
+  carouselSubtitle?: string;
+};
+
+export const clinicInfoShape = {
+  name: "",
+  phone: "",
+  address: "",
   hours: {
-    weekday: "평일 09:00 – 19:00",
-    saturday: "토요일 09:00 – 14:00",
-    closed: "일·공휴일 휴진",
+    weekday: "",
+    saturday: "",
+    closed: "",
   },
-  reservationUrl: "https://m.place.naver.com/place/2015359820/booking?entry=plt",
+  reservationUrl: "",
   socialLinks: {
     blog: "#",
     instagram: "#",
     kakao: "#",
   },
   bannerImages: {
-    events: sampleImages.facility,
-    treatments: sampleImages.facility,
-    about: sampleImages.facility,
-    community: sampleImages.facility,
+    events: "",
+    treatments: "",
+    about: "",
+    community: "",
   },
   defaultImage: "",
 };
 
-// ─── English Defaults ───
-
-export const eventsEn: Event[] = [];
-
-export const treatmentsEn: Treatment[] = [
-  {
-    id: 1,
-    number: "01",
-    title: "Pain Treatment",
-    description: "Korean medicine treatment for chronic pain in the back, neck, and joints",
-    slug: "pain",
-  },
-  {
-    id: 2,
-    number: "02",
-    title: "Auto Insurance\nTreatment",
-    description: "Post-accident pain and aftereffect treatment covered by auto insurance",
-    slug: "insurance",
-  },
-  {
-    id: 3,
-    number: "03",
-    title: "Diet\nProgram",
-    description: "Healthy weight loss through personalized prescriptions based on body constitution",
-    slug: "diet",
-  },
-  {
-    id: 4,
-    number: "04",
-    title: "Cosmetic\nTreatment",
-    description: "Natural facial contouring and skin care through Korean medicine aesthetics",
-    slug: "beauty",
-  },
-  {
-    id: 5,
-    number: "05",
-    title: "Herbal Tonic",
-    description: "Customized herbal tonics for energy recovery and immune system support",
-    slug: "tonic",
-  },
-];
-
-export const directorEn: Director = {
-  name: "Eunju Heo",
-  nameEn: "HEO EUNJU",
-  title: "Director",
-  quote:
-    "I pursue treatment that cares for both\nbody and mind, helping fundamental recovery.",
-  bio: [
-    "Graduated from Kyung Hee University, College of Korean Medicine",
-    "M.S. & Ph.D. in Korean Medicine, Kyung Hee University",
-    "Sports Korean Medicine Team Doctor Certification",
-    "Certified Member, Spinal Nerve Chuna Medicine Society",
-    "Member, Korean Society of Oriental Internal Medicine",
-  ],
-  image: sampleImages.director,
-};
-
-export const noticesEn: Notice[] = [
-  {
-    id: 1,
-    type: "event",
-    title: "May Diet Package - 30% Off Promotion",
-    content: "We are offering a personalized diet program based on constitutional analysis at a 30% discount throughout May.\n\nTarget: Anyone looking to manage their weight\nPeriod: May 1 – May 31, 2026\n\nPlease book via phone or Naver Reservation.",
-    date: "2026.05.14",
-    startDate: "2026-05-01",
-    endDate: "2026-05-31",
-  },
-  {
-    id: 2,
-    type: "notice",
-    title: "Closed on Buddha's Birthday (May 25)",
-    content: "We will be closed on May 25 (Monday) for Buddha's Birthday.\n\nRegular hours resume on May 26 (Tuesday).\nWe apologize for any inconvenience.",
-    date: "2026.05.10",
-    startDate: "2026-05-10",
-    endDate: "2026-05-25",
-  },
-  {
-    id: 3,
-    type: "notice",
-    title: "Schedule Change - Saturday Afternoon Hours Added",
-    content: "Based on patient requests, we are extending Saturday hours.\n\nBefore: Saturday 09:00 – 13:00\nAfter: Saturday 09:00 – 16:00\n\nEffective: May 3, 2026 (Saturday)\nLunch break (13:00–14:00) remains the same.",
-    date: "2026.05.02",
-    startDate: "2026-05-02",
-  },
-  {
-    id: 4,
-    type: "notice",
-    title: "New Associate Director Joining Announcement",
-    content: "Hello, this is Gowoonbit Korean Medicine Clinic.\n\nA new associate director has joined our team starting April 21, 2026.\nWe will continue to provide specialized and attentive care.\n\nThank you.",
-    date: "2026.04.20",
-    startDate: "2026-04-20",
-  },
-];
-
-export const heroSlidesEn: HeroSlide[] = [
-  {
-    id: 1,
-    label: "Korean Medicine Clinic",
-    title: "A Prescription of\nComfort and Recovery",
-    subtitle:
-      "So today's pain doesn't become tomorrow's obstacle\nWe restore the vibrant daily life you've been missing",
-    image: sampleImages.hero1,
-  },
-  {
-    id: 2,
-    label: "Tradition meets Modern",
-    title: "A Place of Rest for\nBody and Mind",
-    subtitle:
-      "Combining the wisdom of traditional Korean medicine\nwith modern precision for your healthy life",
-    image: sampleImages.hero2,
-  },
-  {
-    id: 3,
-    label: "Care from the Root",
-    title: "Treating Health\nat Its Roots",
-    subtitle:
-      "We carefully examine your constitution and lifestyle\nto support fundamental recovery",
-    image: sampleImages.hero3,
-  },
-];
-
-export const clinicInfoEn = {
-  name: "Gowoonbit Korean Medicine Clinic",
-  phone: "02-XXX-XXXX",
-  address: "123, OO-daero, OO-gu, Seoul, South Korea",
-  hours: {
-    weekday: "Weekdays 09:00 – 19:00",
-    saturday: "Saturday 09:00 – 14:00",
-    closed: "Sun & Holidays Closed",
-  },
-  reservationUrl: "https://m.place.naver.com/place/2015359820/booking?entry=plt",
-  socialLinks: {
-    blog: "#",
-    instagram: "#",
-    kakao: "#",
-  },
-  bannerImages: {
-    events: sampleImages.facility,
-    treatments: sampleImages.facility,
-    about: sampleImages.facility,
-    community: sampleImages.facility,
-  },
-  defaultImage: "",
-};
+export type ClinicInfo = typeof clinicInfoShape;

@@ -7,12 +7,18 @@ import { isLoggedIn, logout, resetSiteData, translateAndSyncToEnglish } from "@/
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { AdminLocaleProvider, useAdminLocale } from "@/lib/adminLocale";
 import { Toast } from "@/components/admin/ui";
+import ConfirmProvider, { useConfirm } from "@/components/admin/ConfirmProvider";
 import type { Locale } from "@/lib/i18n";
 
 const adminMenu = [
   { href: "/admin", label: "대시보드", icon: "◎" },
   { href: "/admin/menus", label: "메뉴 관리", icon: "≡" },
+  { href: "/admin/hub-pages", label: "피부미용·한방치료", icon: "▧" },
+  { href: "/admin/subpages", label: "시술 페이지", icon: "▣" },
+  { href: "/admin/equipment", label: "장비소개", icon: "⚕" },
   { href: "/admin/events", label: "이벤트", icon: "◆" },
+  { href: "/admin/services", label: "시술·가격", icon: "₩" },
+  { href: "/admin/reservations", label: "예약 신청", icon: "📅" },
   { href: "/admin/director", label: "대표원장", icon: "◉" },
   { href: "/admin/notices", label: "공지사항", icon: "▤" },
   { href: "/admin/faqs", label: "FAQ", icon: "?" },
@@ -21,13 +27,55 @@ const adminMenu = [
   { href: "/admin/settings", label: "사이트 설정", icon: "⚙" },
 ];
 
+/**
+ * 데모 초기화 버튼.
+ * useConfirm()은 ConfirmProvider 하위에서만 쓸 수 있는데 AdminLayout이 그 Provider를
+ * 직접 렌더하므로, 초기화 동작만 따로 떼어 Provider 안쪽 컴포넌트로 만든다.
+ */
+function ResetButton() {
+  const confirm = useConfirm();
+
+  const onReset = async () => {
+    const ok = await confirm({
+      title: "데모 초기화",
+      message:
+        "⚠️ 모든 콘텐츠가 초기 상태로 되돌아갑니다.\n수정한 모든 데이터가 삭제됩니다.\n\n정말 초기화하시겠습니까?",
+      confirmText: "초기화",
+      danger: true,
+      requireText: "초기화",
+    });
+    if (!ok) return;
+    resetSiteData();
+    location.reload();
+  };
+
+  return (
+    <button
+      onClick={onReset}
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-white/70 hover:bg-white/5 hover:text-ink-inverse transition-colors text-left"
+      style={{ letterSpacing: "-0.02em" }}
+    >
+      <span className="w-5 text-center opacity-70">↺</span>
+      <span>데모 초기화</span>
+    </button>
+  );
+}
+
 function LocaleToggle() {
   const { editingLocale, setEditingLocale } = useAdminLocale();
+  const confirm = useConfirm();
   const [translating, setTranslating] = useState(false);
   const [translateMsg, setTranslateMsg] = useState<string | null>(null);
 
   const handleAutoTranslate = async () => {
-    if (!confirm("한국어 콘텐츠를 영어로 자동 번역합니다.\n기존 영어 콘텐츠가 덮어씌워집니다.\n\n계속하시겠습니까?")) return;
+    const ok = await confirm({
+      title: "영어 자동 번역",
+      message:
+        "한국어 콘텐츠를 영어로 자동 번역합니다.\n기존 영어 콘텐츠가 덮어씌워집니다.\n\n계속하시겠습니까?",
+      confirmText: "번역",
+      danger: true,
+    });
+    if (!ok) return;
     setTranslating(true);
     setTranslateMsg(null);
     const result = await translateAndSyncToEnglish();
@@ -125,24 +173,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.replace("/admin/login");
   };
 
-  const onReset = () => {
-    if (
-      !confirm(
-        "⚠️ 모든 콘텐츠가 초기 상태로 되돌아갑니다.\n수정한 모든 데이터가 삭제됩니다.\n\n정말 초기화하시겠습니까?"
-      )
-    ) return;
-    const input = prompt('초기화를 진행하려면 "초기화"를 입력하세요.');
-    if (input !== "초기화") {
-      alert("입력이 일치하지 않아 초기화가 취소되었습니다.");
-      return;
-    }
-    resetSiteData();
-    alert("초기화 완료. 페이지를 새로고침합니다.");
-    location.reload();
-  };
-
   return (
     <AdminLocaleProvider>
+      <ConfirmProvider>
       {saveError && <Toast message={saveError} onClose={() => setSaveError(null)} variant="error" />}
       <div className="min-h-screen flex bg-[#FAFAFA]">
         {/* Mobile backdrop */}
@@ -209,14 +242,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="w-5 text-center opacity-70">↗</span>
               <span>사이트 미리보기</span>
             </Link>
-            <button
-              onClick={onReset}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-white/70 hover:bg-white/5 hover:text-ink-inverse transition-colors text-left"
-              style={{ letterSpacing: "-0.02em" }}
-            >
-              <span className="w-5 text-center opacity-70">↺</span>
-              <span>데모 초기화</span>
-            </button>
+            <ResetButton />
             <button
               onClick={onLogout}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-white/70 hover:bg-white/5 hover:text-ink-inverse transition-colors text-left"
@@ -243,7 +269,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {clinicName} 관리자
             </span>
           </div>
-          <div className="p-4 md:p-10 max-w-6xl">
+          <div className="p-4 md:p-10 max-w-[90rem]">
             {dataLoaded ? children : (
               <div className="flex items-center justify-center py-20 text-ink-muted">
                 데이터를 불러오는 중...
@@ -252,6 +278,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
       </div>
+      </ConfirmProvider>
     </AdminLocaleProvider>
   );
 }

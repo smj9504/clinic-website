@@ -17,12 +17,15 @@
     "@tiptap/react": "^3.23.5",
     "@tiptap/starter-kit": "^3.23.5",
     "next": "^16.2.6",
+    "nodemailer": "^9.0.5",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "solapi": "^6.0.1"
   },
   "devDependencies": {
     "@types/node": "^22",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",

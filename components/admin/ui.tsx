@@ -1,6 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
+import { stripImagePosition, getImageCropStyle, setImagePosition } from "@/lib/imagePosition";
+import { useMeasuredCropStyle } from "@/lib/useMeasuredCropStyle";
+import ImagePositionModal from "@/components/admin/ImagePositionModal";
+import { getSupabaseClient } from "@/lib/supabase";
 import {
   MAX_REQUEST_BYTES,
   MAX_UPLOAD_BYTES,
@@ -97,14 +101,42 @@ export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
   );
 }
 
-export function Button({
-  variant = "primary",
-  size = "md",
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "danger" | "ghost";
-  size?: "sm" | "md" | "icon";
-}) {
+/**
+ * onClick이 Promise를 돌려주면 그것이 끝날 때까지 버튼을 자동으로 비활성화한다.
+ * 삭제·저장처럼 네트워크를 타는 버튼을 연타해 같은 요청이 여러 번 나가는 것을 막는다.
+ * (호출부에서 별도 busy 상태를 만들 필요가 없다. 이미 disabled를 직접 넘기는 곳은
+ *  그 값이 우선한다 — 둘 중 하나라도 true면 비활성.)
+ */
+export const Button = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: "primary" | "secondary" | "danger" | "ghost";
+    size?: "sm" | "md" | "icon";
+  }
+>(function Button({ variant = "primary", size = "md", onClick, disabled, ...props }, ref) {
+  const [pending, setPending] = useState(false);
+  // 비동기 작업이 끝나기 전에 버튼이 사라질 수 있다(목록에서 삭제된 행 등).
+  // 언마운트 후 setState를 호출하지 않도록 살아 있는지 추적한다.
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  const handleClick = onClick
+    ? (e: React.MouseEvent<HTMLButtonElement>) => {
+        const result = onClick(e) as unknown;
+        if (result && typeof (result as Promise<unknown>).then === "function") {
+          setPending(true);
+          (result as Promise<unknown>).finally(() => {
+            if (alive.current) setPending(false);
+          });
+        }
+      }
+    : undefined;
+
   const variantClass =
     variant === "primary"
       ? "bg-ink text-ink-inverse hover:bg-ink-soft"
@@ -123,39 +155,113 @@ export function Button({
 
   return (
     <button
+      ref={ref}
       {...props}
+      onClick={handleClick}
+      disabled={disabled || pending}
       className={`inline-flex items-center gap-1.5 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variantClass} ${sizeClass} ${
         props.className || ""
       }`}
       style={{ letterSpacing: "-0.02em", ...(props.style || {}) }}
     />
   );
+});
+
+const VIDEO_EXT_RE = /\.(mp4|webm|mov)(\?|#|$)/i;
+
+/** URL 확장자로 동영상 여부를 판별한다 — DataURL(data:video/...)도, #pos= 크롭 위치가 붙은 URL도 함께 잡는다 */
+export function isVideoUrl(url: string): boolean {
+  return url.startsWith("data:video/") || VIDEO_EXT_RE.test(url);
 }
 
 /**
- * 이미지 입력 — URL 입력 OR 파일 업로드 (DataURL로 LocalStorage 저장)
- * 실제 운영에선 파일 업로드 → R2/S3 URL 반환으로 교체
+ * 이미지/동영상 입력 — URL 입력 OR 파일 업로드
+ *
+ * allowVideo가 꺼져 있으면(기본값) 기존과 동일하게 이미지만 받는다.
+ * 켜면 mp4·webm·mov도 업로드할 수 있고, 미리보기가 URL 확장자를 보고
+ * <video>/<img>를 자동으로 분기한다.
  */
 export function ImageInput({
   value,
   onChange,
   aspectRatio = "16 / 10",
+  allowVideo = false,
+  extraRatios = [],
 }: {
   value: string;
   onChange: (v: string) => void;
   aspectRatio?: string;
+  allowVideo?: boolean;
+  /**
+   * 같은 이미지가 다른 화면에도 그대로(동일 초점 좌표로) 노출될 때, 그 목적지들을
+   * 나열한다. 미리보기 아래에 각 비율로 함께 표시하고, 크롭 위치 조정 모달에도
+   * 그대로 전달해 하나의 초점으로 모든 비율이 잘 보이는지 확인할 수 있게 한다.
+   */
+  extraRatios?: { label: string; ratio: string }[];
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [positionModalOpen, setPositionModalOpen] = useState(false);
+  // 메인 미리보기는 실제 크기를 재서 축소(1.00x 미만)가 연속적으로 보이게 한다.
+  // 아래 extraRatios 썸네일들은 프레임 비율이 서로 달라 같은 metrics를 쓸 수 없어
+  // 기존 동작(경계에서 contain 전환)을 그대로 둔다 — 그 칸의 목적은 "이 초점이
+  // 다른 비율에서도 괜찮은가"를 보는 것이라 축소 곡선까지 맞출 필요는 없다.
+  const previewVideo = useMeasuredCropStyle<HTMLVideoElement>(value);
+  const previewImage = useMeasuredCropStyle<HTMLImageElement>(value);
+
+  const maxVideoSize = 100 * 1024 * 1024;
+  const maxSizeLabel = allowVideo ? `이미지 ${MAX_UPLOAD_LABEL} · 동영상 100MB` : MAX_UPLOAD_LABEL;
 
   const onFile = async (file: File) => {
-    if (file.size > MAX_UPLOAD_BYTES) {
+    const isVideo = file.type.startsWith("video/");
+
+    if (isVideo) {
+      if (file.size > maxVideoSize) {
+        alert("업로드 용량 초과 (최대: 동영상 100MB)");
+        return;
+      }
+    } else if (file.size > MAX_UPLOAD_BYTES) {
       alert(`${MAX_UPLOAD_LABEL} 이하 이미지만 업로드 가능합니다.`);
       return;
     }
+
+    const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
+
     setUploading(true);
     try {
-      // 전송 전에 1920px WebP로 축소 — 서버가 어차피 같은 크기로 변환하므로
+      // 동영상은 병원 내부 서버(또는 그 앞단)의 요청 본문 크기 제한에 걸리기
+      // 쉬워(수십MB 클립이 흔함) 서버를 거치지 않는다 — /api/upload-url에서
+      // 서명된 업로드 URL만 받아 브라우저가 Supabase Storage에 직접 전송한다.
+      if (isVideo) {
+        const urlRes = await fetch("/api/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type,
+            size: file.size,
+            password,
+          }),
+        });
+        const urlJson = await urlRes.json();
+        if (!urlRes.ok) {
+          alert(`업로드 실패: ${urlJson.error || urlRes.statusText}`);
+          return;
+        }
+
+        const { error: uploadError } = await getSupabaseClient()
+          .storage.from("site-assets")
+          .uploadToSignedUrl(urlJson.path, urlJson.token, file, { contentType: file.type });
+        if (uploadError) {
+          alert(`업로드 실패: ${uploadError.message}`);
+          return;
+        }
+
+        onChange(urlJson.publicUrl);
+        return;
+      }
+
+      // 이미지는 전송 전에 1920px WebP로 축소 — 서버가 어차피 같은 크기로 변환하므로
       // 최종 화질은 그대로면서 요청 본문 크기 제한에 걸리지 않는다.
       const upload = await shrinkForUpload(file);
       if (upload.size > MAX_REQUEST_BYTES) {
@@ -163,7 +269,6 @@ export function ImageInput({
         return;
       }
 
-      const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
       const formData = new FormData();
       formData.append("file", upload);
       formData.append("password", password);
@@ -177,27 +282,76 @@ export function ImageInput({
       }
       onChange(json.url);
     } catch (err) {
-      alert("이미지 업로드에 실패했습니다.");
+      alert("업로드에 실패했습니다.");
     } finally {
       setUploading(false);
     }
   };
 
+  const preview = value && isVideoUrl(value);
+  const cleanValue = value ? stripImagePosition(value) : "";
+
   return (
     <div className="space-y-3">
       {value && (
-        <div
-          className="relative w-full max-w-md bg-bg-alt rounded overflow-hidden border border-line"
-          style={{ aspectRatio }}
-        >
-          <img
-            src={value}
-            alt="preview"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.opacity = "0.3";
-            }}
-          />
+        <div className="flex gap-3 flex-wrap items-start">
+          <div
+            className="relative w-full max-w-md bg-bg-alt rounded overflow-hidden border border-line"
+            style={{ aspectRatio }}
+          >
+            {preview ? (
+              <video
+                ref={previewVideo.ref}
+                src={cleanValue}
+                controls
+                className="w-full h-full object-cover"
+                style={{ ...previewVideo.style }}
+                onLoadedMetadata={previewVideo.onLoad}
+              />
+            ) : (
+              <img
+                ref={previewImage.ref}
+                src={cleanValue}
+                alt="preview"
+                className="w-full h-full object-cover"
+                style={{ ...previewImage.style }}
+                onLoad={previewImage.onLoad}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.opacity = "0.3";
+                }}
+              />
+            )}
+          </div>
+          {extraRatios.map((extra) => (
+            <div key={extra.label} className="w-24 shrink-0">
+              <div
+                className="relative w-full bg-bg-alt rounded overflow-hidden border border-line"
+                style={{ aspectRatio: extra.ratio }}
+              >
+                {preview ? (
+                  <video
+                    src={cleanValue}
+                    muted
+                    className="w-full h-full object-cover"
+                    style={{ ...getImageCropStyle(value) }}
+                  />
+                ) : (
+                  <img
+                    src={cleanValue}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    style={{ ...getImageCropStyle(value) }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.opacity = "0.3";
+                    }}
+                  />
+                )}
+              </div>
+              <p className="text-[0.7rem] text-ink-muted mt-1 text-center" style={{ letterSpacing: "-0.01em" }}>
+                {extra.label}
+              </p>
+            </div>
+          ))}
         </div>
       )}
 
@@ -205,7 +359,7 @@ export function ImageInput({
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept={allowVideo ? "image/*,video/*" : "image/*"}
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -222,24 +376,46 @@ export function ImageInput({
           {uploading ? "업로드 중..." : "파일 선택"}
         </Button>
         {value && (
-          <Button type="button" variant="ghost" onClick={() => onChange("")}>
-            이미지 제거
-          </Button>
+          <>
+            <Button type="button" variant="secondary" onClick={() => setPositionModalOpen(true)}>
+              크롭 위치 조정
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => onChange("")}>
+              {preview ? "동영상 제거" : "이미지 제거"}
+            </Button>
+          </>
         )}
       </div>
       <p className="text-xs text-ink-muted">
-        최대 업로드 용량: {MAX_UPLOAD_LABEL} · 업로드 시 1920px WebP로 자동 압축됩니다
+        최대 업로드 용량: {maxSizeLabel} · 이미지는 업로드 시 1920px WebP로 자동 압축됩니다
+        {allowVideo && " (mp4 · webm · mov)"}
       </p>
 
       <div>
-        <label className="block text-xs text-ink-muted mb-1.5">또는 이미지 URL 직접 입력</label>
+        <label className="block text-xs text-ink-muted mb-1.5">
+          또는 {allowVideo ? "이미지·동영상" : "이미지"} URL 직접 입력
+        </label>
         <TextInput
           type="url"
           placeholder="https://images.unsplash.com/..."
-          value={value.startsWith("data:") ? "" : value}
+          value={cleanValue.startsWith("data:") ? "" : cleanValue}
           onChange={(e) => onChange(e.target.value)}
         />
       </div>
+
+      {positionModalOpen && value && (
+        <ImagePositionModal
+          url={value}
+          aspectRatio={aspectRatio}
+          extraRatios={extraRatios}
+          isVideo={Boolean(preview)}
+          onClose={() => setPositionModalOpen(false)}
+          onConfirm={(x, y, scale) => {
+            onChange(setImagePosition(cleanValue, x, y, scale));
+            setPositionModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -253,6 +429,66 @@ export function Card({
 }) {
   return (
     <div className={`bg-surface border border-line rounded-lg p-6 ${className || ""}`}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * 편집 폼을 영역별로 나누는 탭. 각 탭 패널은 마운트된 채 숨김 처리된다(hidden
+ * 속성) — 리치에디터(RichEditor/TipTap) 같은 무거운 자식이 탭 전환마다
+ * 언마운트·재초기화되며 상태를 잃는 것을 막기 위해서다.
+ */
+export function Tabs({
+  tabs,
+  active,
+  onChange,
+}: {
+  tabs: { id: string; label: string; badge?: React.ReactNode }[];
+  active: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div role="tablist" className="flex gap-1 border-b border-line mb-6 overflow-x-auto">
+      {tabs.map((tab) => {
+        const isActive = tab.id === active;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(tab.id)}
+            className={`relative shrink-0 px-4 py-3 text-sm font-semibold transition-colors ${
+              isActive ? "text-ink" : "text-ink-muted hover:text-ink"
+            }`}
+            style={{ letterSpacing: "-0.02em" }}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              {tab.label}
+              {tab.badge}
+            </span>
+            {isActive && (
+              <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-ink rounded-full" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function TabPanel({
+  id,
+  active,
+  children,
+}: {
+  id: string;
+  active: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div role="tabpanel" hidden={id !== active}>
       {children}
     </div>
   );
