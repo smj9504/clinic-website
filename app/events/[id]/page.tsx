@@ -10,17 +10,12 @@ import { useSiteData, getMenuLabel } from "@/lib/useSiteData";
 import { useServiceCatalog } from "@/lib/useServices";
 import { isServiceVisible } from "@/lib/services";
 import { useLocale, useT } from "@/lib/i18n";
-import { todayKST, formatEventPeriod } from "@/lib/date";
+import { todayKST, formatEventPeriod, isEventEnded } from "@/lib/date";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
-
-function isEnded(ev: { endDate?: string }) {
-  if (!ev.endDate) return false;
-  return ev.endDate < todayKST();
-}
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -32,7 +27,7 @@ export default function EventDetailPage() {
   const eventsLabel = getMenuLabel(menus, "/events", t("events.title"));
 
   const event = events.find((e) => String(e.id) === id);
-  const ended = event ? isEnded(event) : false;
+  const ended = event ? isEventEnded(event) : false;
 
   const linkedServices = useMemo(() => {
     if (!event) return [];
@@ -101,7 +96,7 @@ export default function EventDetailPage() {
           {ended && (
             <div className="mb-5">
               <span className="inline-block text-sm font-semibold px-4 py-1.5 rounded-full bg-white/20 text-white backdrop-blur-sm">
-                종료된 이벤트
+                {t("events.endedLong")}
               </span>
             </div>
           )}

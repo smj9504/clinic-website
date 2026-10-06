@@ -127,3 +127,8 @@ export function formatEventPeriod(
   }
   return item.date.replace("EVENT · ", "");
 }
+
+/** 종료일(endDate)이 오늘(KST)보다 이전이면 종료된 이벤트다. 종료일 당일까지는 진행중으로 본다. */
+export function isEventEnded(item: { endDate?: string }): boolean {
+  return !!item.endDate && item.endDate < todayKST();
+}

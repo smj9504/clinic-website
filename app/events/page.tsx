@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import EventImage from "@/components/EventImage";
+import EventEndedOverlay from "@/components/EventEndedOverlay";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { htmlToText } from "@/lib/html";
@@ -13,12 +14,7 @@ const BLUR_PLACEHOLDER =
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 import type { EndedVisibility } from "@/lib/storage";
-import { todayKST, addDays, formatEventPeriod } from "@/lib/date";
-
-function isEnded(ev: { endDate?: string }) {
-  if (!ev.endDate) return false;
-  return ev.endDate < todayKST();
-}
+import { todayKST, addDays, formatEventPeriod, isEventEnded } from "@/lib/date";
 
 function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
   const today = todayKST();
@@ -77,17 +73,17 @@ export default function EventsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-x-12 gap-y-16">
               {events.map((event) => {
-                const ended = isEnded(event);
+                const ended = isEventEnded(event);
                 return (
                 <Link
                   key={event.id}
                   href={`/events/${event.id}`}
-                  className={`group block ${ended ? "opacity-60" : ""}`}
+                  className="group block"
                 >
                   <EventImage
                     ratio={16 / 10}
                     wrapperClassName="overflow-hidden rounded mb-6 bg-bg-alt"
-                    className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                    className={`transition-transform duration-700 ease-out group-hover:scale-[1.04] ${ended ? "grayscale" : ""}`}
                     src={event.image || fallbackImage}
                     mobileSrc={event.mobileImage || undefined}
                     alt={event.title}
@@ -95,20 +91,22 @@ export default function EventsPage() {
                     quality={75}
                     placeholder="blur"
                     blurDataURL={BLUR_PLACEHOLDER}
-                  />
+                  >
+                    {ended && <EventEndedOverlay />}
+                  </EventImage>
                   <div
                     className="text-xs font-semibold uppercase text-ink-muted mb-3 flex items-center gap-2"
                     style={{ letterSpacing: "0.15em" }}
                   >
                     {formatEventPeriod(event, t)}
                     {ended && (
-                      <span className="text-[0.65rem] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 normal-case" style={{ letterSpacing: 0 }}>
-                        종료
+                      <span className="text-[0.7rem] font-semibold px-2.5 py-0.5 rounded-full bg-ink text-ink-inverse normal-case" style={{ letterSpacing: 0 }}>
+                        {t("events.ended")}
                       </span>
                     )}
                   </div>
                   <h2
-                    className="font-display mb-4"
+                    className={`font-display mb-4 ${ended ? "opacity-60" : ""}`}
                     style={{
                       fontSize: "1.875rem",
                       fontWeight: 600,
@@ -119,7 +117,7 @@ export default function EventsPage() {
                     {event.title} {event.subtitle}
                   </h2>
                   <p
-                    className="text-ink-soft mb-4"
+                    className={`text-ink-soft mb-4 ${ended ? "opacity-60" : ""}`}
                     style={{ fontSize: "1rem", lineHeight: 1.8 }}
                   >
                     {htmlToText(event.description, " · ")}

@@ -62,6 +62,8 @@ const ko = {
   "events.period": "이벤트 기간",
   "events.contact": "문의",
   "events.ongoing": "진행중",
+  "events.ended": "종료",
+  "events.endedLong": "종료된 이벤트",
   "events.linkedServices": "이벤트 적용 시술",
   "events.linkedServicesHint": "이 이벤트로 만나볼 수 있는 시술입니다.",
 
@@ -238,6 +240,8 @@ const en: Record<keyof typeof ko, string> = {
   "events.period": "Period",
   "events.contact": "Contact",
   "events.ongoing": "Ongoing",
+  "events.ended": "Ended",
+  "events.endedLong": "Event Ended",
   "events.linkedServices": "Treatments in This Event",
   "events.linkedServicesHint": "Treatments available through this event.",
 

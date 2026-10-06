@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import EventImage from "@/components/EventImage";
+import EventEndedOverlay from "@/components/EventEndedOverlay";
 import SlideCarousel from "@/components/sections/SlideCarousel";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
@@ -13,7 +14,7 @@ const BLUR_PLACEHOLDER =
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 import type { EndedVisibility } from "@/lib/storage";
-import { todayKST, addDays, formatEventPeriod } from "@/lib/date";
+import { todayKST, addDays, formatEventPeriod, isEventEnded } from "@/lib/date";
 
 function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
   const today = todayKST();
@@ -33,7 +34,9 @@ export default function EventsSection() {
 
   if (featured.length === 0) return null;
 
-  const renderCard = (event: (typeof featured)[number]) => (
+  const renderCard = (event: (typeof featured)[number]) => {
+    const ended = isEventEnded(event);
+    return (
     <Link
       href={`/events/${event.id}`}
       className="group block h-full card-lift rounded-lg overflow-hidden bg-bg"
@@ -41,7 +44,7 @@ export default function EventsSection() {
       <EventImage
         ratio={16 / 10}
         wrapperClassName="overflow-hidden bg-bg-alt"
-        className="transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+        className={`transition-transform duration-700 ease-out group-hover:scale-[1.06] ${ended ? "grayscale" : ""}`}
         src={event.image || fallbackImage}
         mobileSrc={event.mobileImage || undefined}
         alt={event.title}
@@ -52,16 +55,22 @@ export default function EventsSection() {
       >
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        {ended && <EventEndedOverlay />}
       </EventImage>
       <div className="p-6">
         <div
-          className="text-xs font-semibold uppercase text-ink-muted mb-4"
+          className="text-xs font-semibold uppercase text-ink-muted mb-4 flex items-center gap-2"
           style={{ letterSpacing: "0.15em" }}
         >
           {formatEventPeriod(event, t)}
+          {ended && (
+            <span className="text-[0.7rem] font-semibold px-2.5 py-0.5 rounded-full bg-ink text-ink-inverse normal-case" style={{ letterSpacing: 0 }}>
+              {t("events.ended")}
+            </span>
+          )}
         </div>
         <h3
-          className="font-display mb-3"
+          className={`font-display mb-3 ${ended ? "opacity-60" : ""}`}
           style={{
             fontSize: "1.5rem",
             fontWeight: 600,
@@ -74,7 +83,7 @@ export default function EventsSection() {
           {event.subtitle}
         </h3>
         <p
-          className="text-ink-soft mb-5 line-clamp-2"
+          className={`text-ink-soft mb-5 line-clamp-2 ${ended ? "opacity-60" : ""}`}
           style={{ fontSize: "0.95rem", lineHeight: 1.7 }}
         >
           {htmlToText(event.description, " · ")}
@@ -94,7 +103,8 @@ export default function EventsSection() {
         </span>
       </div>
     </Link>
-  );
+    );
+  };
 
   return (
     <section className="py-20 md:py-36 overflow-hidden">
