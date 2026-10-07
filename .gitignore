@@ -6,3 +6,9 @@ build/
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+
+# 시술 업데이트 스크립트 백업
+backups/
+
+# 비밀 키
+.env
