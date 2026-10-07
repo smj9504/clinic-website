@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { computePrice, formatKRW } from "@/lib/price";
+import { computePrice, formatKRW, maxDiscountRate, primaryPrice } from "@/lib/price";
 import { isEventService, isVideoUrl, priceText, serviceText, type Service, type ServiceBadge } from "@/lib/services";
 import type { Locale } from "@/lib/i18n";
 import type { TranslationKey } from "@/lib/translations";
@@ -27,10 +27,18 @@ export type ServiceCardProps = {
 export default function ServiceCard({ service, locale, fallbackImage, t }: ServiceCardProps) {
   const { name, summary } = serviceText(service, locale);
 
-  // 카드에는 대표 옵션(첫 번째)만 보여준다. 나머지는 상세 페이지의 가격표에서.
-  const price = service.prices[0];
+  // 카드에는 대표 옵션(최저가) 하나만 보여준다. 나머지는 상세 페이지의 가격표에서.
+  // 옵션이 여러 개면 이미지에 "옵션 N종" 배지를, 가격 뒤에 "~"를 붙여 최저가임을 알린다.
+  const price = primaryPrice(service.prices);
   const computed = price ? computePrice(price) : null;
   const label = price ? priceText(price, locale).label : "";
+  const hasMore = service.prices.length > 1;
+
+  // 옵션이 여러 개면 할인율은 옵션 중 최대치를 "최대 N%"로 보여준다.
+  // 이때 정가 취소선은 표시 가격의 할인율이 그 최대치와 같을 때만 그린다 —
+  // "최대 50%" 옆에 30% 할인된 금액의 정가가 붙으면 숫자가 서로 맞지 않아 보인다.
+  const maxRate = hasMore ? maxDiscountRate(service.prices) : computed?.rate ?? 0;
+  const showStrike = Boolean(computed?.hasDiscount) && computed?.rate === maxRate;
 
   const until = service.saleEndDate
     ? `${t("services.untilPrefix")}${service.saleEndDate}${t("services.untilSuffix")}`
@@ -77,6 +85,14 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
             placeholder="blur"
             blurDataURL={BLUR_PLACEHOLDER}
           />
+        )}
+        {hasMore && (
+          <span
+            className="absolute left-0 top-0 px-2 py-1 text-[0.65rem] font-semibold bg-ink text-ink-inverse"
+            style={{ letterSpacing: "0.02em" }}
+          >
+            {t("services.optionsBadge").replace("{count}", String(service.prices.length))}
+          </span>
         )}
         {(service.badges.length > 0 || isEventService(service)) && (
           <div className="absolute right-0 bottom-0 flex">
@@ -142,12 +158,13 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
               </div>
             )}
             <div className="flex items-baseline gap-1.5 flex-wrap">
-              {computed.hasDiscount && (
+              {maxRate > 0 && (
                 <span
                   className="text-sale font-bold"
                   style={{ fontSize: "1.0625rem", letterSpacing: "-0.03em" }}
                 >
-                  {computed.rate}
+                  {hasMore && <span className="text-[0.7em] font-semibold">{t("services.maxRatePrefix")}</span>}
+                  {maxRate}
                   <span className="text-[0.7em]">%</span>
                 </span>
               )}
@@ -155,9 +172,11 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
                 className="font-bold"
                 style={{ fontSize: "1.0625rem", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}
               >
+                {hasMore && t("services.priceFromPrefix")}
                 {formatKRW(computed.final)}
+                {hasMore && t("services.priceFromSuffix")}
               </span>
-              {computed.hasDiscount && (
+              {showStrike && (
                 <span
                   className="text-xs text-ink-muted line-through"
                   style={{ fontVariantNumeric: "tabular-nums" }}

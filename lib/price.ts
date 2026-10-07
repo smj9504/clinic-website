@@ -87,7 +87,27 @@ export function formatNumber(n: number): string {
   return sign + Math.abs(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-/** 카드에 노출할 대표 옵션 — 첫 번째 옵션 */
+/**
+ * 카드에 노출할 대표 옵션 — 판매가가 가장 낮은 옵션.
+ *
+ * 옵션이 여러 개면 카드에 "~부터"로 표기하는데, 이 표기는 최저가여야 한다.
+ * 첫 번째 옵션을 쓰면 더 싼 옵션이 뒤에 있을 때 "부터"가 거짓이 된다.
+ * 판매가가 같으면 앞쪽 옵션(관리자가 정한 순서)을 유지한다.
+ */
 export function primaryPrice(prices: ServicePrice[]): ServicePrice | undefined {
-  return prices[0];
+  let best: ServicePrice | undefined;
+  let bestFinal = Infinity;
+  for (const price of prices) {
+    const { final } = computePrice(price);
+    if (final < bestFinal) {
+      best = price;
+      bestFinal = final;
+    }
+  }
+  return best;
+}
+
+/** 옵션들 중 가장 큰 할인율 — 할인 옵션이 없으면 0 */
+export function maxDiscountRate(prices: ServicePrice[]): number {
+  return prices.reduce((max, price) => Math.max(max, computePrice(price).rate), 0);
 }

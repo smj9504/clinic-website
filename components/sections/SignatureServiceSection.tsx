@@ -6,7 +6,7 @@ import { useServiceCatalog } from "@/lib/useServices";
 import { useSiteData } from "@/lib/useSiteData";
 import { useLocale, type Locale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
-import { computePrice, formatKRW } from "@/lib/price";
+import { computePrice, formatKRW, maxDiscountRate, primaryPrice } from "@/lib/price";
 import {
   blockText,
   isVideoUrl,
@@ -144,8 +144,13 @@ function SignatureCard({
 }) {
   const { name, summary } = serviceText(service, locale);
   const hasRealImage = Boolean(service.image) && !isVideoUrl(service.image);
-  const price = service.prices[0];
+  // 시술 카드(ServiceCard)와 같은 규칙 — 최저가 옵션을 보여주고, 옵션이 여러 개면
+  // "옵션 N종" 배지 · "최대 N%" · 가격 뒤 "~"로 표시한다.
+  const price = primaryPrice(service.prices);
   const computed = price ? computePrice(price) : null;
+  const hasMore = service.prices.length > 1;
+  const maxRate = hasMore ? maxDiscountRate(service.prices) : computed?.rate ?? 0;
+  const showStrike = Boolean(computed?.hasDiscount) && computed?.rate === maxRate;
 
   const pointsBlock = service.blocks?.find((b) => b.type === "points" && !b.isHidden);
   const points = pointsBlock ? blockText(pointsBlock, locale).items ?? [] : [];
@@ -202,6 +207,14 @@ function SignatureCard({
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        {hasMore && (
+          <span
+            className="absolute left-4 top-4 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur text-ink-inverse text-[0.65rem] font-semibold"
+            style={{ letterSpacing: "0.02em" }}
+          >
+            {t("services.optionsBadge").replace("{count}", String(service.prices.length))}
+          </span>
+        )}
         {service.tag && (
           <span
             className="absolute left-4 bottom-4 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur text-ink-inverse text-xs font-semibold"
@@ -257,12 +270,13 @@ function SignatureCard({
               {t("signature.priceFrom")}
             </div>
             <div className="flex items-baseline gap-2 flex-wrap">
-              {computed.hasDiscount && (
+              {maxRate > 0 && (
                 <span
                   className="font-bold"
                   style={{ fontSize: "1.25rem", letterSpacing: "-0.03em", color: "#E08A76" }}
                 >
-                  {computed.rate}
+                  {hasMore && <span className="text-[0.7em] font-semibold">{t("services.maxRatePrefix")}</span>}
+                  {maxRate}
                   <span className="text-[0.7em]">%</span>
                 </span>
               )}
@@ -274,10 +288,12 @@ function SignatureCard({
                   fontVariantNumeric: "tabular-nums",
                 }}
               >
+                {hasMore && t("services.priceFromPrefix")}
                 {formatKRW(computed.final)}
+                {hasMore && t("services.priceFromSuffix")}
               </span>
             </div>
-            {computed.hasDiscount && (
+            {showStrike && (
               <div
                 className="text-sm text-ink-muted line-through mt-0.5"
                 style={{ fontVariantNumeric: "tabular-nums" }}
