@@ -340,6 +340,11 @@ export default function RichEditor({
           border-radius: 0.375rem;
           margin: 0.8em 0;
         }
+        /* 이미지 NodeView의 바깥 래퍼(div)를 inline으로 풀어, 100% 미만 이미지가
+           프론트와 똑같이 옆으로 나란히 배치되게 한다 */
+        .ProseMirror .react-renderer.node-image {
+          display: inline;
+        }
         .ProseMirror:focus {
           outline: none;
         }
