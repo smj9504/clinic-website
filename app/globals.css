@@ -193,6 +193,13 @@ img { max-width: 100%; display: block; }
   transform: scale(1);
 }
 
+/* 배너 배경 영상 — iOS 저전력 모드 등 자동재생이 막혔을 때 뜨는 기본 재생 버튼을 숨겨
+   플레이어처럼 보이지 않게 한다 (그 경우 첫 프레임이 정지 배경으로 남는다) */
+.banner-video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+
 /* ─── Nav dropdown (desktop hover submenu) ─── */
 .nav-dropdown {
   opacity: 0;
