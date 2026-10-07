@@ -4,9 +4,14 @@ import Image from "next/image";
 import DirectorFeature from "@/components/sections/DirectorFeature";
 import FacilityCarousel from "@/components/sections/FacilityCarousel";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
-import { useT } from "@/lib/i18n";
+import { useT, useLocale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+
+const WEEKDAY_SHORT = {
+  ko: ["일", "월", "화", "수", "목", "금", "토"],
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+};
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -15,6 +20,15 @@ export default function AboutPage() {
   const { about, clinicInfo, menus, heroSlides } = useSiteData();
   const banner = getBannerImage(menus, "/about", heroSlides[0]?.image);
   const t = useT();
+  const { locale } = useLocale();
+  // 정기휴무 요일이 있으면 "일·공휴일" 앞에 붙여 휴진 행 하나로 보여준다 (예: "수·일·공휴일")
+  const closedWeekdays = (clinicInfo.hours.closedWeekdays ?? []).filter((d) => d !== 0);
+  const holidayLabel =
+    closedWeekdays.length === 0
+      ? t("about.holiday")
+      : locale === "en"
+        ? `${closedWeekdays.map((d) => WEEKDAY_SHORT.en[d]).join(", ")}, ${t("about.holiday")}`
+        : `${closedWeekdays.map((d) => WEEKDAY_SHORT.ko[d]).join("·")}·${t("about.holiday")}`;
   const philRef = useScrollReveal<HTMLDivElement>();
   const facilityHeaderRef = useScrollReveal<HTMLDivElement>();
   const hoursRef = useScrollReveal<HTMLDivElement>();
@@ -132,7 +146,7 @@ export default function AboutPage() {
               </div>
               <div className="flex justify-between">
                 <span className="font-semibold" style={{ letterSpacing: "-0.02em" }}>
-                  {t("about.holiday")}
+                  {holidayLabel}
                 </span>
                 <span className="text-ink-muted">{t("about.closed")}</span>
               </div>

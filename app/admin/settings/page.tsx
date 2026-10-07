@@ -26,7 +26,17 @@ const HERO_EFFECT_OPTIONS: { value: HeroSlideEffect; label: string }[] = [
   { value: "none", label: "없음" },
 ];
 
-type Tab = "clinic" | "hero" | "treatments" | "layout" | "about" | "password";
+/** 정기휴무로 지정할 수 있는 요일 (일요일은 항상 휴진이라 제외) */
+const CLOSABLE_WEEKDAYS: { value: number; label: string }[] = [
+  { value: 1, label: "월" },
+  { value: 2, label: "화" },
+  { value: 3, label: "수" },
+  { value: 4, label: "목" },
+  { value: 5, label: "금" },
+  { value: 6, label: "토" },
+];
+
+type Tab ="clinic" | "hero" | "treatments" | "layout" | "about" | "password";
 
 export default function SettingsAdminPage() {
   const { editingLocale } = useAdminLocale();
@@ -168,6 +178,34 @@ function ClinicInfoTab({ onSave }: { onSave: () => void }) {
                 }))
               }
             />
+          </Field>
+          <Field
+            label="정기휴무 요일"
+            hint="선택한 요일은 휴진일로 처리되어 예약 시간 선택에서 제외됩니다. 일요일은 항상 휴진입니다. 푸터·챗봇에 보이는 휴진 문구는 아래 칸에서 함께 수정해 주세요."
+          >
+            <div className="flex gap-1 flex-wrap">
+              {CLOSABLE_WEEKDAYS.map((opt) => {
+                const closedWeekdays = draft.hours.closedWeekdays ?? [];
+                const active = closedWeekdays.includes(opt.value);
+                return (
+                  <Button
+                    key={opt.value}
+                    type="button"
+                    size="sm"
+                    variant={active ? "primary" : "secondary"}
+                    onClick={() =>
+                      setDraft((p) => {
+                        const prev = p.hours.closedWeekdays ?? [];
+                        const next = active ? prev.filter((d) => d !== opt.value) : [...prev, opt.value].sort((a, b) => a - b);
+                        return { ...p, hours: { ...p.hours, closedWeekdays: next } };
+                      })
+                    }
+                  >
+                    {opt.label}
+                  </Button>
+                );
+              })}
+            </div>
           </Field>
           <Field label="휴진">
             <TextInput

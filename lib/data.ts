@@ -369,6 +369,12 @@ export const clinicInfoShape = {
     weekday: "",
     saturday: "",
     closed: "",
+    /**
+     * 매주 쉬는 요일 (0=일 ~ 6=토). 예: 매주 수요일 정기휴무면 [3].
+     * 일요일은 이 값과 무관하게 항상 휴진으로 본다. 예전에 저장된 데이터엔
+     * 이 필드가 없을 수 있으므로 읽는 쪽은 항상 `?? []`로 폴백한다.
+     */
+    closedWeekdays: [] as number[],
   },
   reservationUrl: "",
   socialLinks: {

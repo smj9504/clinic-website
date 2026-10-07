@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { isPastClinicHoursToday } from "@/lib/date";
+import { isPastClinicHoursToday, type ClinicHours } from "@/lib/date";
 
 const OPTIONS: { value: string; label: string }[] = [
   { value: "", label: "상관없음" },
@@ -16,7 +16,7 @@ export type TimeSelectProps = {
   /** 시간대 선택을 판단할 기준 날짜("YYYY-MM-DD"). 오늘 날짜이고 진료 종료 시각을 지났으면 오전·오후를 모두 막는다. */
   desiredDate?: string;
   /** 오전/오후 활성화 여부를 판단할 진료 시간. 없으면 항상 전체 옵션을 보여준다(제한 없음). */
-  clinicHours?: { weekday: string; saturday: string };
+  clinicHours?: ClinicHours;
 };
 
 /**

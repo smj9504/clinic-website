@@ -617,6 +617,8 @@ export async function syncImages(locale: Locale) {
       ...other.clinicInfo,
       bannerImages: current.clinicInfo.bannerImages,
       defaultImage: current.clinicInfo.defaultImage,
+      // 정기휴무 요일은 언어와 무관한 값이라 이미지처럼 양쪽에 똑같이 맞춘다
+      hours: { ...other.clinicInfo.hours, closedWeekdays: current.clinicInfo.hours.closedWeekdays ?? [] },
     },
     subPages: (other.subPages ?? []).map((sp) => {
       const cur = (current.subPages ?? []).find((c) => c.id === sp.id);
@@ -897,7 +899,10 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
         suffix: next(),
       })),
       showStats: koData.showStats,
-      clinicInfo: enData.clinicInfo,
+      clinicInfo: {
+        ...enData.clinicInfo,
+        hours: { ...enData.clinicInfo.hours, closedWeekdays: koData.clinicInfo.hours.closedWeekdays ?? [] },
+      },
       eventEndedHide: koData.eventEndedHide,
       noticeEndedHide: koData.noticeEndedHide,
       subPages: (koData.subPages ?? []).map((sp, i) => {

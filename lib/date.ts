@@ -34,23 +34,35 @@ function weekdayOf(dateStr: string): number {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
+/** 진료 시간 판단에 필요한 clinicInfo.hours 필드. closedWeekdays는 예전 데이터엔 없을 수 있다. */
+export type ClinicHours = { weekday: string; saturday: string; closedWeekdays?: number[] };
+
+/** 해당 요일(0=일 ~ 6=토)이 휴진인지. 일요일은 항상 휴진, 그 외엔 admin에서 지정한 정기휴무 요일. */
+export function isClosedWeekday(weekday: number, hours: ClinicHours): boolean {
+  return weekday === 0 || (hours.closedWeekdays ?? []).includes(weekday);
+}
+
+/** 해당 날짜의 진료 시간 범위. 휴진 요일이거나 hours 텍스트 형식이 안 맞으면 null. */
+function clinicHoursRangeOf(dateStr: string, hours: ClinicHours): { opens: string; closes: string } | null {
+  const weekday = weekdayOf(dateStr);
+  if (isClosedWeekday(weekday, hours)) return null;
+  return weekday === 6 ? parseHoursRange(hours.saturday) : parseHoursRange(hours.weekday);
+}
+
 /**
  * 주어진 날짜의 진료 종료 시각("HH:mm"). 평일(월~금)은 hours.weekday, 토요일은
- * hours.saturday를 파싱해서 쓰고, 일요일은 휴진이라 null(=하루 종일 진료 없음).
+ * hours.saturday를 파싱해서 쓰고, 일요일·정기휴무 요일은 null(=하루 종일 진료 없음).
  * hours 텍스트 형식이 안 맞으면 판단할 수 없으므로 null(=제한 없음으로 취급).
  */
-export function clinicClosingTime(dateStr: string, hours: { weekday: string; saturday: string }): string | null {
-  const weekday = weekdayOf(dateStr);
-  if (weekday === 0) return null; // 일요일 휴진 — "오늘 진료 종료 시각" 개념 자체가 없음
-  const range = weekday === 6 ? parseHoursRange(hours.saturday) : parseHoursRange(hours.weekday);
-  return range?.closes ?? null;
+export function clinicClosingTime(dateStr: string, hours: ClinicHours): string | null {
+  return clinicHoursRangeOf(dateStr, hours)?.closes ?? null;
 }
 
 /**
  * 해당 날짜가 오늘이고, 이미 그날 진료 종료 시각을 지났다면 true.
  * 오늘이 아니면(미래 날짜) 항상 false — 아직 지나지 않은 날의 시간대는 막을 이유가 없다.
  */
-export function isPastClinicHoursToday(dateStr: string, hours: { weekday: string; saturday: string }): boolean {
+export function isPastClinicHoursToday(dateStr: string, hours: ClinicHours): boolean {
   if (dateStr !== todayKST()) return false;
   const closes = clinicClosingTime(dateStr, hours);
   if (!closes) return false;
@@ -63,12 +75,9 @@ export function isPastClinicHoursToday(dateStr: string, hours: { weekday: string
  * 불필요한 요청을 보낼 이유가 없다. hours 텍스트 형식이 안 맞으면 판단할 수
  * 없으므로 안전하게 false(=실행 안 함)로 취급한다.
  */
-export function isWithinClinicHoursNow(hours: { weekday: string; saturday: string }): boolean {
-  const today = todayKST();
-  const weekday = weekdayOf(today);
-  if (weekday === 0) return false; // 일요일 휴진
-  const range = weekday === 6 ? parseHoursRange(hours.saturday) : parseHoursRange(hours.weekday);
-  if (!range) return false;
+export function isWithinClinicHoursNow(hours: ClinicHours): boolean {
+  const range = clinicHoursRangeOf(todayKST(), hours);
+  if (!range) return false; // 휴진 요일이거나 형식 불일치
   const now = nowKST();
   return now >= range.opens && now < range.closes;
 }
@@ -76,14 +85,12 @@ export function isWithinClinicHoursNow(hours: { weekday: string; saturday: strin
 /**
  * 주어진 날짜의 진료 시간을 30분 간격 "HH:MM" 슬롯 배열로 반환한다.
  * 평일(월~금)은 hours.weekday, 토요일은 hours.saturday를 파싱해서 쓰고,
- * 일요일이거나 hours 텍스트 형식이 안 맞으면 빈 배열(=선택 가능한 슬롯 없음).
+ * 일요일·정기휴무 요일이거나 hours 텍스트 형식이 안 맞으면 빈 배열(=선택 가능한 슬롯 없음).
  * 종료 시각(closes) 자체는 슬롯에 포함하지 않는다 — 예: 10:00–18:00이면
  * 마지막 슬롯은 17:30(30분 진료가 종료 시각 안에 들어가는 마지막 시작 시각).
  */
-export function generateTimeSlots(dateStr: string, hours: { weekday: string; saturday: string }): string[] {
-  const weekday = weekdayOf(dateStr);
-  if (weekday === 0) return []; // 일요일 휴진
-  const range = weekday === 6 ? parseHoursRange(hours.saturday) : parseHoursRange(hours.weekday);
+export function generateTimeSlots(dateStr: string, hours: ClinicHours): string[] {
+  const range = clinicHoursRangeOf(dateStr, hours);
   if (!range) return [];
 
   const [openH, openM] = range.opens.split(":").map(Number);

@@ -1,6 +1,6 @@
 import { getServiceClient } from "@/lib/supabase";
 import { clinicInfoShape } from "@/lib/data";
-import { parseHoursRange } from "@/lib/date";
+import { parseHoursRange, isClosedWeekday } from "@/lib/date";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gowoonbit-kmc.com";
 
@@ -19,13 +19,17 @@ async function getClinicHours(): Promise<typeof clinicInfoShape.hours> {
   }
 }
 
+const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 function buildOpeningHours(hours: typeof clinicInfoShape.hours) {
-  const weekday = parseHoursRange(hours.weekday);
-  const saturday = parseHoursRange(hours.saturday);
+  // 정기휴무로 지정한 요일은 영업일에서 뺀다
+  const openWeekdays = [1, 2, 3, 4, 5].filter((d) => !isClosedWeekday(d, hours)).map((d) => WEEKDAY_NAMES[d]);
+  const weekday = openWeekdays.length > 0 ? parseHoursRange(hours.weekday) : null;
+  const saturday = isClosedWeekday(6, hours) ? null : parseHoursRange(hours.saturday);
   return [
     weekday && {
       "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      dayOfWeek: openWeekdays,
       opens: weekday.opens,
       closes: weekday.closes,
     },
