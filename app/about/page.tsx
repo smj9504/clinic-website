@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import DirectorFeature from "@/components/sections/DirectorFeature";
 import FacilityCarousel from "@/components/sections/FacilityCarousel";
@@ -21,6 +22,8 @@ export default function AboutPage() {
   const { about, clinicInfo, menus, heroSlides } = useSiteData();
   const banner = getBannerImage(menus, "/about", heroSlides[0]?.image);
   const bannerIsVideo = !!banner && isVideoUrl(banner);
+  // 영상 원본 비율 — 메타데이터를 읽기 전까지는 16:9로 자리를 잡아 레이아웃 흔들림을 줄인다
+  const [bannerRatio, setBannerRatio] = useState<string | null>(null);
   const t = useT();
   const { locale } = useLocale();
   // 정기휴무 요일이 있으면 "일·공휴일" 앞에 붙여 휴진 행 하나로 보여준다 (예: "수·일·공휴일")
@@ -37,19 +40,19 @@ export default function AboutPage() {
 
   return (
     <>
-      <section
-        className={`relative overflow-hidden ${
-          bannerIsVideo
-            ? "flex items-end min-h-[62vh] md:min-h-[80vh] pt-32 pb-12 md:pb-20"
-            : "pt-32 pb-10 md:pt-44 md:pb-14"
-        }`}
-        style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
-      >
-        {bannerIsVideo ? (
-          <>
-            {/* 소개 영상은 플레이어가 아니라 배너 배경으로 흐르게 한다 — 조작 UI 없이 무음 반복 재생.
-                이미지 배너보다 영역을 키우고, 어두운 막을 옅게 깔아 영상이 살아 보이게 하되
-                제목이 놓이는 하단만 진하게 눌러 글자 가독성을 지킨다. */}
+      {bannerIsVideo ? (
+        // 소개 영상 배너 — 플레이어가 아니라 배너 자리에 흐르는 무음 반복 영상.
+        // 영상 하단의 자막까지 보여야 해서 잘라내지(cover) 않고 원본 비율 그대로 화면 폭에 맞추며,
+        // 고정 헤더(h-20)에 윗부분이 가리지 않도록 그 아래에서 시작한다. 제목은 영상과 겹치지 않게 숨긴다.
+        <section className="pt-20">
+          <h1 className="sr-only">{getMenuLabel(menus, "/about", t("about.title"))}</h1>
+          <div
+            className="relative w-full"
+            style={{
+              aspectRatio: bannerRatio ?? "16 / 9",
+              background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)",
+            }}
+          >
             <video
               // 동영상 URL이 바뀔 때 이전 재생 상태가 남지 않도록 key로 강제 재마운트
               key={banner}
@@ -62,18 +65,19 @@ export default function AboutPage() {
               disablePictureInPicture
               aria-hidden="true"
               tabIndex={-1}
-              className="banner-video absolute inset-0 w-full h-full object-cover pointer-events-none"
-              style={{ ...getImageCropStyle(banner) }}
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(to top, rgba(44,38,32,0.78) 0%, rgba(44,38,32,0.3) 45%, rgba(44,38,32,0.2) 70%, rgba(44,38,32,0.45) 100%)",
+              onLoadedMetadata={(e) => {
+                const { videoWidth, videoHeight } = e.currentTarget;
+                if (videoWidth && videoHeight) setBannerRatio(`${videoWidth} / ${videoHeight}`);
               }}
+              className="banner-video absolute inset-0 w-full h-full object-contain pointer-events-none"
             />
-          </>
-        ) : (
+          </div>
+        </section>
+      ) : (
+        <section
+          className="relative pt-32 pb-10 md:pt-44 md:pb-14 overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)" }}
+        >
           <div className="absolute inset-0 opacity-30">
             <Image
               src={stripImagePosition(banner || about.facilityImages[0] || "/placeholder.svg")}
@@ -87,27 +91,27 @@ export default function AboutPage() {
               blurDataURL={BLUR_PLACEHOLDER}
             />
           </div>
-        )}
-        <div className="container-default relative w-full text-ink-inverse">
-          <span
-            className="text-xs font-semibold uppercase opacity-70 mb-4 block"
-            style={{ letterSpacing: "0.2em" }}
-          >
-            About
-          </span>
-          <h1
-            className="font-display"
-            style={{
-              fontSize: "clamp(2rem, 5vw, 3.5rem)",
-              fontWeight: 600,
-              letterSpacing: "-0.04em",
-              lineHeight: 1.15,
-            }}
-          >
-            {getMenuLabel(menus, "/about", t("about.title"))}
-          </h1>
-        </div>
-      </section>
+          <div className="container-default relative text-ink-inverse">
+            <span
+              className="text-xs font-semibold uppercase opacity-70 mb-4 block"
+              style={{ letterSpacing: "0.2em" }}
+            >
+              About
+            </span>
+            <h1
+              className="font-display"
+              style={{
+                fontSize: "clamp(2rem, 5vw, 3.5rem)",
+                fontWeight: 600,
+                letterSpacing: "-0.04em",
+                lineHeight: 1.15,
+              }}
+            >
+              {getMenuLabel(menus, "/about", t("about.title"))}
+            </h1>
+          </div>
+        </section>
+      )}
 
       {/* Philosophy */}
       <section className="pt-10 pb-20 md:pt-16 md:pb-32">
