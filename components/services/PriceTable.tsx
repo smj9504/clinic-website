@@ -29,7 +29,14 @@ export type PriceTableProps = {
 export default function PriceTable({ serviceId, serviceName, prices, locale, t, isEvent = false }: PriceTableProps) {
   const { addItem, removeItem, isSelected } = useCart();
 
-  if (prices.length === 0) return null;
+  // 가격 옵션이 없는 시술(시그니처 등)은 상담 후 안내로 표시한다
+  if (prices.length === 0) {
+    return (
+      <p className="text-sm font-medium" style={{ lineHeight: 1.7 }}>
+        {t("services.priceOnConsult")}
+      </p>
+    );
+  }
 
   return (
     <ul className="divide-y divide-line">
