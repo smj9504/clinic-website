@@ -101,7 +101,7 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
                 수동으로 껐다 켰다 할 별도 설정을 두지 않는다. */}
             {isEventService(service) && (
               <span
-                className="px-2 py-1 text-[0.6rem] font-bold bg-sale text-white"
+                className="px-2.5 py-1 text-[0.75rem] font-bold bg-sale text-white"
                 style={{ letterSpacing: "0.08em" }}
               >
                 EVENT
@@ -110,7 +110,7 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
             {service.badges.map((badge) => (
               <span
                 key={badge}
-                className={`px-2 py-1 text-[0.6rem] font-bold ${BADGE_STYLE[badge]}`}
+                className={`px-2.5 py-1 text-[0.75rem] font-bold ${BADGE_STYLE[badge]}`}
                 style={{ letterSpacing: "0.08em" }}
               >
                 {badge}

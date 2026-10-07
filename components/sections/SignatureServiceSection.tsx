@@ -166,7 +166,7 @@ function SignatureCard({
     >
       {emphasized && (
         <div
-          className="absolute top-4 right-4 z-10 px-2.5 py-1 rounded-full bg-accent-soft text-ink-inverse text-[0.65rem] font-bold"
+          className="absolute top-4 right-4 z-10 px-3 py-1 rounded-full bg-accent-soft text-ink-inverse text-[0.75rem] font-bold"
           style={{ letterSpacing: "0.08em" }}
         >
           BEST
