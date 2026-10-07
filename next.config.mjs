@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Vercel 이미지 최적화(/_next/image)를 쓰지 않고 원본 URL을 그대로 쓴다.
+    // Hobby 플랜 변환 한도를 넘으면 402로 이미지가 깨지는데, 업로드 시
+    // 이미 sharp로 1920px·WebP 변환을 하므로 추가 최적화 이득이 작다.
+    // 아래 캐시/사이즈/포맷 설정은 unoptimized에서는 적용되지 않는다.
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "plus.unsplash.com" },
