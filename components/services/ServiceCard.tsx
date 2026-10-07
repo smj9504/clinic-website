@@ -88,7 +88,7 @@ export default function ServiceCard({ service, locale, fallbackImage, t }: Servi
         )}
         {hasMore && (
           <span
-            className="absolute left-0 top-0 px-2 py-1 text-[0.65rem] font-semibold bg-ink text-ink-inverse"
+            className="absolute left-0 top-0 px-2.5 py-1 text-[0.75rem] font-semibold bg-ink text-ink-inverse"
             style={{ letterSpacing: "0.02em" }}
           >
             {t("services.optionsBadge").replace("{count}", String(service.prices.length))}

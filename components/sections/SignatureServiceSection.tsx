@@ -209,7 +209,7 @@ function SignatureCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
         {hasMore && (
           <span
-            className="absolute left-4 top-4 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur text-ink-inverse text-[0.65rem] font-semibold"
+            className="absolute left-4 top-4 px-3 py-1 rounded-full bg-black/40 backdrop-blur text-ink-inverse text-[0.75rem] font-semibold"
             style={{ letterSpacing: "0.02em" }}
           >
             {t("services.optionsBadge").replace("{count}", String(service.prices.length))}
