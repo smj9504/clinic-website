@@ -51,9 +51,13 @@ export default function SignatureServiceSection() {
     categories: [signatureCategory],
     subcategories: subcategories.filter((s) => subcategoryIds.has(s.id)),
     services: services.filter((svc) => subcategoryIds.has(svc.subcategoryId)),
-  }).slice(0, 3);
+  }).slice(0, 4);
 
   if (featured.length === 0) return null;
+
+  // 강조 카드는 관리자가 BEST 뱃지를 단 시술. 없으면 3장일 때 가운데, 그 외엔 첫 장
+  const bestIndex = featured.findIndex((s) => s.badges.includes("BEST"));
+  const emphasizedIndex = bestIndex >= 0 ? bestIndex : featured.length === 3 ? 1 : 0;
 
   return (
     <section className="relative py-20 md:py-36 overflow-hidden bg-surface-dark text-ink-inverse">
@@ -89,14 +93,18 @@ export default function SignatureServiceSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-5 items-stretch">
+        <div
+          className={`grid grid-cols-1 gap-6 md:gap-5 items-stretch ${
+            featured.length === 4 ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3"
+          }`}
+        >
           {featured.map((service, i) => (
             <SignatureCard
               key={service.id}
               service={service}
               locale={locale}
               t={t}
-              emphasized={featured.length === 3 ? i === 1 : i === 0}
+              emphasized={i === emphasizedIndex}
             />
           ))}
         </div>
@@ -161,7 +169,20 @@ function SignatureCard({
       )}
 
       <div className="relative overflow-hidden bg-black/30" style={{ aspectRatio: "16 / 10" }}>
-        {hasRealImage ? (
+        {/* 동영상은 시술 카드와 같이 조작 UI 없는 무음 반복 재생으로 보여 준다 */}
+        {isVideoUrl(service.image) ? (
+          <video
+            key={service.image}
+            src={stripImagePosition(service.image)}
+            muted
+            autoPlay
+            loop
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-cover opacity-90 transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+            style={{ ...getImageCropStyle(service.image) }}
+          />
+        ) : hasRealImage ? (
           <Image
             src={stripImagePosition(service.image)}
             alt={name}

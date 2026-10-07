@@ -135,15 +135,31 @@ export default function ServiceDetailLayout({ children }: { children: React.Reac
                         }`}
                       >
                         <span className="relative w-7 h-7 rounded-full overflow-hidden bg-bg-alt shrink-0">
-                          <Image
-                            src={stripImagePosition(isVideoUrl(s.image) ? fallbackImage : s.image || fallbackImage)}
-                            alt=""
-                            fill
-                            className="object-cover"
-                            style={{ ...getImageCropStyle(isVideoUrl(s.image) ? fallbackImage : s.image || fallbackImage) }}
-                            sizes="28px"
-                            quality={60}
-                          />
+                          {/*
+                            대표 미디어가 동영상이면 첫 프레임을 정지 화면으로 보여 준다.
+                            28px 칩이라 재생할 필요는 없고, #t=0.1 은 iOS Safari에서도
+                            메타데이터만 받아 첫 프레임을 그리게 하는 관용 표기다.
+                          */}
+                          {isVideoUrl(s.image) ? (
+                            <video
+                              src={`${stripImagePosition(s.image)}#t=0.1`}
+                              muted
+                              playsInline
+                              preload="metadata"
+                              className="absolute inset-0 w-full h-full object-cover"
+                              style={{ ...getImageCropStyle(s.image) }}
+                            />
+                          ) : (
+                            <Image
+                              src={stripImagePosition(s.image || fallbackImage)}
+                              alt=""
+                              fill
+                              className="object-cover"
+                              style={{ ...getImageCropStyle(s.image || fallbackImage) }}
+                              sizes="28px"
+                              quality={60}
+                            />
+                          )}
                         </span>
                         <span
                           className="text-sm whitespace-nowrap"
