@@ -24,6 +24,8 @@ const SOURCE_META: Record<Source, { label: string; color: string }> = {
 
 type Picked = { src: string; source: Source };
 
+const OPEN_KEY = "admin_event_image_preview_open";
+
 export default function EventImagePreview({
   image,
   mobileImage,
@@ -42,6 +44,21 @@ export default function EventImagePreview({
   title: string;
 }) {
   const [device, setDevice] = useState<"pc" | "mobile">("pc");
+  // 펼침 여부는 관리자 브라우저에 기억해 둔다 — 이벤트를 여러 개 연달아 수정할 때 매번 다시 접고 펴지 않도록
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(OPEN_KEY) !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const toggleOpen = () => {
+    const next = !open;
+    setOpen(next);
+    try {
+      localStorage.setItem(OPEN_KEY, next ? "1" : "0");
+    } catch {}
+  };
   const isMobile = device === "mobile";
 
   const main: Picked = image ? { src: image, source: "image" } : { src: fallbackImage, source: "fallback" };
@@ -65,81 +82,101 @@ export default function EventImagePreview({
 
   return (
     <div className="mb-6 rounded border border-line bg-bg-alt p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div>
-          <h4 className="text-sm font-semibold" style={{ letterSpacing: "-0.02em" }}>
-            이미지 위치 미리보기
-          </h4>
-          <p className="text-xs text-ink-muted mt-0.5">
-            지금 넣은 이미지가 사이트 어디에 보이는지 보여줍니다. 이름표는 어느 입력칸의 이미지인지를 뜻합니다.
+      <div className={`flex flex-wrap items-center justify-between gap-3 ${open ? "mb-4" : ""}`}>
+        <button
+          type="button"
+          onClick={toggleOpen}
+          aria-expanded={open}
+          className="flex items-start gap-2 text-left"
+        >
+          <svg
+            width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            className={`mt-0.5 shrink-0 text-ink-muted transition-transform ${open ? "rotate-90" : ""}`}
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+          <span>
+            <span className="block text-sm font-semibold" style={{ letterSpacing: "-0.02em" }}>
+              이미지 위치 미리보기
+            </span>
+            <span className="block text-xs text-ink-muted mt-0.5">
+              지금 넣은 이미지가 사이트 어디에 보이는지 보여줍니다. 이름표는 어느 입력칸의 이미지인지를 뜻합니다.
+            </span>
+          </span>
+        </button>
+        {open && (
+          <div className="flex gap-1 rounded-full bg-surface p-1 border border-line">
+            {(["pc", "mobile"] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDevice(d)}
+                className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                  device === d ? "bg-accent text-white" : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                {d === "pc" ? "PC" : "모바일"}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {open && (
+        <>
+          <div className="flex flex-wrap gap-5 items-start">
+            <Screen title="홈 · 이벤트 목록 카드" width={frameWidth}>
+              <div className="p-2">
+                <div className="rounded overflow-hidden border border-line bg-surface">
+                  <Shot picked={card} ratio={card.ratio} />
+                  <div className="p-1.5 space-y-1">
+                    <Line w="40%" />
+                    <div className="text-[9px] font-semibold truncate">{title || "이벤트 제목"}</div>
+                    <Line w="80%" />
+                  </div>
+                </div>
+              </div>
+            </Screen>
+
+            <Screen title="이벤트 상세페이지" width={frameWidth}>
+              <div className="relative" style={{ aspectRatio: isMobile ? "1 / 1" : "16 / 5" }}>
+                {banner ? (
+                  <Shot picked={banner} fill dim={banner.dim} />
+                ) : (
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(#3A322A, #2C2620)" }} />
+                )}
+                <div className="absolute left-2 bottom-2 text-white text-[9px] font-semibold drop-shadow">
+                  {title || "이벤트 제목"}
+                </div>
+                {!banner && <Tag source={null} note="단색 배경 (상단 배너·기본 배너 없음)" />}
+              </div>
+              <div className="p-2 space-y-1.5">
+                <div className={isMobile ? "" : "w-2/3"}>
+                  <div className="rounded overflow-hidden">
+                    <Shot picked={body} ratio={body.ratio} />
+                  </div>
+                </div>
+                <Line w="50%" />
+                <Line w="70%" />
+              </div>
+            </Screen>
+
+            <Screen title="메인 팝업" width={frameWidth}>
+              <div className="relative bg-black/40 p-3 flex justify-center" style={{ minHeight: isMobile ? 220 : 160 }}>
+                <div className="w-full rounded overflow-hidden bg-surface shadow" style={{ maxWidth: isMobile ? "85%" : "75%" }}>
+                  <Shot picked={popup} ratio={popup.ratio} />
+                </div>
+              </div>
+            </Screen>
+          </div>
+
+          <p className="text-[11px] text-ink-muted mt-4 leading-relaxed">
+            * 이벤트 이미지는 상세페이지 아래 &lsquo;다른 이벤트&rsquo; 카드에도 쓰입니다. 팝업은 [팝업 관리]에서 이 이벤트를 연결했을 때만 표시됩니다.
+            모바일은 화면 폭 768px 미만(팝업은 640px 미만) 기준입니다.
           </p>
-        </div>
-        <div className="flex gap-1 rounded-full bg-surface p-1 border border-line">
-          {(["pc", "mobile"] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setDevice(d)}
-              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-                device === d ? "bg-accent text-white" : "text-ink-muted hover:text-ink"
-              }`}
-            >
-              {d === "pc" ? "PC" : "모바일"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-5 items-start">
-        <Screen title="홈 · 이벤트 목록 카드" width={frameWidth}>
-          <div className="p-2">
-            <div className="rounded overflow-hidden border border-line bg-surface">
-              <Shot picked={card} ratio={card.ratio} />
-              <div className="p-1.5 space-y-1">
-                <Line w="40%" />
-                <div className="text-[9px] font-semibold truncate">{title || "이벤트 제목"}</div>
-                <Line w="80%" />
-              </div>
-            </div>
-          </div>
-        </Screen>
-
-        <Screen title="이벤트 상세페이지" width={frameWidth}>
-          <div className="relative" style={{ aspectRatio: isMobile ? "1 / 1" : "16 / 5" }}>
-            {banner ? (
-              <Shot picked={banner} fill dim={banner.dim} />
-            ) : (
-              <div className="absolute inset-0" style={{ background: "linear-gradient(#3A322A, #2C2620)" }} />
-            )}
-            <div className="absolute left-2 bottom-2 text-white text-[9px] font-semibold drop-shadow">
-              {title || "이벤트 제목"}
-            </div>
-            {!banner && <Tag source={null} note="단색 배경 (상단 배너·기본 배너 없음)" />}
-          </div>
-          <div className="p-2 space-y-1.5">
-            <div className={isMobile ? "" : "w-2/3"}>
-              <div className="rounded overflow-hidden">
-                <Shot picked={body} ratio={body.ratio} />
-              </div>
-            </div>
-            <Line w="50%" />
-            <Line w="70%" />
-          </div>
-        </Screen>
-
-        <Screen title="메인 팝업" width={frameWidth}>
-          <div className="relative bg-black/40 p-3 flex justify-center" style={{ minHeight: isMobile ? 220 : 160 }}>
-            <div className="w-full rounded overflow-hidden bg-surface shadow" style={{ maxWidth: isMobile ? "85%" : "75%" }}>
-              <Shot picked={popup} ratio={popup.ratio} />
-            </div>
-          </div>
-        </Screen>
-      </div>
-
-      <p className="text-[11px] text-ink-muted mt-4 leading-relaxed">
-        * 이벤트 이미지는 상세페이지 아래 &lsquo;다른 이벤트&rsquo; 카드에도 쓰입니다. 팝업은 [팝업 관리]에서 이 이벤트를 연결했을 때만 표시됩니다.
-        모바일은 화면 폭 768px 미만(팝업은 640px 미만) 기준입니다.
-      </p>
+        </>
+      )}
     </div>
   );
 }
