@@ -22,6 +22,7 @@ import {
 import { useConfirm } from "@/components/admin/ConfirmProvider";
 import RichEditor from "@/components/admin/RichEditor";
 import LinkedServicesPicker from "@/components/admin/equipment/LinkedServicesPicker";
+import EventImagePreview from "@/components/admin/events/EventImagePreview";
 
 const todayStr = todayKST;
 
@@ -223,6 +224,16 @@ export default function EventsAdminPage() {
           <h3 className="font-semibold mb-4" style={{ letterSpacing: "-0.02em" }}>
             {editing === "new" ? "새 이벤트 추가" : "이벤트 수정"}
           </h3>
+
+          <EventImagePreview
+            image={draft.image}
+            mobileImage={draft.mobileImage}
+            detailImage={draft.detailImage}
+            bannerImage={draft.bannerImage}
+            defaultBanner={eventDetailBanner}
+            fallbackImage={fallbackImage}
+            title={draft.title}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
