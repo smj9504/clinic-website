@@ -6,6 +6,7 @@ import { useAdminLocale } from "@/lib/adminLocale";
 import { updateSiteData, syncImages } from "@/lib/storage";
 import { todayKST } from "@/lib/date";
 import { htmlToText } from "@/lib/html";
+import { stripImagePosition } from "@/lib/imagePosition";
 import type { Event } from "@/lib/data";
 import { useServiceCatalog } from "@/lib/useServices";
 import { patchServices } from "@/lib/servicesApi";
@@ -46,6 +47,7 @@ const emptyEvent: Omit<Event, "id"> = {
   image: "",
   mobileImage: "",
   detailImage: "",
+  bannerImage: "",
   date: "EVENT · 2026.05",
   startDate: todayStr(),
   endDate: "",
@@ -54,7 +56,7 @@ const emptyEvent: Omit<Event, "id"> = {
 export default function EventsAdminPage() {
   const confirm = useConfirm();
   const { editingLocale } = useAdminLocale();
-  const { events, eventEndedHide, clinicInfo } = useSiteDataForLocale(editingLocale);
+  const { events, eventEndedHide, clinicInfo, eventDetailBanner } = useSiteDataForLocale(editingLocale);
   const fallbackImage = clinicInfo.defaultImage || "/gowoonbit.jpg";
   const update = async (fn: (data: import("@/lib/storage").SiteData) => import("@/lib/storage").SiteData) => {
     const ok = await updateSiteData(fn, editingLocale);
@@ -93,6 +95,7 @@ export default function EventsAdminPage() {
       image: e.image,
       mobileImage: e.mobileImage || "",
       detailImage: e.detailImage || "",
+      bannerImage: e.bannerImage || "",
       date: e.date,
       startDate: e.startDate || "",
       endDate: e.endDate || "",
@@ -169,6 +172,20 @@ export default function EventsAdminPage() {
       await syncLinkedServices(id, []);
       setToast("이벤트가 삭제되었습니다");
     }
+  };
+
+  const saveDefaultBanner = async (v: string) => {
+    const ok = await update((d) => ({ ...d, eventDetailBanner: v }));
+    if (ok) setToast(v ? "기본 배너가 저장되었습니다" : "기본 배너가 삭제되었습니다");
+    return ok;
+  };
+
+  /** 편집 중인 이벤트의 배너를 기본 배너로 지정한다. 이 이벤트는 이후 기본 배너를 따르도록 개별 배너를 비운다. */
+  const setDraftBannerAsDefault = async () => {
+    if (!draft.bannerImage) return;
+    if (!(await confirm({ message: "이 이미지를 모든 이벤트 상세페이지의 기본 배너로 설정할까요?", confirmText: "기본으로 설정" }))) return;
+    const ok = await saveDefaultBanner(draft.bannerImage);
+    if (ok) setDraft((p) => ({ ...p, bannerImage: "" }));
   };
 
   const move = (id: number, dir: -1 | 1) => {
@@ -283,6 +300,33 @@ export default function EventsAdminPage() {
                 />
               </Field>
               <Field
+                label="상세페이지 상단 배너 (선택)"
+                hint={`이벤트 상세페이지 맨 위 제목 영역의 배경입니다. 권장 크기 1920×600 (16:5). 위에 제목 글씨가 겹치고 화면 폭에 따라 위아래·양옆이 잘리니, 중요한 내용은 가운데에 두세요(모바일에서는 가운데 정사각형 정도만 보입니다). ${
+                  eventDetailBanner
+                    ? "비워두면 아래 '기본 배너'가 표시됩니다."
+                    : "비워두면 이벤트 이미지가 어둡게 깔립니다. 아래 '기본 배너'를 지정해 두면 그 이미지가 대신 표시됩니다."
+                }`}
+              >
+                <ImageInput
+                  value={draft.bannerImage ?? ""}
+                  onChange={(v) => setDraft((p) => ({ ...p, bannerImage: v }))}
+                  aspectRatio="16 / 5"
+                  extraRatios={[{ label: "모바일 약 1:1", ratio: "1 / 1" }]}
+                />
+                {draft.bannerImage ? (
+                  <div className="mt-2">
+                    <Button size="sm" variant="secondary" onClick={setDraftBannerAsDefault}>
+                      이 이미지를 기본 배너로 설정
+                    </Button>
+                  </div>
+                ) : eventDetailBanner ? (
+                  <div className="mt-2 flex items-center gap-3 text-xs text-ink-muted">
+                    <img src={stripImagePosition(eventDetailBanner)} alt="" className="w-24 rounded object-cover" style={{ aspectRatio: "16 / 5" }} />
+                    기본 배너가 표시됩니다
+                  </div>
+                ) : null}
+              </Field>
+              <Field
                 label="이벤트 적용 시술"
                 hint="이 이벤트가 적용되는 시술을 선택하세요. 이벤트 상세 페이지에 목록으로 표시되고, 시술 목록에서도 '이벤트' 탭으로 모아 볼 수 있습니다."
               >
@@ -392,6 +436,21 @@ export default function EventsAdminPage() {
             : "해당 상태의 이벤트가 없습니다."}
         </Card>
       )}
+
+      {/* 상세페이지 기본 배너 */}
+      <Card className="mt-6">
+        <Field
+          label="상세페이지 기본 배너"
+          hint="상단 배너를 따로 넣지 않은 모든 이벤트의 상세페이지 맨 위에 이 이미지가 표시됩니다. 권장 크기 1920×600 (16:5). 위에 제목 글씨가 겹치고 화면 폭에 따라 잘리니 중요한 내용은 가운데에 두세요(모바일에서는 가운데 정사각형 정도만 보입니다)."
+        >
+          <ImageInput
+            value={eventDetailBanner ?? ""}
+            onChange={saveDefaultBanner}
+            aspectRatio="16 / 5"
+            extraRatios={[{ label: "모바일 약 1:1", ratio: "1 / 1" }]}
+          />
+        </Field>
+      </Card>
 
       {/* 종료 이벤트 숨김 설정 */}
       <Card className="mt-6">

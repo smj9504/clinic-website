@@ -25,6 +25,11 @@ export type Event = {
    * 비어 있으면 기존처럼 image를 사용한다(기존 이벤트와 완전히 호환).
    */
   detailImage?: string;
+  /**
+   * 이벤트 상세 페이지 맨 위 제목 영역의 배경 배너 (선택 사항).
+   * 비어 있으면 SiteData.eventDetailBanner(기본 배너)를 쓴다.
+   */
+  bannerImage?: string;
   date: string;
   startDate?: string; // "2026-05-01"
   endDate?: string;   // "2026-05-31"

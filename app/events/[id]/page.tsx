@@ -19,7 +19,7 @@ const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 export default function EventDetailPage() {
   const { id } = useParams();
-  const { events, clinicInfo, menus } = useSiteData();
+  const { events, clinicInfo, menus, eventDetailBanner } = useSiteData();
   const { services } = useServiceCatalog();
   const { locale } = useLocale();
   const t = useT();
@@ -49,40 +49,66 @@ export default function EventDetailPage() {
   }
 
   const otherEvents = events.filter((e) => e.id !== event.id).slice(0, 3);
+  // 상단 배너: 이벤트 전용 배너 → 어드민에서 지정한 기본 배너 순으로 쓴다
+  const banner = event.bannerImage || eventDetailBanner || "";
 
   return (
     <>
       {/* Hero */}
       <section className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden">
         {/*
+          배너(이벤트 전용 또는 기본 배너)가 있으면 그 이미지를 배경으로 쓰고,
+          배너용으로 따로 준비한 이미지라 제목이 읽힐 정도로만 옅게 덮는다.
+          배너가 없을 때는 기존처럼 이벤트 이미지를 짙게 덮어 쓰되,
           detailImage(가격표 등 "그대로 보여줘야 하는" 이미지)가 지정된 이벤트는
-          그 이미지를 히어로 배경으로 재사용하지 않는다 — 어둡게 덮는 오버레이와
-          제목 글씨에 가려 금액이 읽히지 않기 때문이다. 이때는 단색 배경만 깔고,
-          이미지는 본문에서 원본 그대로 크게 보여준다.
+          단색 배경만 깔고 이미지는 본문에서 원본 그대로 크게 보여준다.
         */}
         <div className="absolute inset-0">
-          {!event.detailImage && (
-            <Image
-              src={stripImagePosition(event.image || fallbackImage)}
-              alt=""
-              fill
-              className="object-cover"
-              style={{ ...getImageCropStyle(event.image || fallbackImage) }}
-              sizes="100vw"
-              priority
-              quality={75}
-              placeholder="blur"
-              blurDataURL={BLUR_PLACEHOLDER}
-            />
+          {banner ? (
+            <>
+              <Image
+                src={stripImagePosition(banner)}
+                alt=""
+                fill
+                className="object-cover"
+                style={{ ...getImageCropStyle(banner) }}
+                sizes="100vw"
+                priority
+                quality={75}
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
+              />
+              <div
+                className="absolute inset-0"
+                style={{ background: "linear-gradient(to bottom, rgba(44,38,32,0.35) 0%, rgba(44,38,32,0.6) 100%)" }}
+              />
+            </>
+          ) : (
+            <>
+              {!event.detailImage && (
+                <Image
+                  src={stripImagePosition(event.image || fallbackImage)}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  style={{ ...getImageCropStyle(event.image || fallbackImage) }}
+                  sizes="100vw"
+                  priority
+                  quality={75}
+                  placeholder="blur"
+                  blurDataURL={BLUR_PLACEHOLDER}
+                />
+              )}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: event.detailImage
+                    ? "linear-gradient(to bottom, #3A322A 0%, #2C2620 100%)"
+                    : "linear-gradient(to bottom, rgba(44,38,32,0.75) 0%, rgba(44,38,32,0.90) 100%)",
+                }}
+              />
+            </>
           )}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: event.detailImage
-                ? "linear-gradient(to bottom, #3A322A 0%, #2C2620 100%)"
-                : "linear-gradient(to bottom, rgba(44,38,32,0.75) 0%, rgba(44,38,32,0.90) 100%)",
-            }}
-          />
         </div>
 
         <div className="container-default relative text-ink-inverse">

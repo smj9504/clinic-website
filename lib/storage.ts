@@ -389,6 +389,8 @@ export type SiteData = {
   skinBeautyEquipmentSections?: SkinBeautyEquipmentSections;
   /** /equipment(장비소개) 목록 페이지 맨 위 제목 영역의 배경(30% 밝기). 비어 있으면 그라디언트만 표시된다 */
   equipmentPageBanner?: string;
+  /** 이벤트 상세 페이지 상단 배너의 기본 이미지. 이벤트별 bannerImage가 비어 있으면 이 이미지가 표시된다 */
+  eventDetailBanner?: string;
   /** 메인페이지 섹션 표시 순서/숨김 (Hero 제외) */
   homeSections?: HomeSectionConfig[];
 };
@@ -459,6 +461,7 @@ function stripBase64Images(data: SiteData): SiteData {
       image: strip(e.image),
       mobileImage: e.mobileImage ? strip(e.mobileImage) : e.mobileImage,
       detailImage: e.detailImage ? strip(e.detailImage) : e.detailImage,
+      bannerImage: e.bannerImage ? strip(e.bannerImage) : e.bannerImage,
     })),
     treatments: data.treatments.map((t) => ({ ...t, image: strip(t.image ?? "") })),
     director: { ...data.director, image: strip(data.director.image) },
@@ -484,6 +487,7 @@ function stripBase64Images(data: SiteData): SiteData {
       showcaseImage: strip(eq.showcaseImage ?? ""),
     })),
     equipmentPageBanner: strip(data.equipmentPageBanner ?? ""),
+    eventDetailBanner: strip(data.eventDetailBanner ?? ""),
   };
 }
 
@@ -599,7 +603,7 @@ export async function syncImages(locale: Locale) {
     events: current.events.map((ce) => {
       const oe = other.events.find((o) => o.id === ce.id);
       return oe
-        ? { ...oe, image: ce.image, mobileImage: ce.mobileImage, detailImage: ce.detailImage }
+        ? { ...oe, image: ce.image, mobileImage: ce.mobileImage, detailImage: ce.detailImage, bannerImage: ce.bannerImage }
         : { ...ce };
     }),
     treatments: other.treatments.map((t, i) => ({
@@ -642,6 +646,7 @@ export async function syncImages(locale: Locale) {
       };
     }),
     equipmentPageBanner: current.equipmentPageBanner ?? other.equipmentPageBanner,
+    eventDetailBanner: current.eventDetailBanner ?? other.eventDetailBanner,
   };
 
   await setSiteData(synced, otherLocale);
@@ -810,6 +815,7 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
         image: e.image,
         mobileImage: e.mobileImage,
         detailImage: e.detailImage,
+        bannerImage: e.bannerImage,
         startDate: e.startDate,
         endDate: e.endDate,
       })),
@@ -964,6 +970,7 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
         serviceIds: eq.serviceIds ?? [],
       })),
       equipmentPageBanner: koData.equipmentPageBanner,
+      eventDetailBanner: koData.eventDetailBanner,
     };
 
     await setSiteData(translatedEn, "en");
