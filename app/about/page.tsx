@@ -42,35 +42,38 @@ export default function AboutPage() {
     <>
       {bannerIsVideo ? (
         // 소개 영상 배너 — 플레이어가 아니라 배너 자리에 흐르는 무음 반복 영상.
-        // 영상 하단의 자막까지 보여야 해서 잘라내지(cover) 않고 원본 비율 그대로 화면 폭에 맞추며,
-        // 고정 헤더(h-20)에 윗부분이 가리지 않도록 그 아래에서 시작한다. 제목은 영상과 겹치지 않게 숨긴다.
-        <section className="pt-20">
+        // 영상 하단의 자막까지 보여야 해서 잘라내지(cover) 않고 원본 비율 그대로 보여주며,
+        // 화면 전체 폭 대신 게시물 본문과 같은 폭(max-w-3xl)으로 줄여 고정 헤더(h-20) 아래에 둔다.
+        // 제목은 영상과 겹치지 않게 숨긴다.
+        <section className="pt-28 md:pt-36">
           <h1 className="sr-only">{getMenuLabel(menus, "/about", t("about.title"))}</h1>
-          <div
-            className="relative w-full"
-            style={{
-              aspectRatio: bannerRatio ?? "16 / 9",
-              background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)",
-            }}
-          >
-            <video
-              // 동영상 URL이 바뀔 때 이전 재생 상태가 남지 않도록 key로 강제 재마운트
-              key={banner}
-              src={stripImagePosition(banner)}
-              muted
-              autoPlay
-              loop
-              playsInline
-              preload="auto"
-              disablePictureInPicture
-              aria-hidden="true"
-              tabIndex={-1}
-              onLoadedMetadata={(e) => {
-                const { videoWidth, videoHeight } = e.currentTarget;
-                if (videoWidth && videoHeight) setBannerRatio(`${videoWidth} / ${videoHeight}`);
+          <div className="container-default max-w-3xl">
+            <div
+              className="relative w-full rounded overflow-hidden"
+              style={{
+                aspectRatio: bannerRatio ?? "16 / 9",
+                background: "linear-gradient(135deg, #2C2620 0%, #4A3A2E 100%)",
               }}
-              className="banner-video absolute inset-0 w-full h-full object-contain pointer-events-none"
-            />
+            >
+              <video
+                // 동영상 URL이 바뀔 때 이전 재생 상태가 남지 않도록 key로 강제 재마운트
+                key={banner}
+                src={stripImagePosition(banner)}
+                muted
+                autoPlay
+                loop
+                playsInline
+                preload="auto"
+                disablePictureInPicture
+                aria-hidden="true"
+                tabIndex={-1}
+                onLoadedMetadata={(e) => {
+                  const { videoWidth, videoHeight } = e.currentTarget;
+                  if (videoWidth && videoHeight) setBannerRatio(`${videoWidth} / ${videoHeight}`);
+                }}
+                className="banner-video absolute inset-0 w-full h-full object-contain pointer-events-none"
+              />
+            </div>
           </div>
         </section>
       ) : (
