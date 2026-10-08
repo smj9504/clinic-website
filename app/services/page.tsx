@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import CategoryFilter, { ALL, EVENT_FILTER } from "@/components/services/CategoryFilter";
@@ -11,6 +12,9 @@ import { isVideoUrl, sortServicesForDisplay } from "@/lib/services";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+import EventImage from "@/components/EventImage";
+import EventEndedOverlay from "@/components/EventEndedOverlay";
+import { formatEventPeriod, isEventEnded, isEventHidden } from "@/lib/date";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -44,7 +48,7 @@ export default function ServicesPage() {
 }
 
 function ServicesPageInner() {
-  const { menus, heroSlides, clinicInfo } = useSiteData();
+  const { menus, heroSlides, clinicInfo, events, eventEndedHide } = useSiteData();
   const { categories, subcategories, services, loading, error, reload } = useServiceCatalog();
   const { locale } = useLocale();
   const t = useT();
@@ -66,6 +70,14 @@ function ServicesPageInner() {
     () => services.some((s) => (s.eventIds ?? []).length > 0),
     [services]
   );
+
+  // 이벤트 목록 페이지와 같은 기준으로 방문자에게 보이는 이벤트만 탭에 노출한다
+  const visibleEvents = useMemo(
+    () => events.filter((e) => !isEventHidden(e, eventEndedHide)),
+    [events, eventEndedHide]
+  );
+  const showEventTab = hasEventServices || visibleEvents.length > 0;
+  const isEventTab = activeCategory === EVENT_FILTER && showEventTab;
 
   const visible = useMemo(() => {
     const ordered = sortServicesForDisplay({ categories, subcategories, services });
@@ -147,11 +159,54 @@ function ServicesPageInner() {
               onCategoryChange={setActiveCategory}
               locale={locale}
               t={t}
-              hasEventServices={hasEventServices}
+              hasEventServices={showEventTab}
             />
           </div>
 
           <div>
+            {isEventTab && visibleEvents.length > 0 && (
+              <div className={`${GRID} ${visible.length > 0 ? "mb-12 pb-12 border-b border-line" : ""}`}>
+                {visibleEvents.map((event) => {
+                  const ended = isEventEnded(event);
+                  return (
+                    <Link key={event.id} href={`/events/${event.id}`} className="group block">
+                      <EventImage
+                        ratio={16 / 10}
+                        wrapperClassName="overflow-hidden rounded mb-4 bg-bg-alt"
+                        className={`transition-transform duration-700 ease-out group-hover:scale-[1.04] ${ended ? "grayscale" : ""}`}
+                        src={event.image || fallbackImage}
+                        mobileSrc={event.mobileImage || undefined}
+                        alt={event.title}
+                        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                        quality={75}
+                        placeholder="blur"
+                        blurDataURL={BLUR_PLACEHOLDER}
+                      >
+                        {ended && <EventEndedOverlay />}
+                      </EventImage>
+                      <div
+                        className="text-xs font-semibold uppercase text-ink-muted mb-2 flex items-center gap-2"
+                        style={{ letterSpacing: "0.15em" }}
+                      >
+                        {formatEventPeriod(event, t)}
+                        {ended && (
+                          <span className="text-[0.7rem] font-semibold px-2.5 py-0.5 rounded-full bg-ink text-ink-inverse normal-case" style={{ letterSpacing: 0 }}>
+                            {t("events.ended")}
+                          </span>
+                        )}
+                      </div>
+                      <h2
+                        className={`font-display group-hover:text-accent transition-colors ${ended ? "opacity-60" : ""}`}
+                        style={{ fontSize: "1.25rem", fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.35 }}
+                      >
+                        {event.title} {event.subtitle}
+                      </h2>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
             {loading ? (
               <>
                 <p className="sr-only">{t("services.loading")}</p>
@@ -170,9 +225,12 @@ function ServicesPageInner() {
                 </button>
               </div>
             ) : visible.length === 0 ? (
-              <div className="text-center py-20 text-ink-muted">
-                {services.length === 0 ? t("services.empty") : t("services.emptyFiltered")}
-              </div>
+              // 이벤트 탭에서 이벤트 카드가 이미 보이면 "시술 없음" 문구는 생략
+              isEventTab && visibleEvents.length > 0 ? null : (
+                <div className="text-center py-20 text-ink-muted">
+                  {services.length === 0 ? t("services.empty") : t("services.emptyFiltered")}
+                </div>
+              )
             ) : (
               <div className={GRID}>
                 {visible.map((service) => (

@@ -5,7 +5,7 @@ import type { Locale } from "@/lib/i18n";
 import type { TranslationKey } from "@/lib/translations";
 
 export const ALL = "all";
-/** 실제 카테고리가 아니라 "eventIds가 있는 시술만" 골라 보여주는 가상 필터 */
+/** 실제 카테고리가 아니라 노출 중인 이벤트와 eventIds가 있는 시술을 모아 보여주는 가상 필터 */
 export const EVENT_FILTER = "event";
 
 function Tab({
@@ -42,7 +42,7 @@ export type CategoryFilterProps = {
   onCategoryChange: (id: string) => void;
   locale: Locale;
   t: (key: TranslationKey) => string;
-  /** 이벤트 적용 시술이 하나라도 있을 때만 "이벤트" 탭을 보여준다 */
+  /** 노출 중인 이벤트나 이벤트 적용 시술이 하나라도 있을 때만 "이벤트" 탭을 보여준다 */
   hasEventServices?: boolean;
 };
 
