@@ -10,7 +10,8 @@ import { useSiteData, getMenuLabel } from "@/lib/useSiteData";
 import { useServiceCatalog } from "@/lib/useServices";
 import { isServiceVisible } from "@/lib/services";
 import { useLocale, useT } from "@/lib/i18n";
-import { todayKST, formatEventPeriod, isEventEnded } from "@/lib/date";
+import { todayKST, formatEventPeriod, isEventEnded, isEventHidden } from "@/lib/date";
+import EventEndedOverlay from "@/components/EventEndedOverlay";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
 
 const BLUR_PLACEHOLDER =
@@ -19,7 +20,7 @@ const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
 export default function EventDetailPage() {
   const { id } = useParams();
-  const { events, clinicInfo, menus, eventDetailBanner } = useSiteData();
+  const { events, clinicInfo, menus, eventDetailBanner, eventEndedHide } = useSiteData();
   const { services } = useServiceCatalog();
   const { locale } = useLocale();
   const t = useT();
@@ -48,7 +49,11 @@ export default function EventDetailPage() {
     );
   }
 
-  const otherEvents = events.filter((e) => e.id !== event.id).slice(0, 3);
+  // 하단 "다른 이벤트": 목록 페이지와 같은 숨김 규칙을 적용하고, 진행 중인 이벤트를 먼저 보여준다
+  const otherEvents = events
+    .filter((e) => e.id !== event.id && !isEventHidden(e, eventEndedHide))
+    .sort((a, b) => Number(isEventEnded(a)) - Number(isEventEnded(b)))
+    .slice(0, 3);
   // 상단 배너: 이벤트 전용 배너 → 어드민에서 지정한 기본 배너 순으로 쓴다
   const banner = event.bannerImage || eventDetailBanner || "";
 
@@ -342,7 +347,9 @@ export default function EventDetailPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-start gap-8">
-              {otherEvents.map((other) => (
+              {otherEvents.map((other) => {
+                const otherEnded = isEventEnded(other);
+                return (
                 <Link
                   key={other.id}
                   href={`/events/${other.id}`}
@@ -351,22 +358,29 @@ export default function EventDetailPage() {
                   <EventImage
                     ratio={16 / 10}
                     wrapperClassName="overflow-hidden rounded mb-5 bg-bg-alt"
-                    className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                    className={`transition-transform duration-700 ease-out group-hover:scale-[1.04] ${otherEnded ? "grayscale" : ""}`}
                     src={other.image || fallbackImage}
                     alt={other.title}
                     sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
                     quality={75}
                     placeholder="blur"
                     blurDataURL={BLUR_PLACEHOLDER}
-                  />
+                  >
+                    {otherEnded && <EventEndedOverlay />}
+                  </EventImage>
                   <div
-                    className="text-xs font-semibold uppercase text-ink-muted mb-2.5"
+                    className="text-xs font-semibold uppercase text-ink-muted mb-2.5 flex items-center gap-2"
                     style={{ letterSpacing: "0.15em" }}
                   >
                     {formatEventPeriod(other, t)}
+                    {otherEnded && (
+                      <span className="text-[0.7rem] font-semibold px-2.5 py-0.5 rounded-full bg-ink text-ink-inverse normal-case" style={{ letterSpacing: 0 }}>
+                        {t("events.ended")}
+                      </span>
+                    )}
                   </div>
                   <h3
-                    className="font-display mb-2"
+                    className={`font-display mb-2 ${otherEnded ? "opacity-60" : ""}`}
                     style={{
                       fontSize: "1.15rem",
                       fontWeight: 600,
@@ -393,7 +407,8 @@ export default function EventDetailPage() {
                     </svg>
                   </span>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>

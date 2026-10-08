@@ -13,23 +13,13 @@ const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNFOEU0REYiLz48L3N2Zz4=";
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
-import type { EndedVisibility } from "@/lib/storage";
-import { todayKST, addDays, formatEventPeriod, isEventEnded } from "@/lib/date";
-
-function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
-  const today = todayKST();
-  if (ev.startDate && ev.startDate > today) return true;
-  if (!ev.endDate || ev.endDate >= today) return false;
-  if (hideRule === undefined) return false; // 숨기지 않음
-  if (hideRule === "immediately") return true;
-  return addDays(ev.endDate, hideRule) <= today;
-}
+import { formatEventPeriod, isEventEnded, isEventHidden } from "@/lib/date";
 
 export default function EventsSection() {
   const { events, eventEndedHide, clinicInfo } = useSiteData();
   const t = useT();
   const fallbackImage = clinicInfo.defaultImage || FALLBACK_IMAGE;
-  const featured = events.filter((e) => !isHidden(e, eventEndedHide)).slice(0, 8);
+  const featured = events.filter((e) => !isEventHidden(e, eventEndedHide)).slice(0, 8);
   const headerRef = useScrollReveal<HTMLDivElement>();
 
   if (featured.length === 0) return null;

@@ -139,3 +139,20 @@ export function formatEventPeriod(
 export function isEventEnded(item: { endDate?: string }): boolean {
   return !!item.endDate && item.endDate < todayKST();
 }
+
+/**
+ * 방문자 화면(홈·이벤트 목록·상세 하단)에서 숨길 이벤트인지 판단한다.
+ * 아직 시작 전이면 숨기고, 종료된 이벤트는 어드민의 "종료된 이벤트 표시 설정"
+ * (hideRule: 미설정=항상 표시, "immediately"=종료 즉시, 숫자=종료 N일 뒤)을 따른다.
+ */
+export function isEventHidden(
+  ev: { startDate?: string; endDate?: string },
+  hideRule?: "immediately" | number
+): boolean {
+  const today = todayKST();
+  if (ev.startDate && ev.startDate > today) return true;
+  if (!ev.endDate || ev.endDate >= today) return false;
+  if (hideRule === undefined) return false;
+  if (hideRule === "immediately") return true;
+  return addDays(ev.endDate, hideRule) <= today;
+}

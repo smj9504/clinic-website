@@ -13,24 +13,14 @@ const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
-import type { EndedVisibility } from "@/lib/storage";
-import { todayKST, addDays, formatEventPeriod, isEventEnded } from "@/lib/date";
-
-function isHidden(ev: { startDate?: string; endDate?: string }, hideRule?: EndedVisibility) {
-  const today = todayKST();
-  if (ev.startDate && ev.startDate > today) return true;
-  if (!ev.endDate || ev.endDate >= today) return false;
-  if (hideRule === undefined) return false;
-  if (hideRule === "immediately") return true;
-  return addDays(ev.endDate, hideRule) <= today;
-}
+import { formatEventPeriod, isEventEnded, isEventHidden } from "@/lib/date";
 
 export default function EventsPage() {
   const { events: allEvents, menus, heroSlides, eventEndedHide, clinicInfo } = useSiteData();
   const fallbackImage = clinicInfo.defaultImage || FALLBACK_IMAGE;
   const t = useT();
   const banner = getBannerImage(menus, "/events", heroSlides[0]?.image);
-  const events = allEvents.filter((e) => !isHidden(e, eventEndedHide));
+  const events = allEvents.filter((e) => !isEventHidden(e, eventEndedHide));
 
   return (
     <>
