@@ -22,10 +22,11 @@ export default function SlideCarousel({
   const [animKey, setAnimKey] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ startX: number; scrollLeft: number; dragging: boolean }>({
+  const dragRef = useRef<{ startX: number; scrollLeft: number; dragging: boolean; moved: boolean }>({
     startX: 0,
     scrollLeft: 0,
     dragging: false,
+    moved: false,
   });
 
   const goTo = useCallback((index: number) => {
@@ -57,26 +58,45 @@ export default function SlideCarousel({
     return () => clearInterval(id);
   }, [count, interval, isPaused]);
 
-  // Drag-to-scroll (마우스로도 슬라이드 넘기기)
+  // Drag-to-scroll (마우스로도 슬라이드 넘기기). 터치는 브라우저 기본 스크롤에 맡긴다.
+  // 포인터 캡처는 실제로 끌기 시작했을 때만 건다 — pointerdown 즉시 캡처하면
+  // click이 트랙으로 넘어가 슬라이드 안의 링크가 눌리지 않는다.
+  const DRAG_THRESHOLD = 5;
+
   const onPointerDown = (e: React.PointerEvent) => {
     const track = trackRef.current;
-    if (!track) return;
-    dragRef.current = { startX: e.clientX, scrollLeft: track.scrollLeft, dragging: true };
-    setIsPaused(true);
-    track.setPointerCapture(e.pointerId);
+    if (!track || e.pointerType !== "mouse" || e.button !== 0) return;
+    dragRef.current = { startX: e.clientX, scrollLeft: track.scrollLeft, dragging: true, moved: false };
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     const track = trackRef.current;
-    if (!track || !dragRef.current.dragging) return;
-    const delta = e.clientX - dragRef.current.startX;
-    track.scrollLeft = dragRef.current.scrollLeft - delta;
+    const drag = dragRef.current;
+    if (!track || !drag.dragging) return;
+    const delta = e.clientX - drag.startX;
+    if (!drag.moved) {
+      if (Math.abs(delta) < DRAG_THRESHOLD) return;
+      drag.moved = true;
+      setIsPaused(true);
+      track.setPointerCapture(e.pointerId);
+    }
+    track.scrollLeft = drag.scrollLeft - delta;
+  };
+
+  // 드래그로 끝난 경우엔 이어지는 click을 막아 링크 이동을 방지한다
+  const onClickCapture = (e: React.MouseEvent) => {
+    if (!dragRef.current.moved) return;
+    dragRef.current.moved = false;
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const endDrag = () => {
-    dragRef.current.dragging = false;
+    const drag = dragRef.current;
+    if (!drag.dragging) return;
+    drag.dragging = false;
     const track = trackRef.current;
-    if (!track) return;
+    if (!track || !drag.moved) return;
     // 가장 가까운 슬라이드로 스냅 + activeIndex 동기화 (0: leading spacer)
     let closest = 0;
     let minDist = Infinity;
@@ -116,6 +136,9 @@ export default function SlideCarousel({
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerLeave={endDrag}
+        onPointerCancel={endDrag}
+        onClickCapture={onClickCapture}
+        onDragStart={(e) => e.preventDefault()}
         className={`flex ${gapClassName} overflow-x-auto cursor-grab active:cursor-grabbing select-none`}
         style={{
           scrollSnapType: "x mandatory",
