@@ -117,7 +117,7 @@ export default function AboutPage() {
       )}
 
       {/* Philosophy */}
-      <section className="pt-10 pb-20 md:pt-16 md:pb-32">
+      <section className="pt-10 md:pt-16">
         <div ref={philRef} className="reveal-fade-up container-default max-w-3xl text-center">
           <span
             className="text-xs font-semibold uppercase text-accent mb-4 block"
