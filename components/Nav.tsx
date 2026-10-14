@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -69,12 +70,17 @@ export default function Nav() {
       style={{ background: "rgba(251, 250, 247, 0.85)" }}
     >
       <div className="h-full flex items-center justify-between container-wide">
-        <Link
-          href="/"
-          className="font-display font-bold text-xl text-accent"
-          style={{ letterSpacing: "-0.04em" }}
-        >
-          {clinicInfo.name}
+        <Link href="/" className="shrink-0" aria-label={clinicInfo.name}>
+          <Image
+            src="/logo-header.png"
+            alt={clinicInfo.name}
+            width={903}
+            height={200}
+            priority
+            className={`w-auto transition-all duration-300 ease-out ${
+              scrolled ? "h-7 sm:h-8" : "h-8 sm:h-9"
+            }`}
+          />
         </Link>
 
         <ul className="hidden lg:flex gap-10 list-none">
