@@ -1,8 +1,8 @@
 /**
- * 예약 신청 관리자 알림 이메일 — Gmail SMTP (nodemailer)
+ * 예약 신청 관리자 알림 이메일 — Gmail/네이버 SMTP (nodemailer)
  *
- * 환자가 예약을 신청하면 관리자(RESERVATION_NOTIFY_EMAIL)에게 접수 내용을
- * 이메일로 발송한다. 이메일 발송은 예약 접수의 부가 기능(best-effort)이며,
+ * 환자가 예약을 신청하면 관리자(RESERVATION_NOTIFY_EMAIL, 없으면 발신 계정
+ * 자신)에게 접수 내용을 이메일로 발송한다. 이메일 발송은 예약 접수의 부가 기능(best-effort)이며,
  * 실패하더라도 예약 신청 자체(DB insert)는 정상 처리되어야 한다 — 호출부
  * (app/api/reservation-requests/route.ts)에서 try/catch로 감싸 처리한다.
  */
@@ -14,40 +14,70 @@ import { formatKRW } from "@/lib/price";
 const BRAND_ACCENT = "#6B4423";
 const BRAND_NAME = "고운빛한의원";
 
-let cachedTransporter: Transporter | null = null;
+/** 발신 메일 주소의 도메인 → SMTP 서버. */
+const SMTP_HOSTS: Record<string, string> = {
+  "gmail.com": "smtp.gmail.com",
+  "naver.com": "smtp.naver.com",
+};
+
+type Mailer = { transporter: Transporter; senderAddress: string };
+
+let cachedMailer: Mailer | null = null;
 
 /**
- * nodemailer transporter를 지연 초기화한다.
+ * nodemailer transporter와 발신 주소를 지연 초기화한다.
  *
  * `lib/supabase.ts`의 `getServiceClient()`와 동일한 패턴: 환경변수가 없는
  * 상태에서도 모듈이 로드되는 시점(빌드/다른 API 라우트 임포트 등)에는
  * 크래시하지 않고, 실제로 이메일을 보내려는 시점에만 환경변수를 읽고
  * 없으면 에러를 던진다. 이후 호출에서는 같은 커넥션 풀을 재사용해
  * 매 요청마다 새로 연결하지 않는다.
+ *
+ * 발신 계정은 MAIL_USER/MAIL_PASSWORD를 우선 쓰고, SMTP 서버는 주소의
+ * 도메인(@gmail.com / @naver.com)으로 고른다. MAIL_USER가 없으면 예전
+ * 이름인 GMAIL_USER/GMAIL_APP_PASSWORD를 쓰고 SMTP 서버도 예전처럼 항상
+ * Gmail로 둔다 — 이미 GMAIL_*로 설정된 서버(구글 워크스페이스의 자체 도메인
+ * 주소 포함)가 환경변수를 바꾸기 전까지 그대로 동작하도록. 주소와
+ * 비밀번호는 항상 같은 쌍에서 가져와, 네이버 주소에 Gmail 앱 비밀번호가
+ * 섞이지 않게 한다.
  */
-function getTransporter(): Transporter {
-  if (!cachedTransporter) {
-    const user = process.env.GMAIL_USER;
-    const pass = process.env.GMAIL_APP_PASSWORD;
+function getMailer(): Mailer {
+  if (!cachedMailer) {
+    const usesMailUser = Boolean(process.env.MAIL_USER);
+    const [user, pass] = usesMailUser
+      ? [process.env.MAIL_USER, process.env.MAIL_PASSWORD]
+      : [process.env.GMAIL_USER, process.env.GMAIL_APP_PASSWORD];
     if (!user || !pass) {
       throw new Error(
-        "GMAIL_USER 또는 GMAIL_APP_PASSWORD 환경변수가 설정되지 않았습니다."
+        "발신 메일 계정이 설정되지 않았습니다. MAIL_USER와 MAIL_PASSWORD 환경변수를 확인해 주세요."
+      );
+    }
+
+    const host = usesMailUser
+      ? SMTP_HOSTS[user.split("@")[1]?.toLowerCase() ?? ""]
+      : "smtp.gmail.com";
+    if (!host) {
+      throw new Error(
+        `발신 메일 주소(${user})의 SMTP 서버를 알 수 없습니다. @gmail.com 또는 @naver.com 전체 주소를 넣어 주세요.`
       );
     }
 
     // port 465 + secure:true (SMTPS) 사용.
     // nodemailer 공식 문서/커뮤니티 관례상 587(STARTTLS)보다 465(암묵적 TLS)가
-    // 연결이 평문으로 시작하지 않아 더 안정적이고, Gmail이 두 포트 모두
-    // 공식 지원하지만 465가 프록시/방화벽 환경에서 STARTTLS 협상 실패로
-    // 인한 간헐적 타임아웃 이슈가 적다.
-    cachedTransporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: { user, pass },
-    });
+    // 연결이 평문으로 시작하지 않아 더 안정적이고, Gmail·네이버 모두 465를
+    // 공식 지원하며 프록시/방화벽 환경에서 STARTTLS 협상 실패로 인한
+    // 간헐적 타임아웃 이슈가 적다.
+    cachedMailer = {
+      transporter: nodemailer.createTransport({
+        host,
+        port: 465,
+        secure: true,
+        auth: { user, pass },
+      }),
+      senderAddress: user,
+    };
   }
-  return cachedTransporter;
+  return cachedMailer;
 }
 
 function escapeHtml(value: string): string {
@@ -209,20 +239,21 @@ export async function sendReservationNotificationEmail(
   reservation: ReservationRequest,
   origin?: string | null
 ): Promise<void> {
-  const to = (process.env.RESERVATION_NOTIFY_EMAIL || "minjeesong95@gmail.com")
+  // 네이버 SMTP는 로그인한 계정과 다른 발신 주소를 거부하므로, 발신 주소는
+  // 항상 로그인 계정 주소 그대로 쓴다. 받는 사람을 따로 지정하지 않으면
+  // 그 계정 메일함으로 보낸다.
+  const { transporter, senderAddress } = getMailer();
+  const to = (process.env.RESERVATION_NOTIFY_EMAIL || senderAddress)
     .split(",")
     .map((email) => email.trim())
     .filter(Boolean);
-  const from = `"${BRAND_NAME}" <${process.env.GMAIL_USER}>`;
-
   const base = origin || process.env.NEXT_PUBLIC_SITE_URL || null;
   const adminUrl = base
     ? `${base.replace(/\/$/, "")}/admin/reservations?id=${encodeURIComponent(reservation.id)}`
     : null;
 
-  const transporter = getTransporter();
   await transporter.sendMail({
-    from,
+    from: `"${BRAND_NAME}" <${senderAddress}>`,
     to,
     subject: `[${BRAND_NAME}] 새 예약 신청 - ${reservation.name}님`,
     text: buildTextBody(reservation, adminUrl),
