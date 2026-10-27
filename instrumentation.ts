@@ -15,6 +15,8 @@ let schedulerStarted = false;
 
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  // 시그마 연동이 꺼져 있으면 동기화할 대상이 없다 (lib/reservations.ts의 SIGMA_ENABLED)
+  if (process.env.NEXT_PUBLIC_SIGMA_ENABLED !== "true") return;
   if (schedulerStarted) return;
   schedulerStarted = true;
 

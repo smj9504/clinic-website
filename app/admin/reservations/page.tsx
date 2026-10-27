@@ -13,7 +13,12 @@ import {
   fetchReservationSyncLogs,
   type ReservationSyncLogRow,
 } from "@/lib/reservationsApi";
-import { isValidSigmaDateTime, type ReservationRequest, type ReservationStatus } from "@/lib/reservations";
+import {
+  SIGMA_ENABLED,
+  isValidSigmaDateTime,
+  type ReservationRequest,
+  type ReservationStatus,
+} from "@/lib/reservations";
 import { formatKRW } from "@/lib/price";
 import { useSiteData } from "@/lib/useSiteData";
 import ReservationSlotPicker from "@/components/admin/ReservationSlotPicker";
@@ -100,7 +105,7 @@ function ReservationsAdminPageInner() {
 
   useEffect(() => {
     load();
-    loadSyncLogs();
+    if (SIGMA_ENABLED) loadSyncLogs();
   }, []);
 
   const runSync = async () => {
@@ -121,6 +126,12 @@ function ReservationsAdminPageInner() {
   };
 
   const startConfirming = (r: ReservationRequest) => {
+    // 시그마 연동이 꺼져 있으면 일시 입력 없이 상태만 바로 바꾼다 —
+    // 병원 시스템 등록과 환자 안내는 직원이 직접 한다.
+    if (!SIGMA_ENABLED) {
+      setStatus(r.id, "confirmed");
+      return;
+    }
     setConfirmError(null);
     setConfirmingId(r.id);
     // 기존 값이 있으면(재확정 등) 그대로, 없으면 신청자가 남긴 희망 날짜를 기본값으로 제시한다.
@@ -145,7 +156,7 @@ function ReservationsAdminPageInner() {
     const target = reservations.find((r) => r.id === focusId);
     if (!target) return;
     setDidAutoFocus(true);
-    if (target.status === "pending") startConfirming(target);
+    if (SIGMA_ENABLED && target.status === "pending") startConfirming(target);
     requestAnimationFrame(() => {
       focusedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
@@ -230,7 +241,7 @@ function ReservationsAdminPageInner() {
         description="환자가 홈페이지에서 신청한 예약을 확인하고, 병원 시스템에 등록한 뒤 상태를 처리하세요."
       />
 
-      {!setupRequired && (
+      {SIGMA_ENABLED && !setupRequired && (
         <Card className="p-4 mb-6">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>

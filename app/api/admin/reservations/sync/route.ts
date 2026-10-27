@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminRequest } from "@/lib/adminAuth";
 import { getServiceClient } from "@/lib/supabase";
 import { syncReservationsWithSigma } from "@/lib/reservationSync";
-import { isMissingTableError, toReservation, type ReservationRow } from "@/lib/reservations";
+import { SIGMA_ENABLED, isMissingTableError, toReservation, type ReservationRow } from "@/lib/reservations";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,10 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   const denied = await requireAdminRequest(request);
   if (denied) return denied;
+
+  if (!SIGMA_ENABLED) {
+    return NextResponse.json({ error: "병원 시스템(시그마) 연동이 꺼져 있습니다." }, { status: 409 });
+  }
 
   const summary = await syncReservationsWithSigma("manual");
 

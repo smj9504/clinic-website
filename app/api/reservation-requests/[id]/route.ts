@@ -4,6 +4,7 @@ import { requireAdminRequest } from "@/lib/adminAuth";
 import { sendReservationCancelledSms } from "@/lib/sms";
 import { createSigmaReservation, cancelSigmaReservation } from "@/lib/sigma";
 import {
+  SIGMA_ENABLED,
   isValidSigmaDateTime,
   toReservation,
   type ReservationRow,
@@ -36,6 +37,10 @@ const ALLOWED_STATUSES: ReservationStatus[] = ["pending", "confirmed", "cancelle
  * 예약이 등록돼 있었다면(sigma_reservation_uuid 존재) 시그마 취소
  * API도 함께 호출한다. 이것도 실패 시 DB를 바꾸지 않는다 — 홈페이지만
  * 취소로 표시되고 병원 시스템에는 예약이 그대로 남으면 안 된다.
+ *
+ * 위 시그마 연동은 SIGMA_ENABLED일 때만 동작한다. 꺼져 있으면 확정·취소 모두
+ * DB 상태만 바꾸고 reservationDt도 요구하지 않는다 — 병원 시스템 등록과
+ * 환자 안내는 직원이 직접 한다(확정 문자도 보내지 않는다).
  */
 export async function PATCH(request: NextRequest, { params }: Params) {
   const denied = await requireAdminRequest(request);
@@ -50,7 +55,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (status !== undefined && !ALLOWED_STATUSES.includes(status)) {
     return NextResponse.json({ error: "올바르지 않은 상태 값입니다" }, { status: 400 });
   }
-  if (status === "confirmed") {
+  if (status === "confirmed" && SIGMA_ENABLED) {
     if (!reservationDt) {
       return NextResponse.json({ error: "확정할 예약 일시를 입력해 주세요." }, { status: 400 });
     }
@@ -95,7 +100,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   // 확정 처리는 시그마 호출이 성공해야만 진행한다 — 실패 시 DB를 건드리지 않고 즉시 에러를 반환한다.
   let sigmaFields: { sigma_reservation_uuid: string; sigma_reservation_dt: string } | null = null;
-  if (status === "confirmed" && statusActuallyChanges && existingRow) {
+  if (SIGMA_ENABLED && status === "confirmed" && statusActuallyChanges && existingRow) {
     const sigmaResult = await createSigmaReservation({
       reservationDt: reservationDt!,
       name: existingRow.name,
@@ -120,7 +125,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   // 표시하면 병원 시스템에는 예약이 그대로 남아 이중예약을 놓칠 수 있다.
   // 시그마 자체는 이미 취소된 예약에 다시 취소 호출해도 현재 상태를 그대로
   // 반환하므로(멱등), previousStatus가 이미 cancelled여도 안전하게 재호출된다.
-  if (status === "cancelled" && statusActuallyChanges && existingRow?.sigma_reservation_uuid) {
+  if (SIGMA_ENABLED && status === "cancelled" && statusActuallyChanges && existingRow?.sigma_reservation_uuid) {
     const cancelResult = await cancelSigmaReservation(existingRow.sigma_reservation_uuid);
     if (!cancelResult.ok) {
       return NextResponse.json(

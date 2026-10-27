@@ -72,6 +72,16 @@ export function toReservation(row: ReservationRow): ReservationRequest {
   };
 }
 
+/**
+ * 시그마(병원 내부 예약 시스템) 연동 사용 여부 — NEXT_PUBLIC_SIGMA_ENABLED=true일 때만 켠다.
+ *
+ * 시그마는 병원 내부망에만 있어 Vercel 배포 환경에서는 접근할 수 없다. 꺼져
+ * 있으면 "확정 처리"는 홈페이지 상태만 바꾸고(병원 시스템 등록·환자 안내는
+ * 직원이 직접 한다), 시그마 취소 연동·상태 동기화도 실행하지 않는다.
+ * 서버·클라이언트가 같은 값을 보도록 NEXT_PUBLIC_ 환경변수를 쓴다(빌드 시 고정).
+ */
+export const SIGMA_ENABLED = process.env.NEXT_PUBLIC_SIGMA_ENABLED === "true";
+
 /** 시그마 API가 요구하는 "YYYY-MM-DD HH:MM" 형식 검증 */
 export function isValidSigmaDateTime(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(value.trim());
