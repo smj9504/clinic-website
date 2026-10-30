@@ -8,11 +8,18 @@
  */
 
 import nodemailer, { type Transporter } from "nodemailer";
-import type { ReservationRequest } from "@/lib/reservations";
+import { SIGMA_ENABLED, type ReservationRequest } from "@/lib/reservations";
 import { formatKRW } from "@/lib/price";
 
 const BRAND_ACCENT = "#6B4423";
 const BRAND_NAME = "고운빛한의원";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gowoonbit-kmc.com";
+
+/**
+ * 관리자 페이지 링크 문구. 시그마 연동이 꺼져 있으면 "확정 처리"가 병원
+ * 시스템에 예약을 만들지 않으므로, 확정이 아니라 확인하러 가는 링크로 안내한다.
+ */
+const ADMIN_LINK_LABEL = SIGMA_ENABLED ? "이 예약 확정 처리하기" : "관리자 페이지에서 예약 확인하기";
 
 /** 발신 메일 주소의 도메인 → SMTP 서버. */
 const SMTP_HOSTS: Record<string, string> = {
@@ -132,7 +139,7 @@ function buildHtmlBody(reservation: ReservationRequest, adminUrl: string | null)
   const linkHtml = adminUrl
     ? `<p style="margin:24px 0 0;">
          <a href="${escapeHtml(adminUrl)}" style="display:inline-block;padding:10px 18px;background:${BRAND_ACCENT};color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;">
-           이 예약 확정 처리하기
+           ${ADMIN_LINK_LABEL}
          </a>
        </p>`
     : "";
@@ -222,7 +229,7 @@ function buildTextBody(reservation: ReservationRequest, adminUrl: string | null)
   lines.push(`접수 시각: ${createdAt}`);
 
   if (adminUrl) {
-    lines.push("", `이 예약 확정 처리하기: ${adminUrl}`);
+    lines.push("", `${ADMIN_LINK_LABEL}: ${adminUrl}`);
   }
 
   return lines.join("\n");
@@ -231,13 +238,14 @@ function buildTextBody(reservation: ReservationRequest, adminUrl: string | null)
 /**
  * 새 예약 신청 접수 알림을 관리자 이메일로 발송한다.
  *
+ * 관리자 페이지 링크는 요청의 origin이 아니라 사이트 주소(NEXT_PUBLIC_SITE_URL)로
+ * 만든다 — 로컬 개발 서버나 프록시 뒤에서 받은 요청은 origin이
+ * http://localhost:3000이 되어, 메일을 받은 관리자가 링크를 열 수 없기 때문이다.
+ *
  * @param reservation 방금 접수된 예약 신청 (DB insert 후 변환된 결과)
- * @param origin 요청의 origin(예: https://gounbitclinic.com). 있으면 관리자
- *   페이지 절대 URL을 이메일에 포함시키는 데 사용한다. 없으면 링크를 생략한다.
  */
 export async function sendReservationNotificationEmail(
-  reservation: ReservationRequest,
-  origin?: string | null
+  reservation: ReservationRequest
 ): Promise<void> {
   // 네이버 SMTP는 로그인한 계정과 다른 발신 주소를 거부하므로, 발신 주소는
   // 항상 로그인 계정 주소 그대로 쓴다. 받는 사람을 따로 지정하지 않으면
@@ -247,10 +255,7 @@ export async function sendReservationNotificationEmail(
     .split(",")
     .map((email) => email.trim())
     .filter(Boolean);
-  const base = origin || process.env.NEXT_PUBLIC_SITE_URL || null;
-  const adminUrl = base
-    ? `${base.replace(/\/$/, "")}/admin/reservations?id=${encodeURIComponent(reservation.id)}`
-    : null;
+  const adminUrl = `${SITE_URL.replace(/\/$/, "")}/admin/reservations?id=${encodeURIComponent(reservation.id)}`;
 
   await transporter.sendMail({
     from: `"${BRAND_NAME}" <${senderAddress}>`,

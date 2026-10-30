@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
   // 전송 후 백그라운드 작업이 중간에 끊길 수 있어 응답 전에 await로 완료를
   // 기다리되, 실패는 로그만 남기고 무시한다.
   try {
-    await sendReservationNotificationEmail(reservation, request.nextUrl.origin);
+    await sendReservationNotificationEmail(reservation);
   } catch (emailError) {
     console.error("예약 신청 알림 이메일 발송 실패:", emailError);
   }
