@@ -71,7 +71,7 @@ export default function EventsPage() {
                   className="group block"
                 >
                   <EventImage
-                    ratio={16 / 10}
+                    ratio={16 / 9}
                     wrapperClassName="overflow-hidden rounded mb-6 bg-bg-alt"
                     className={`transition-transform duration-700 ease-out group-hover:scale-[1.04] ${ended ? "grayscale" : ""}`}
                     src={event.image || fallbackImage}

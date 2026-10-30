@@ -281,13 +281,12 @@ export default function EventsAdminPage() {
             <div>
               <Field
                 label="이벤트 이미지"
-                hint="이벤트 목록·상세(16:10)와 팝업 PC(16:9), 그리고 모바일용 이미지를 따로 넣지 않았을 때의 모바일 화면 전반에 쓰입니다. 크롭 위치는 한 지점으로 이 미리보기들에 모두 적용되니, 아래 미리보기를 확인하며 위치를 정하세요. 권장 크기 1200×900 이상"
+                hint="이벤트 목록·상세·팝업 PC(모두 16:9), 그리고 모바일용 이미지를 따로 넣지 않았을 때의 모바일 화면 전반에 쓰입니다. 크롭 위치는 한 지점으로 이 미리보기들에 모두 적용되니, 아래 미리보기를 확인하며 위치를 정하세요. 권장 크기 1920×1080(16:9)"
               >
                 <ImageInput
                   value={draft.image}
                   onChange={(v) => setDraft((p) => ({ ...p, image: v }))}
-                  aspectRatio="16 / 10"
-                  extraRatios={[{ label: "팝업 · PC 16:9", ratio: "16 / 9" }]}
+                  aspectRatio="16 / 9"
                 />
               </Field>
               <Field

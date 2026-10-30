@@ -32,7 +32,7 @@ export default function EventsSection() {
       className="group block h-full card-lift rounded-lg overflow-hidden bg-bg"
     >
       <EventImage
-        ratio={16 / 10}
+        ratio={16 / 9}
         wrapperClassName="overflow-hidden bg-bg-alt"
         className={`transition-transform duration-700 ease-out group-hover:scale-[1.06] ${ended ? "grayscale" : ""}`}
         src={event.image || fallbackImage}

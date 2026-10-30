@@ -64,7 +64,7 @@ export default function EventImagePreview({
   const main: Picked = image ? { src: image, source: "image" } : { src: fallbackImage, source: "fallback" };
   // 모바일 화면에서 모바일용 이미지가 있으면 그걸 4:5로, 없으면 이벤트 이미지를 그대로 쓴다
   const card: Picked & { ratio: string } =
-    isMobile && mobileImage ? { src: mobileImage, source: "mobileImage", ratio: "4 / 5" } : { ...main, ratio: "16 / 10" };
+    isMobile && mobileImage ? { src: mobileImage, source: "mobileImage", ratio: "4 / 5" } : { ...main, ratio: "16 / 9" };
   const popup: Picked & { ratio: string } =
     isMobile && mobileImage ? { src: mobileImage, source: "mobileImage", ratio: "4 / 5" } : { ...main, ratio: isMobile ? "4 / 5" : "16 / 9" };
   const body: (Picked & { ratio: string }) =
