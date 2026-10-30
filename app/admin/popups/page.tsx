@@ -13,15 +13,9 @@ import {
   Toast,
 } from "@/components/admin/ui";
 
-function extractMonth(dateStr: string): string {
-  const m = dateStr.match(/(\d{4})[.\-/](\d{2})/);
-  return m ? `${m[1]}.${m[2]}` : "";
-}
-
-function isCurrentMonth(dateStr: string): boolean {
-  const now = new Date();
-  const current = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}`;
-  return extractMonth(dateStr) === current;
+/** 시작일("YYYY-MM-DD")이 이번 달(KST)인지. 시작일이 없으면 판단할 수 없으므로 false. */
+function isCurrentMonth(startDate?: string): boolean {
+  return !!startDate && startDate.slice(0, 7) === todayKST().slice(0, 7);
 }
 
 function eventToItem(ev: Event): PopupItem {
@@ -131,8 +125,8 @@ export default function PopupAdminPage() {
 
   // Sort: current month first (종료된 이벤트는 이미 제외됨)
   const sortedEvents = [...activeEvents].sort((a, b) => {
-    const aCurrent = isCurrentMonth(a.date) ? 0 : 1;
-    const bCurrent = isCurrentMonth(b.date) ? 0 : 1;
+    const aCurrent = isCurrentMonth(a.startDate) ? 0 : 1;
+    const bCurrent = isCurrentMonth(b.startDate) ? 0 : 1;
     return aCurrent - bCurrent;
   });
 
@@ -183,7 +177,7 @@ export default function PopupAdminPage() {
           <div className="space-y-2">
             {sortedEvents.map((ev) => {
               const checked = selectedIds.has(ev.id);
-              const current = isCurrentMonth(ev.date);
+              const current = isCurrentMonth(ev.startDate);
               return (
                 <label
                   key={ev.id}
@@ -210,8 +204,10 @@ export default function PopupAdminPage() {
                         <span className="text-ink-muted font-normal ml-2">{ev.subtitle}</span>
                       )}
                     </div>
-                    <div className="text-[0.65rem] text-ink-muted uppercase" style={{ letterSpacing: "0.1em" }}>
-                      {ev.date}
+                    <div className="text-[0.65rem] text-ink-muted" style={{ letterSpacing: "0.03em" }}>
+                      {ev.startDate || ""}
+                      {ev.startDate && ev.endDate ? " ~ " : ""}
+                      {ev.endDate || ""}
                     </div>
                   </div>
                   {current && (
