@@ -72,10 +72,10 @@ export async function sendVerificationCodeSms(phone: string, code: string): Prom
   await sendSms(phone, `[${BRAND_NAME}] 인증번호는 [${code}]입니다. 3분 이내에 입력해 주세요.`);
 }
 
-/** 예약 신청 접수 알림 */
+/** 상담 신청 접수 알림 */
 export async function sendReservationCreatedSms(reservation: ReservationRequest): Promise<void> {
   const desiredTime = reservation.desiredTime?.trim() || "상관없음";
-  const text = `[${BRAND_NAME}] ${reservation.name}님, 예약 신청이 접수되었습니다. 희망일시: ${reservation.desiredDate} ${desiredTime}. 확인 후 안내드리겠습니다.`;
+  const text = `[${BRAND_NAME}] ${reservation.name}님, 상담 신청이 접수되었습니다. 희망일시: ${reservation.desiredDate} ${desiredTime}. 확인 후 안내드리겠습니다.`;
   await sendSms(reservation.phone, text);
 }
 
