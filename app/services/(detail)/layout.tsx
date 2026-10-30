@@ -11,6 +11,7 @@ import { categoryText, isEventService, isVideoUrl, serviceText } from "@/lib/ser
 import { useSiteData } from "@/lib/useSiteData";
 import { useLocale, useT } from "@/lib/i18n";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+import { isEventHidden } from "@/lib/date";
 
 const FALLBACK_IMAGE = "/gowoonbit.jpg";
 
@@ -37,11 +38,17 @@ export default function ServiceDetailLayout({ children }: { children: React.Reac
   const id = typeof params?.id === "string" ? params.id : undefined;
 
   const catalog = useServiceCatalog();
-  const { clinicInfo } = useSiteData();
+  const { clinicInfo, events, eventEndedHide } = useSiteData();
   const { locale } = useLocale();
   const t = useT();
 
   const fallbackImage = clinicInfo.defaultImage || FALLBACK_IMAGE;
+
+  // 목록 페이지(app/services/page.tsx)와 같은 기준 — 이벤트 적용 시술이나
+  // 방문자에게 보이는 이벤트가 하나라도 있으면 "이벤트" 탭을 노출한다
+  const showEventTab =
+    catalog.services.some(isEventService) ||
+    events.some((e) => !isEventHidden(e, eventEndedHide));
 
   const currentService = catalog.services.find((s) => s.id === id);
   const currentSubcategory = currentService
@@ -108,6 +115,7 @@ export default function ServiceDetailLayout({ children }: { children: React.Reac
                 }}
                 locale={locale}
                 t={t}
+                hasEventServices={showEventTab}
               />
             </div>
 
