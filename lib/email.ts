@@ -87,6 +87,14 @@ function getMailer(): Mailer {
   return cachedMailer;
 }
 
+/** 쉼표로 구분된 수신 주소 목록을 배열로 바꾼다. */
+function parseRecipients(value: string): string[] {
+  return value
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -251,10 +259,7 @@ export async function sendReservationNotificationEmail(
   // 항상 로그인 계정 주소 그대로 쓴다. 받는 사람을 따로 지정하지 않으면
   // 그 계정 메일함으로 보낸다.
   const { transporter, senderAddress } = getMailer();
-  const to = (process.env.RESERVATION_NOTIFY_EMAIL || senderAddress)
-    .split(",")
-    .map((email) => email.trim())
-    .filter(Boolean);
+  const to = parseRecipients(process.env.RESERVATION_NOTIFY_EMAIL || senderAddress);
   const adminUrl = `${SITE_URL.replace(/\/$/, "")}/admin/reservations?id=${encodeURIComponent(reservation.id)}`;
 
   await transporter.sendMail({
@@ -263,5 +268,44 @@ export async function sendReservationNotificationEmail(
     subject: `[${BRAND_NAME}] 새 예약 신청 - ${reservation.name}님`,
     text: buildTextBody(reservation, adminUrl),
     html: buildHtmlBody(reservation, adminUrl),
+  });
+}
+
+/**
+ * 문자(솔라피) 발송 실패를 관리자 이메일로 알린다.
+ *
+ * 잔액 부족·발신번호 문제 등으로 문자가 안 나가면 환자는 인증번호를 받지
+ * 못해 상담 신청 자체를 할 수 없는데, 그동안은 서버 로그 말고는 알 방법이
+ * 없었다. 이메일은 솔라피와 무관한 경로라 문자가 막혀도 도착한다.
+ *
+ * 받는 사람은 SMS_ALERT_EMAIL → RESERVATION_NOTIFY_EMAIL → 발신 계정 순으로 정한다.
+ *
+ * @param purpose 실패한 문자의 종류(예: "휴대폰 인증번호")
+ * @param reason 솔라피가 돌려준 실패 사유. 수신번호는 담지 않는다.
+ */
+export async function sendSmsFailureAlertEmail(purpose: string, reason: string): Promise<void> {
+  const { transporter, senderAddress } = getMailer();
+  const to = parseRecipients(
+    process.env.SMS_ALERT_EMAIL || process.env.RESERVATION_NOTIFY_EMAIL || senderAddress
+  );
+
+  const text = [
+    `${BRAND_NAME} 홈페이지에서 보내는 문자가 발송되지 않았습니다.`,
+    "",
+    `문자 종류: ${purpose}`,
+    `실패 사유: ${reason}`,
+    `발생 시각: ${formatCreatedAt(new Date().toISOString())}`,
+    "",
+    "인증번호 문자가 나가지 않으면 환자가 상담 신청을 할 수 없습니다.",
+    "솔라피 콘솔에서 잔액과 발신번호 상태를 확인해 주세요.",
+    "",
+    "같은 알림은 1시간에 한 번만 보냅니다.",
+  ].join("\n");
+
+  await transporter.sendMail({
+    from: `"${BRAND_NAME}" <${senderAddress}>`,
+    to,
+    subject: `[${BRAND_NAME}] 문자 발송 실패 - 확인이 필요합니다`,
+    text,
   });
 }
