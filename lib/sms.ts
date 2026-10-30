@@ -1,13 +1,14 @@
 /**
  * SMS 발송 — 솔라피(Solapi)
  *
- * 용도 2가지:
+ * 용도 3가지:
  *   1) 본인인증 인증번호 발송 (app/api/auth/sms/send) — 필수 성공 경로.
  *      실패하면 인증번호가 실제로 전송되지 않은 것이므로 호출부가 에러를
  *      그대로 사용자에게 알려야 한다 (best-effort 아님).
- *   2) 상담 신청 접수 알림 — best-effort 부가 기능. 실패해도 신청 처리
- *      (DB insert) 자체는 정상 진행되어야 하므로 호출부에서 try/catch로
+ *   2) 상담 신청 접수 알림(환자에게) — best-effort 부가 기능. 실패해도 신청
+ *      처리(DB insert) 자체는 정상 진행되어야 하므로 호출부에서 try/catch로
  *      감싼다. lib/email.ts와 동일한 계약.
+ *   3) 새 상담 신청 도착 알림(관리자에게) — 2)와 같은 best-effort 계약.
  *
  * 확정 알림은 여기서 보내지 않는다 — 관리자가 확정 처리를 하면 시그마
  * (한의원 내부 예약 시스템, lib/sigma.ts)에 실제 예약이 생성되고, 그
@@ -117,4 +118,29 @@ export async function sendReservationCreatedSms(reservation: ReservationRequest)
   const desiredTime = reservation.desiredTime?.trim() || "상관없음";
   const text = `[${BRAND_NAME}] ${reservation.name}님, 상담 신청이 접수되었습니다. 희망일시: ${reservation.desiredDate} ${desiredTime}. 확인 후 안내드리겠습니다.`;
   await sendSms(reservation.phone, text, "상담 신청 접수 안내");
+}
+
+/**
+ * 새 상담 신청 도착 알림 — 관리자 휴대폰으로 보낸다.
+ *
+ * 받을 번호는 RESERVATION_NOTIFY_PHONE(쉼표로 여러 개)이고, 비어 있으면
+ * 보내지 않는다. 신청이 왔다는 사실과 바로 연락할 수 있는 정보만 담아 단문
+ * (90바이트)에 들어가게 한다 — 직원 휴대폰으로 가는 내부 알림이라 [병원명]
+ * 머리말은 뺐다. 자세한 내용은 이메일 알림이나 관리자 페이지에서 확인한다.
+ * 한 번호가 실패해도 나머지 번호에는 보낸다.
+ */
+export async function sendReservationAdminSms(reservation: ReservationRequest): Promise<void> {
+  const phones = (process.env.RESERVATION_NOTIFY_PHONE ?? "")
+    .split(",")
+    .map((phone) => phone.trim())
+    .filter(Boolean);
+  if (phones.length === 0) return;
+
+  const desiredTime = reservation.desiredTime?.trim() || "상관없음";
+  const text = `새 상담 신청: ${reservation.name}님 ${reservation.phone} / 희망 ${reservation.desiredDate} ${desiredTime}`;
+  const results = await Promise.allSettled(
+    phones.map((phone) => sendSms(phone, text, "관리자 새 상담 신청 알림"))
+  );
+  const failed = results.find((result) => result.status === "rejected");
+  if (failed) throw failed.reason;
 }

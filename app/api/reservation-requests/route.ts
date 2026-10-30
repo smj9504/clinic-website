@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { requireAdminRequest } from "@/lib/adminAuth";
 import { sendReservationNotificationEmail } from "@/lib/email";
-import { sendReservationCreatedSms } from "@/lib/sms";
+import { sendReservationAdminSms, sendReservationCreatedSms } from "@/lib/sms";
 import {
   isMissingTableError,
   toReservation,
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
   const reservation = toReservation(data as ReservationRow);
 
-  // 관리자 알림 이메일 · 환자 알림 SMS — 둘 다 best-effort 부가 기능.
+  // 관리자 알림 이메일 · 환자 알림 SMS · 관리자 알림 SMS — 모두 best-effort 부가 기능.
   // 예약 신청(DB insert)은 이미 성공했으므로, 발송이 실패해도 환자에게는
   // 정상적으로 접수 완료 응답을 돌려줘야 한다. 서버리스 환경에서는 응답
   // 전송 후 백그라운드 작업이 중간에 끊길 수 있어 응답 전에 await로 완료를
@@ -119,6 +119,11 @@ export async function POST(request: NextRequest) {
     await sendReservationCreatedSms(reservation);
   } catch (smsError) {
     console.error("예약 신청 알림 SMS 발송 실패:", smsError);
+  }
+  try {
+    await sendReservationAdminSms(reservation);
+  } catch (smsError) {
+    console.error("관리자 새 상담 신청 알림 SMS 발송 실패:", smsError);
   }
 
   return NextResponse.json({ reservation }, { status: 201 });
