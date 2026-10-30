@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { requireAdminRequest } from "@/lib/adminAuth";
-import { sendReservationCancelledSms } from "@/lib/sms";
 import { createSigmaReservation, cancelSigmaReservation } from "@/lib/sigma";
 import {
   SIGMA_ENABLED,
@@ -29,9 +28,9 @@ const ALLOWED_STATUSES: ReservationStatus[] = ["pending", "confirmed", "cancelle
  * 시스템에 실제로 예약이 생성되지 않았는데 홈페이지만 "확정"으로
  * 표시하면 안 된다.
  *
- * 확정 알림 SMS는 더 이상 여기서 보내지 않는다 — 시그마에 예약이
- * 생성되면 병원 내부 시스템이 자체적으로 문자를 보낸다. 취소 알림은
- * 시그마와 무관한 홈페이지 자체 기능이라 그대로 유지한다.
+ * 확정·취소 알림 SMS는 여기서 보내지 않는다 — 시그마에 예약이 생성되면
+ * 병원 내부 시스템이 자체적으로 확정 문자를 보내고, 취소는 환자에게
+ * 문자로 알리지 않기로 했다.
  *
  * status를 "cancelled"로 바꾸는 요청에서, 그 신청이 이미 시그마에
  * 예약이 등록돼 있었다면(sigma_reservation_uuid 존재) 시그마 취소
@@ -150,24 +149,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const reservation = toReservation(data as ReservationRow);
-
-  // 취소 알림 SMS — best-effort. 아래 3가지 조건이 모두 참일 때만 보낸다:
-  //   (1) 이번 요청에 status가 실제로 포함됨 (adminNote만 바꾼 요청 제외)
-  //   (2) 이전 상태 조회에 성공함
-  //   (3) 이전 값과 실제로 다름 — 이미 cancelled인 건을 실수로 다시
-  //       "취소 처리" 눌러도 재발송되지 않도록 방어한다
-  //       (app/admin/reservations/page.tsx의 setStatus가 버튼 클릭마다
-  //       무조건 PATCH를 호출하는 구조라 이 방어가 필요하다)
-  if (status === "cancelled" && statusActuallyChanges) {
-    try {
-      await sendReservationCancelledSms(reservation);
-    } catch (smsError) {
-      console.error("예약 취소 알림 SMS 발송 실패:", smsError);
-    }
-  }
-
-  return NextResponse.json({ reservation });
+  return NextResponse.json({ reservation: toReservation(data as ReservationRow) });
 }
 
 /**

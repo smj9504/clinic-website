@@ -21,8 +21,7 @@
 
 import { getServiceClient } from "@/lib/supabase";
 import { listSigmaReservations } from "@/lib/sigma";
-import { sendReservationCancelledSms } from "@/lib/sms";
-import { toReservation, type ReservationRow } from "@/lib/reservations";
+import type { ReservationRow } from "@/lib/reservations";
 
 export type ReservationSyncTrigger = "scheduled" | "manual";
 
@@ -114,11 +113,6 @@ export async function syncReservationsWithSigma(
           sigmaReservationDt: row.sigma_reservation_dt ?? "",
           reason: "cancelled_in_sigma",
         });
-        try {
-          await sendReservationCancelledSms(toReservation(updated as ReservationRow));
-        } catch (smsError) {
-          console.error("동기화 취소 알림 SMS 발송 실패:", smsError);
-        }
       }
     }
   }

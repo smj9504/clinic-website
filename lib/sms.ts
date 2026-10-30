@@ -5,13 +5,14 @@
  *   1) 본인인증 인증번호 발송 (app/api/auth/sms/send) — 필수 성공 경로.
  *      실패하면 인증번호가 실제로 전송되지 않은 것이므로 호출부가 에러를
  *      그대로 사용자에게 알려야 한다 (best-effort 아님).
- *   2) 예약 상태 변경 알림(생성/취소) — best-effort 부가 기능. 실패해도
- *      예약 처리(DB insert/update) 자체는 정상 진행되어야 하므로 호출부에서
- *      try/catch로 감싼다. lib/email.ts와 동일한 계약.
+ *   2) 상담 신청 접수 알림 — best-effort 부가 기능. 실패해도 신청 처리
+ *      (DB insert) 자체는 정상 진행되어야 하므로 호출부에서 try/catch로
+ *      감싼다. lib/email.ts와 동일한 계약.
  *
  * 확정 알림은 여기서 보내지 않는다 — 관리자가 확정 처리를 하면 시그마
  * (한의원 내부 예약 시스템, lib/sigma.ts)에 실제 예약이 생성되고, 그
- * 병원 시스템이 자체적으로 환자에게 확정 문자를 보낸다.
+ * 병원 시스템이 자체적으로 환자에게 확정 문자를 보낸다. 취소는 환자에게
+ * 문자로 알리지 않는다.
  */
 
 import { SolapiMessageService, MessageNotReceivedError } from "solapi";
@@ -76,11 +77,5 @@ export async function sendVerificationCodeSms(phone: string, code: string): Prom
 export async function sendReservationCreatedSms(reservation: ReservationRequest): Promise<void> {
   const desiredTime = reservation.desiredTime?.trim() || "상관없음";
   const text = `[${BRAND_NAME}] ${reservation.name}님, 상담 신청이 접수되었습니다. 희망일시: ${reservation.desiredDate} ${desiredTime}. 확인 후 안내드리겠습니다.`;
-  await sendSms(reservation.phone, text);
-}
-
-/** 예약 취소 알림 */
-export async function sendReservationCancelledSms(reservation: ReservationRequest): Promise<void> {
-  const text = `[${BRAND_NAME}] ${reservation.name}님, 예약이 취소되었습니다. 재예약을 원하시면 홈페이지 또는 전화로 문의해 주세요.`;
   await sendSms(reservation.phone, text);
 }
