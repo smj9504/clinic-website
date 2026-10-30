@@ -58,9 +58,11 @@ export async function POST(request: NextRequest) {
   const code = generateVerificationCode();
   const expiresAt = new Date(Date.now() + codeTtlSec() * 1000).toISOString();
 
-  const { error: insertError } = await supabase
+  const { data: inserted, error: insertError } = await supabase
     .from("sms_verifications")
-    .insert({ phone, code, expires_at: expiresAt });
+    .insert({ phone, code, expires_at: expiresAt })
+    .select("id")
+    .single();
 
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
@@ -72,6 +74,9 @@ export async function POST(request: NextRequest) {
     await sendVerificationCodeSms(phone, code);
   } catch (smsError) {
     console.error("인증번호 SMS 발송 실패:", smsError);
+    // 실제로 문자가 나가지 않았으므로 발송 이력을 지운다 — 남겨두면 위 쿨다운에
+    // 걸려 사용자가 바로 다시 시도하지 못한다.
+    await supabase.from("sms_verifications").delete().eq("id", inserted.id);
     return NextResponse.json(
       { error: "인증번호 발송에 실패했습니다. 잠시 후 다시 시도해 주세요." },
       { status: 500 }

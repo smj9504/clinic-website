@@ -14,7 +14,7 @@
  * 병원 시스템이 자체적으로 환자에게 확정 문자를 보낸다.
  */
 
-import { SolapiMessageService } from "solapi";
+import { SolapiMessageService, MessageNotReceivedError } from "solapi";
 import type { ReservationRequest } from "@/lib/reservations";
 
 const BRAND_NAME = "고운빛한의원";
@@ -51,7 +51,20 @@ function getSenderPhone(): string {
 /** 내부 공통 발송 함수 — 개별 함수들이 이걸 감싼다 */
 async function sendSms(to: string, text: string): Promise<void> {
   const service = getMessageService();
-  await service.send({ to, from: getSenderPhone(), text });
+  try {
+    await service.send({ to, from: getSenderPhone(), text });
+  } catch (err) {
+    // 접수 실패(발신번호 미등록·잔액 부족 등)의 실제 사유는 failedMessageList 안에만 있고
+    // 에러 메시지에는 실패 개수만 찍힌다 — 로그에서 원인이 보이도록 사유를 꺼내 다시 던진다.
+    // 수신번호(to)는 개인정보라 로그에 남기지 않는다.
+    if (err instanceof MessageNotReceivedError) {
+      const reasons = err.failedMessageList
+        .map((m) => `[${m.statusCode}] ${m.statusMessage}`)
+        .join(", ");
+      throw new Error(`솔라피 메시지 접수 실패: ${reasons}`);
+    }
+    throw err;
+  }
 }
 
 /** 휴대폰 본인인증 — 인증번호 발송 */
