@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { useAdminLocale } from "@/lib/adminLocale";
 import { updateSiteData, syncImages, changePassword, defaultHomeSections } from "@/lib/storage";
+import { passwordRuleError } from "@/lib/passwordRule";
 import type { HeroSlide, HeroSlideEffect, Treatment, HomeSectionConfig, HomeSectionId } from "@/lib/data";
 import { defaultHeroEffect } from "@/lib/data";
 import {
@@ -864,8 +865,9 @@ function PasswordTab({ onSave }: { onSave: () => void }) {
       setError("모든 필드를 입력해 주세요.");
       return;
     }
-    if (next.length < 4) {
-      setError("새 비밀번호는 4자 이상이어야 합니다.");
+    const ruleError = passwordRuleError(next);
+    if (ruleError) {
+      setError(ruleError);
       return;
     }
     if (next !== confirm) {
@@ -903,7 +905,7 @@ function PasswordTab({ onSave }: { onSave: () => void }) {
           type="password"
           value={next}
           onChange={(e) => { setNext(e.target.value); setError(""); }}
-          placeholder="4자 이상"
+          placeholder="영문+숫자+특수문자 8자 이상"
         />
       </Field>
       <Field label="새 비밀번호 확인">
