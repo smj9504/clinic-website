@@ -2,14 +2,13 @@
  * 예약 신청 관리자 알림 이메일 — Gmail/네이버 SMTP (nodemailer)
  *
  * 환자가 예약을 신청하면 관리자(RESERVATION_NOTIFY_EMAIL, 없으면 발신 계정
- * 자신)에게 접수 내용을 이메일로 발송한다. 이메일 발송은 예약 접수의 부가 기능(best-effort)이며,
+ * 자신)에게 접수 알림과 관리자 페이지 링크를 이메일로 발송한다(신청자 정보는 담지 않는다). 이메일 발송은 예약 접수의 부가 기능(best-effort)이며,
  * 실패하더라도 예약 신청 자체(DB insert)는 정상 처리되어야 한다 — 호출부
  * (app/api/reservation-requests/route.ts)에서 try/catch로 감싸 처리한다.
  */
 
 import nodemailer, { type Transporter } from "nodemailer";
 import { SIGMA_ENABLED, type ReservationRequest } from "@/lib/reservations";
-import { formatKRW } from "@/lib/price";
 
 const BRAND_ACCENT = "#6B4423";
 const BRAND_NAME = "고운빛한의원";
@@ -119,38 +118,16 @@ function formatCreatedAt(iso: string): string {
   }
 }
 
-function buildHtmlBody(reservation: ReservationRequest, adminUrl: string | null): string {
-  const name = escapeHtml(reservation.name);
-  const phone = escapeHtml(reservation.phone);
-  const desiredDate = escapeHtml(reservation.desiredDate);
-  const desiredTime = escapeHtml(reservation.desiredTime?.trim() || "상관없음");
-  const memo = escapeHtml(reservation.memo?.trim() || "없음");
+/*
+ * 알림 메일에는 신청자 정보를 담지 않는다 — 이름·연락처·증상(건강정보)·선택 시술 모두.
+ * 메일함에 들어간 사본은 홈페이지의 보관기간(신청일로부터 1년) 자동 파기가 닿지 않아
+ * 처리방침과 어긋나게 오래 남고, 메일 계정이 유출되면 함께 새어 나간다. 메일은
+ * "새 신청이 왔다"는 알림과 관리자 페이지 링크만 보내고, 내용은 로그인한 관리자
+ * 화면에서 확인한다.
+ */
+
+function buildHtmlBody(reservation: ReservationRequest, adminUrl: string): string {
   const createdAt = escapeHtml(formatCreatedAt(reservation.createdAt));
-
-  const selectedServicesRowHtml =
-    reservation.selectedServices.length > 0
-      ? `<tr>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;color:#888;vertical-align:top;">선택 시술</td>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;">
-                      ${reservation.selectedServices
-                        .map((item) => {
-                          const label = escapeHtml(
-                            `${item.serviceName}${item.priceLabel ? ` (${item.priceLabel})` : ""}`
-                          );
-                          return `<div>${label} — ${formatKRW(item.finalPrice)}</div>`;
-                        })
-                        .join("")}
-                    </td>
-                  </tr>`
-      : "";
-
-  const linkHtml = adminUrl
-    ? `<p style="margin:24px 0 0;">
-         <a href="${escapeHtml(adminUrl)}" style="display:inline-block;padding:10px 18px;background:${BRAND_ACCENT};color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;">
-           ${ADMIN_LINK_LABEL}
-         </a>
-       </p>`
-    : "";
 
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -166,40 +143,19 @@ function buildHtmlBody(reservation: ReservationRequest, adminUrl: string | null)
             </tr>
             <tr>
               <td style="padding:24px;">
-                <h2 style="margin:0 0 16px;font-size:18px;color:#2b2b2b;">새 예약 신청이 접수되었습니다</h2>
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;color:#333333;">
-                  <tr>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;color:#888;width:110px;">신청자 이름</td>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;">${name}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;color:#888;">연락처</td>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;">${phone}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;color:#888;">희망 날짜</td>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;">${desiredDate}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;color:#888;">희망 시간대</td>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;">${desiredTime}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;color:#888;vertical-align:top;">증상·요청사항</td>
-                    <td style="padding:8px 0;border-bottom:1px solid #eee;white-space:pre-wrap;">${memo}</td>
-                  </tr>
-                  ${selectedServicesRowHtml}
-                  <tr>
-                    <td style="padding:8px 0;color:#888;">접수 시각</td>
-                    <td style="padding:8px 0;">${createdAt}</td>
-                  </tr>
-                </table>
-                ${linkHtml}
+                <h2 style="margin:0 0 12px;font-size:18px;color:#2b2b2b;">새 상담 신청이 접수되었습니다</h2>
+                <p style="margin:0 0 4px;font-size:14px;color:#333333;">접수 시각: ${createdAt}</p>
+                <p style="margin:0;font-size:13px;color:#888888;">개인정보 보호를 위해 신청 내용은 메일에 담지 않습니다. 관리자 페이지에 로그인해 확인해 주세요.</p>
+                <p style="margin:24px 0 0;">
+                  <a href="${escapeHtml(adminUrl)}" style="display:inline-block;padding:10px 18px;background:${BRAND_ACCENT};color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;">
+                    ${ADMIN_LINK_LABEL}
+                  </a>
+                </p>
               </td>
             </tr>
             <tr>
               <td style="padding:16px 24px;background:#faf8f5;border-top:1px solid #eee;">
-                <span style="font-size:12px;color:#999;">본 메일은 ${BRAND_NAME} 홈페이지 예약 신청 시스템에서 자동으로 발송되었습니다.</span>
+                <span style="font-size:12px;color:#999;">본 메일은 ${BRAND_NAME} 홈페이지 상담 신청 시스템에서 자동으로 발송되었습니다.</span>
               </td>
             </tr>
           </table>
@@ -210,41 +166,19 @@ function buildHtmlBody(reservation: ReservationRequest, adminUrl: string | null)
 </html>`;
 }
 
-function buildTextBody(reservation: ReservationRequest, adminUrl: string | null): string {
-  const desiredTime = reservation.desiredTime?.trim() || "상관없음";
-  const memo = reservation.memo?.trim() || "없음";
-  const createdAt = formatCreatedAt(reservation.createdAt);
-
-  const lines = [
-    `${BRAND_NAME} — 새 예약 신청이 접수되었습니다`,
+function buildTextBody(reservation: ReservationRequest, adminUrl: string): string {
+  return [
+    `${BRAND_NAME} — 새 상담 신청이 접수되었습니다`,
     "",
-    `신청자 이름: ${reservation.name}`,
-    `연락처: ${reservation.phone}`,
-    `희망 날짜: ${reservation.desiredDate}`,
-    `희망 시간대: ${desiredTime}`,
-    `증상·요청사항: ${memo}`,
-  ];
-
-  if (reservation.selectedServices.length > 0) {
-    lines.push("선택 시술:");
-    for (const item of reservation.selectedServices) {
-      lines.push(
-        `  - ${item.serviceName}${item.priceLabel ? ` (${item.priceLabel})` : ""} ${formatKRW(item.finalPrice)}`
-      );
-    }
-  }
-
-  lines.push(`접수 시각: ${createdAt}`);
-
-  if (adminUrl) {
-    lines.push("", `${ADMIN_LINK_LABEL}: ${adminUrl}`);
-  }
-
-  return lines.join("\n");
+    `접수 시각: ${formatCreatedAt(reservation.createdAt)}`,
+    "개인정보 보호를 위해 신청 내용은 메일에 담지 않습니다. 관리자 페이지에 로그인해 확인해 주세요.",
+    "",
+    `${ADMIN_LINK_LABEL}: ${adminUrl}`,
+  ].join("\n");
 }
 
 /**
- * 새 예약 신청 접수 알림을 관리자 이메일로 발송한다.
+ * 새 상담 신청 접수 알림을 관리자 이메일로 발송한다. 신청자 정보는 담지 않는다(위 설명).
  *
  * 관리자 페이지 링크는 요청의 origin이 아니라 사이트 주소(NEXT_PUBLIC_SITE_URL)로
  * 만든다 — 로컬 개발 서버나 프록시 뒤에서 받은 요청은 origin이
@@ -265,7 +199,7 @@ export async function sendReservationNotificationEmail(
   await transporter.sendMail({
     from: `"${BRAND_NAME}" <${senderAddress}>`,
     to,
-    subject: `[${BRAND_NAME}] 새 예약 신청 - ${reservation.name}님`,
+    subject: `[${BRAND_NAME}] 새 상담 신청이 접수되었습니다`,
     text: buildTextBody(reservation, adminUrl),
     html: buildHtmlBody(reservation, adminUrl),
   });

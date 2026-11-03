@@ -225,7 +225,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           markLoggedIn();
           setReady(true);
         } else {
-          router.replace("/admin/login");
+          // 로그인한 뒤 원래 열려던 화면(예: 메일 링크의 신청 건)으로 돌아가도록 주소를 넘긴다
+          const next = window.location.pathname + window.location.search;
+          router.replace(`/admin/login?next=${encodeURIComponent(next)}`);
         }
       });
       return () => {

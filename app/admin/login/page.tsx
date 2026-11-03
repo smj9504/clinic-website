@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { login, getSiteData } from "@/lib/storage";
 
+/**
+ * 로그인 후 돌아갈 주소. 다른 사이트로 보내는 데 쓰이지 않도록(오픈 리다이렉트)
+ * 이 사이트의 /admin 아래 경로만 받고, 나머지는 대시보드로 보낸다.
+ */
+function safeNextPath(next: string | null): string {
+  if (!next || !/^\/admin(\/|\?|$)/.test(next) || next.startsWith("/admin/login")) return "/admin";
+  return next;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -25,7 +34,7 @@ export default function LoginPage() {
     const result = await login(password);
     setLoading(false);
     if (result.ok) {
-      router.replace("/admin");
+      router.replace(safeNextPath(new URLSearchParams(window.location.search).get("next")));
     } else {
       setError(result.error);
     }
