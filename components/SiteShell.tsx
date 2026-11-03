@@ -21,13 +21,18 @@ function PublicSite({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Nav />
+      {/* 인쇄할 때(처리방침 대기실 비치용 등)는 본문만 나오게 한다 */}
+      <div className="print:hidden">
+        <Nav />
+      </div>
       <main>
         <PageTransition>{children}</PageTransition>
       </main>
-      <Footer />
-      <FloatingActions />
-      <PopupModal />
+      <div className="print:hidden">
+        <Footer />
+        <FloatingActions />
+        <PopupModal />
+      </div>
     </>
   );
 }
