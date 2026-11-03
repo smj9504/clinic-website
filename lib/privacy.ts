@@ -20,7 +20,8 @@ export const CLINIC = {
 export const PRIVACY_OFFICER = {
   name: "허은주",
   position: "대표원장",
-  phone: "010-9860-7525",
+  // 처리방침에 공개되므로 개인 휴대폰 대신 한의원 대표번호를 쓴다
+  phone: CLINIC.phone,
 } as const;
 
 /**
@@ -28,7 +29,7 @@ export const PRIVACY_OFFICER = {
  * 맨 앞 항목의 날짜가 현재 시행일이 된다.
  */
 export const POLICY_HISTORY: { date: string; summary: string }[] = [
-  { date: "2026-11-03", summary: "최초 제정 (같은 날 자동 수집 장치 조항에 관리자 로그인 쿠키 안내 추가)" },
+  { date: "2026-11-03", summary: "최초 제정 (같은 날 자동 수집 장치 조항에 관리자 로그인 쿠키 안내 추가, 보호책임자 연락처를 대표번호로 변경)" },
 ];
 
 /** 처리방침 시행일 (YYYY-MM-DD) */
