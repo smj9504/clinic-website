@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setAdminPassword, verifyAdminPassword } from "@/lib/adminAuth";
+import { adminCheckResponse, checkAdminPassword, setAdminPassword } from "@/lib/adminAuth";
 import { passwordRuleError } from "@/lib/passwordRule";
 
 /**
@@ -14,8 +14,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "password required" }, { status: 400 });
   }
 
-  if (!(await verifyAdminPassword(password))) {
-    return NextResponse.json({ valid: false }, { status: 401 });
+  const check = await checkAdminPassword(password);
+  if (!check.ok) {
+    return adminCheckResponse(check, check.status === 429 ? { valid: false, error: check.error } : { valid: false });
   }
 
   return NextResponse.json({ valid: true });
@@ -39,8 +40,9 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: ruleError }, { status: 400 });
   }
 
-  if (!(await verifyAdminPassword(currentPassword))) {
-    return NextResponse.json({ error: "현재 비밀번호가 일치하지 않습니다" }, { status: 401 });
+  const check = await checkAdminPassword(currentPassword);
+  if (!check.ok) {
+    return adminCheckResponse(check, { error: check.status === 429 ? check.error : "현재 비밀번호가 일치하지 않습니다" });
   }
 
   const { error } = await setAdminPassword(newPassword);

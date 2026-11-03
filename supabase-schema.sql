@@ -301,3 +301,24 @@ alter table reservation_requests
   add column if not exists privacy_agreed_at   timestamptz,
   add column if not exists sensitive_agreed_at timestamptz,
   add column if not exists consent_version     text;
+
+
+-- ─────────────────────────────────────────────────────────────
+-- 9) 관리자 비밀번호 시도 횟수 제한 (supabase-admin-login-guard.sql)
+--
+-- 틀린 비밀번호 시도 기록. 15분 안에 같은 IP에서 서로 다른 비밀번호 5개,
+-- 전체 30개가 틀리면 관리자 로그인을 잠시 막는다(lib/loginGuard.ts).
+-- 비밀번호 자체는 저장하지 않고 HMAC 앞 16자리만 남긴다. 24시간 뒤 지운다.
+-- ─────────────────────────────────────────────────────────────
+
+create table if not exists admin_login_failures (
+  id          bigint generated always as identity primary key,
+  ip          text not null,
+  fingerprint text not null,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists admin_login_failures_created_at_idx on admin_login_failures(created_at desc);
+create index if not exists admin_login_failures_ip_idx on admin_login_failures(ip, created_at desc);
+
+alter table admin_login_failures enable row level security;

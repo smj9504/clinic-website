@@ -6,6 +6,8 @@
  * app/api/site-data/route.ts의 locale 화이트리스트와 supabase-security-fix.sql의
  * RLS 정책이 그 역할을 한다.
  *
+ * 비밀번호를 여러 번 틀리면 접속 IP(또는 전체)를 잠시 차단한다 — lib/loginGuard.ts.
+ *
  * 저장값은 scrypt 일방향 해시다(「개인정보의 안전성 확보조치 기준」 제7조:
  * 비밀번호는 복호화되지 않도록 일방향 암호화하여 저장). 예전 버전이 평문으로
  * 저장한 값도 검증은 되도록 남겨 두었고, 비밀번호를 한 번 변경하면 해시로 바뀐다.
@@ -14,6 +16,7 @@
 import { randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from "crypto";
 import { NextResponse } from "next/server";
 import { getServiceClient } from "./supabase";
+import { checkLoginGuard, clearLoginFailures, lockMessage, recordLoginFailure } from "./loginGuard";
 
 const CONFIG_LOCALE = "_config";
 const CONFIG_KEY = "admin_password";
@@ -62,9 +65,39 @@ async function getStoredAdminPassword(): Promise<string> {
   return data?.data?.[CONFIG_KEY] || DEFAULT_ADMIN_PASSWORD;
 }
 
-export async function verifyAdminPassword(password: unknown): Promise<boolean> {
-  if (typeof password !== "string" || password.length === 0) return false;
-  return matchesStored(password, await getStoredAdminPassword());
+export type AdminCheck =
+  | { ok: true }
+  | { ok: false; status: 401; error: string }
+  | { ok: false; status: 429; error: string; retryAfterSec: number };
+
+/**
+ * 관리자 비밀번호 확인 + 시도 횟수 제한.
+ * 차단 중이면 비밀번호가 맞아도 429를 돌려준다 — 차단 중에 맞는지 알려 주면
+ * 차단이 무작위 대입을 막지 못한다.
+ */
+export async function checkAdminPassword(password: unknown): Promise<AdminCheck> {
+  // 비밀번호 없이 온 요청은 대입 시도가 아니므로 세지 않는다
+  if (typeof password !== "string" || password.length === 0) {
+    return { ok: false, status: 401, error: "unauthorized" };
+  }
+  const guard = await checkLoginGuard();
+  if (guard.lockedUntil) {
+    const { message, retryAfterSec } = lockMessage(guard.lockedUntil);
+    return { ok: false, status: 429, error: message, retryAfterSec };
+  }
+  if (await matchesStored(password, await getStoredAdminPassword())) {
+    await clearLoginFailures(guard);
+    return { ok: true };
+  }
+  await recordLoginFailure(guard, password);
+  return { ok: false, status: 401, error: "unauthorized" };
+}
+
+/** 401·429 응답으로 바꾼다. 429에는 Retry-After를 붙인다 */
+export function adminCheckResponse(check: Exclude<AdminCheck, { ok: true }>, body?: Record<string, unknown>): NextResponse {
+  const res = NextResponse.json(body ?? { error: check.error }, { status: check.status });
+  if (check.status === 429) res.headers.set("Retry-After", String(check.retryAfterSec));
+  return res;
 }
 
 /** 새 비밀번호를 해시해서 저장한다. 규칙 검사는 호출하는 쪽에서 한다 */
@@ -91,8 +124,8 @@ export async function setAdminPassword(newPassword: string): Promise<{ error: st
  *   if (denied) return denied;
  */
 export async function requireAdmin(password: unknown): Promise<NextResponse | null> {
-  if (await verifyAdminPassword(password)) return null;
-  return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const check = await checkAdminPassword(password);
+  return check.ok ? null : adminCheckResponse(check);
 }
 
 /** 관리자 비밀번호를 헤더로 받는 요청용 게이트 (GET·DELETE처럼 본문이 없는 경우) */

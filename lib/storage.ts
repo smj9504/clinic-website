@@ -996,7 +996,8 @@ export function isLoggedIn(): boolean {
   return sessionStorage.getItem(AUTH_KEY) === "true";
 }
 
-export async function login(password: string): Promise<boolean> {
+/** 실패하면 화면에 보여줄 문구를 돌려준다 (틀림 / 시도 횟수 초과로 잠김 / 네트워크 오류) */
+export async function login(password: string): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const res = await fetch("/api/admin-password", {
       method: "POST",
@@ -1006,10 +1007,16 @@ export async function login(password: string): Promise<boolean> {
     if (res.ok) {
       sessionStorage.setItem(AUTH_KEY, "true");
       sessionStorage.setItem("clinic_admin_pw", password);
-      return true;
+      return { ok: true };
     }
-  } catch {}
-  return false;
+    if (res.status === 429) {
+      const json = await res.json().catch(() => ({}));
+      return { ok: false, error: json?.error ?? "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요." };
+    }
+    return { ok: false, error: "비밀번호가 일치하지 않습니다." };
+  } catch {
+    return { ok: false, error: "네트워크 오류로 로그인하지 못했습니다." };
+  }
 }
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {

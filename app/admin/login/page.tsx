@@ -15,12 +15,12 @@ export default function LoginPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const ok = await login(password);
+    const result = await login(password);
     setLoading(false);
-    if (ok) {
+    if (result.ok) {
       router.replace("/admin");
     } else {
-      setError("비밀번호가 일치하지 않습니다.");
+      setError(result.error);
     }
   };
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
           />
 
           {error && (
-            <p className="text-sm text-red-600 mt-3" style={{ letterSpacing: "-0.02em" }}>
+            <p className="text-sm text-red-600 mt-3 break-keep" style={{ letterSpacing: "-0.02em" }}>
               {error}
             </p>
           )}
