@@ -14,6 +14,7 @@ export const CLINIC = {
   phone: "02-783-7525",
   address: "서울시 영등포구 국회대로62길 15, 광복회관 지하1층",
   kakaoChannel: "https://pf.kakao.com/_xiVxjfX",
+  website: "www.gowoonbit-kmc.com",
 } as const;
 
 export const PRIVACY_OFFICER = {
@@ -137,17 +138,9 @@ export const OVERSEAS_TRANSFERS: {
 ];
 
 /**
- * 고정형 영상정보처리기기(CCTV) 운영 정보 — 설치돼 있으면 채운다.
- * null이면 처리방침에 CCTV 조항을 싣지 않는다.
+ * 병원(내원·진료) 개인정보 처리방침의 주소.
+ * 홈페이지 처리방침은 홈페이지에서 처리하는 개인정보만 다루고, 진료·CCTV 등은
+ * 병원용 처리방침이 다룬다. 병원용을 홈페이지에 올리면 그 주소를 넣는다 —
+ * 넣으면 홈페이지 처리방침과 푸터에 링크가 생긴다. null이면 "병원에 비치"로 안내한다.
  */
-export type CctvConfig = {
-  purpose: string;
-  locations: string;
-  count: number;
-  range: string;
-  recordingHours: string;
-  retentionDays: number;
-  storage: string;
-  manager: { name: string; position: string; phone: string };
-};
-export const CCTV: CctvConfig | null = null;
+export const CLINIC_POLICY_URL: string | null = null;

@@ -1,18 +1,20 @@
 /**
- * 개인정보 처리방침 (「개인정보 보호법」 제30조, 같은 법 시행령 제31조)
+ * 홈페이지 개인정보 처리방침 (「개인정보 보호법」 제30조, 같은 법 시행령 제31조)
+ *
+ * 홈페이지에서 처리하는 개인정보(상담 신청, 휴대폰 인증, 접속 기록)만 다룬다.
+ * 내원·진료 과정의 처리(진료기록, CCTV, 진료 쪽 위탁 등)는 병원용 처리방침이 따로 다룬다
+ * — lib/privacy.ts의 CLINIC_POLICY_URL.
  *
  * 개인정보보호위원회 「개인정보 처리방침 작성지침」의 기재사항 순서를 따른다.
- * 해당 없는 항목(추가적 이용·제공 판단 기준, 가명정보, 자동화된 결정, 국내대리인,
- * 민감정보 공개 가능성, 이동형 영상정보처리기기)은 싣지 않는다.
- *
- * 병원 하나에 처리방침은 하나이므로 홈페이지뿐 아니라 내원·진료 과정의 처리까지 담는다.
- * 바뀔 수 있는 사실(업체, 책임자, 보관기간, CCTV, 변경 이력)은 lib/privacy.ts에서 가져온다.
+ * 홈페이지에 해당 없는 항목(추가적 이용·제공 판단 기준, 민감정보 공개 가능성, 가명정보,
+ * 자동화된 결정, 국내대리인, 영상정보처리기기)은 싣지 않는다.
+ * 바뀔 수 있는 사실(업체, 책임자, 보관기간, 변경 이력)은 lib/privacy.ts에서 가져온다.
  */
 
 import PrintButton from "@/components/PrintButton";
 import {
-  CCTV,
   CLINIC,
+  CLINIC_POLICY_URL,
   OUTSOURCING,
   OVERSEAS_TRANSFERS,
   POLICY_EFFECTIVE_DATE,
@@ -42,7 +44,6 @@ type SectionId =
   | "rights"
   | "officer"
   | "remedy"
-  | "cctv"
   | "changes";
 
 const SECTIONS: { id: SectionId; title: string }[] = [
@@ -59,7 +60,6 @@ const SECTIONS: { id: SectionId; title: string }[] = [
   { id: "rights", title: "정보주체와 법정대리인의 권리·의무 및 행사 방법" },
   { id: "officer", title: "개인정보 보호책임자 및 고충처리 부서" },
   { id: "remedy", title: "정보주체의 권익침해에 대한 구제 방법" },
-  ...(CCTV ? [{ id: "cctv" as const, title: "고정형 영상정보처리기기 운영·관리" }] : []),
   { id: "changes", title: "개인정보 처리방침의 변경" },
 ];
 
@@ -117,22 +117,16 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <rect x="17" y="14" width="4" height="6" rx="1.5" />
     </>
   ),
-  camera: (
-    <>
-      <rect x="3" y="7" width="13" height="10" rx="2" />
-      <path d="m16 11 5-3v8l-5-3" />
-    </>
-  ),
 };
 
 type Label = { icon: string; title: string; body: React.ReactNode; to: SectionId };
 
 const LABELS: Label[] = [
-  { icon: "person", title: "일반 개인정보 수집", body: "성명, 연락처, 주소, 주민등록번호(진료 시)", to: "items" },
-  { icon: "health", title: "민감정보 처리", body: "진료·건강에 관한 정보", to: "items" },
-  { icon: "target", title: "처리 목적", body: "진료, 진료비 청구, 예약·상담 안내", to: "purpose" },
-  { icon: "clock", title: "보유 기간", body: "진료기록부 10년 등 법정 기간, 홈페이지 상담 신청 1년", to: "retention" },
-  { icon: "share", title: "제3자 제공", body: "국민건강보험공단·건강보험심사평가원 등(법령 근거)", to: "provision" },
+  { icon: "person", title: "일반 개인정보 수집", body: "이름, 휴대폰 번호", to: "items" },
+  { icon: "health", title: "민감정보 처리", body: "증상·요청사항(별도 동의 시)", to: "items" },
+  { icon: "target", title: "처리 목적", body: "상담 신청 접수와 안내 연락", to: "purpose" },
+  { icon: "clock", title: "보유 기간", body: "상담 신청일로부터 1년", to: "retention" },
+  { icon: "share", title: "제3자 제공", body: "제공하지 않음", to: "provision" },
   { icon: "outsource", title: "처리 위탁", body: `${OUTSOURCING.length}개 업체(문자 발송, 메일, 홈페이지 운영)`, to: "outsourcing" },
   {
     icon: "globe",
@@ -150,7 +144,6 @@ const LABELS: Label[] = [
     ),
     to: "officer",
   },
-  ...(CCTV ? [{ icon: "camera", title: "영상정보처리기기", body: CCTV.locations, to: "cctv" as const }] : []),
 ];
 
 function LabelIcon({ name }: { name: string }) {
@@ -242,6 +235,17 @@ function Ref({ to }: { to: SectionId }) {
   );
 }
 
+/** 병원(내원·진료) 처리방침 안내 — 홈페이지에 올렸으면 링크, 아니면 병원 비치 안내 */
+function ClinicPolicyRef() {
+  return CLINIC_POLICY_URL ? (
+    <a href={CLINIC_POLICY_URL} className="underline underline-offset-2 hover:text-accent">
+      {CLINIC.name} 개인정보 처리방침(병원)
+    </a>
+  ) : (
+    <>병원에 비치한 {CLINIC.name} 개인정보 처리방침(병원)</>
+  );
+}
+
 /* ─── 페이지 ────────────────────────────────────────────────── */
 
 export default function PrivacyPage() {
@@ -259,10 +263,10 @@ export default function PrivacyPage() {
             className="font-display break-keep"
             style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 600, letterSpacing: "-0.04em", lineHeight: 1.15 }}
           >
-            {CLINIC.name} 개인정보 처리방침
+            홈페이지 개인정보 처리방침
           </h1>
           <p className="mt-5 opacity-80" style={{ letterSpacing: "-0.01em" }}>
-            시행일 {EFFECTIVE_DATE_KO}
+            {CLINIC.name} · 시행일 {EFFECTIVE_DATE_KO}
           </p>
         </div>
       </section>
@@ -271,16 +275,22 @@ export default function PrivacyPage() {
         <div className="container-default max-w-3xl break-keep print:max-w-none print:px-0">
           {/* 인쇄물 제목 — 화면에서는 위 배너가 대신한다 */}
           <div className="hidden print:block mb-6">
-            <h1 className="text-2xl font-bold">{CLINIC.name} 개인정보 처리방침</h1>
+            <h1 className="text-2xl font-bold">{CLINIC.name} 홈페이지 개인정보 처리방침</h1>
             <p className="text-sm mt-1">시행일 {EFFECTIVE_DATE_KO}</p>
           </div>
 
           <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
-            <p className="text-ink-soft flex-1 min-w-[16rem] print:text-black" style={{ lineHeight: 1.85, letterSpacing: "-0.01em" }}>
-              {CLINIC.name}(이하 ‘한의원’)은 「개인정보 보호법」 제30조에 따라 정보주체
-              <Gloss>개인정보의 주인인 환자·이용자</Gloss>의 개인정보를 보호하고, 개인정보와 관련한 고충을 빠르고 원활하게
-              처리할 수 있도록 다음과 같이 개인정보 처리방침을 정하여 공개합니다.
-            </p>
+            <div className="flex-1 min-w-[16rem] text-ink-soft space-y-3 print:text-black" style={{ lineHeight: 1.85, letterSpacing: "-0.01em" }}>
+              <p>
+                {CLINIC.name}(이하 ‘한의원’)은 「개인정보 보호법」 제30조에 따라 정보주체
+                <Gloss>개인정보의 주인인 이용자</Gloss>의 개인정보를 보호하고, 개인정보와 관련한 고충을 빠르고 원활하게
+                처리할 수 있도록 다음과 같이 홈페이지 개인정보 처리방침을 정하여 공개합니다.
+              </p>
+              <p className="text-sm border-l-2 border-accent pl-3">
+                이 처리방침은 한의원 홈페이지(<span className="whitespace-nowrap">{CLINIC.website}</span>)에서 처리하는 개인정보에 적용됩니다. 내원·진료 과정에서
+                처리하는 개인정보는 <ClinicPolicyRef />을 따릅니다.
+              </p>
+            </div>
             <PrintButton />
           </div>
 
@@ -327,44 +337,26 @@ export default function PrivacyPage() {
 
           <Article id="purpose">
             <p>
-              한의원은 다음 목적을 위해서만 개인정보를 처리합니다. 다른 목적으로 이용하게 되면 「개인정보 보호법」 제18조에
-              따라 별도의 동의를 받는 등 필요한 조치를 합니다.
+              한의원은 홈페이지에서 다음 목적을 위해서만 개인정보를 처리합니다. 다른 목적으로 이용하게 되면 「개인정보
+              보호법」 제18조에 따라 별도의 동의를 받는 등 필요한 조치를 합니다.
             </p>
             <Table
               head={["구분", "처리 목적"]}
               rows={[
-                ["진료", "환자 확인, 진찰·치료·처방, 진료기록 작성과 보존, 진단서 등 증명서 발급, 진료비 수납"],
-                ["진료비 청구", "국민건강보험공단·건강보험심사평가원에 대한 요양급여비용 청구, 자동차보험 진료수가 청구"],
-                ["진료 예약", "전화·네이버 예약으로 받은 예약의 확인과 일정 안내"],
-                ["홈페이지 상담 신청", "상담 신청 접수, 휴대폰 본인 확인, 상담 일정 안내 연락(문자·전화)"],
+                ["상담 신청", "상담 신청 접수, 상담 일정 안내 연락(문자·전화), 상담 준비"],
+                ["휴대폰 본인 확인", "상담 신청자가 휴대폰 번호의 주인인지 확인"],
                 ["홈페이지 운영", "접속 기록을 이용한 장애 대응과 부정 이용 방지"],
               ]}
             />
           </Article>
 
           <Article id="items">
-            <p>① 한의원은 다음 개인정보를 처리합니다.</p>
+            <p>① 한의원은 홈페이지에서 다음 개인정보를 처리합니다.</p>
             <Table
               head={["구분", "처리 항목", "처리 근거"]}
               rows={[
                 [
-                  "진료",
-                  <>
-                    성명, 주민등록번호, 주소, 연락처, 진료·건강에 관한 정보(진료기록, 처방 내용 등)
-                    <br />
-                    자동차보험 진료 시: 보험회사명, 사고접수번호
-                  </>,
-                  "「의료법」, 「국민건강보험법」, 「자동차손해배상 보장법」 등 법령(동의 없이 처리)",
-                ],
-                [
-                  "진료 예약",
-                  "이름, 연락처, 예약 일시, 요청사항",
-                  <>
-                    정보주체의 요청에 따른 조치 <Gloss>법 제15조 제1항 제4호</Gloss>
-                  </>,
-                ],
-                [
-                  "홈페이지 상담 신청",
+                  "상담 신청",
                   <>
                     필수: 이름, 휴대폰 번호, 희망 상담 일자
                     <br />
@@ -384,58 +376,31 @@ export default function PrivacyPage() {
                 ],
               ]}
             />
-            <p>
-              ② 개인정보는 내원 시 접수·진료 과정, 전화, 네이버 예약(네이버가 전달하는 예약자 정보), 홈페이지 상담 신청을
-              통해 수집합니다.
-            </p>
+            <p>② 개인정보는 홈페이지의 상담 신청 화면에 이용자가 직접 입력하는 방법으로 수집합니다.</p>
             <p>
               ③ <strong className="text-ink">민감정보</strong>
-              <Gloss>건강 상태처럼 사생활을 크게 침해할 수 있는 정보</Gloss>: 진료에 필요한 건강에 관한 정보는 「의료법」에
-              근거하여 처리합니다. 홈페이지 상담 신청의 ‘증상·요청사항’에 적은 건강 정보는 「개인정보 보호법」 제23조에 따라
-              다른 동의와 따로 동의를 받은 경우에만 처리합니다.
+              <Gloss>건강 상태처럼 사생활을 크게 침해할 수 있는 정보</Gloss>: ‘증상·요청사항’에 적은 건강에 관한 정보는
+              「개인정보 보호법」 제23조에 따라 다른 동의와 따로 동의를 받은 경우에만 처리합니다. 동의하지 않으시면 이 칸을
+              비워 두고 상담을 신청하실 수 있습니다.
             </p>
-            <p>
-              ④ <strong className="text-ink">고유식별정보</strong>
-              <Gloss>주민등록번호처럼 개인을 고유하게 구별하는 번호</Gloss>: 「의료법 시행령」 제42조의2 등 법령에 근거하여
-              진료와 진료비 청구에 필요한 범위에서 주민등록번호를 처리합니다. 홈페이지에서는 주민등록번호를 받지 않습니다.
-            </p>
+            <p>④ 홈페이지에서는 주민등록번호를 수집하지 않습니다.</p>
           </Article>
 
           <Article id="children">
             <p>
-              ① 홈페이지 상담 신청은 만 14세 이상만 할 수 있습니다. 만 14세 미만 아동의 상담은 법정대리인
+              홈페이지 상담 신청은 만 14세 이상만 할 수 있습니다. 만 14세 미만 아동의 상담은 법정대리인
               <Gloss>부모 등 보호자</Gloss>이 신청해 주셔야 하며, 이때는 법정대리인의 이름과 연락처를 받습니다.
-            </p>
-            <p>
-              ② 만 14세 미만 아동을 진료할 때에는 법령에 따라 진료에 필요한 범위에서 아동의 개인정보를 처리하며, 법정대리인의
-              성명과 연락처를 함께 확인합니다.
             </p>
           </Article>
 
           <Article id="retention">
-            <p>① 한의원은 법령에서 정한 기간 또는 정보주체에게 동의받은 기간 동안만 개인정보를 보유합니다.</p>
+            <p>① 한의원은 정보주체에게 동의받은 기간 동안만 개인정보를 보유하며, 기간이 지나면 지체 없이 파기합니다.</p>
             <Table
               head={["구분", "보유 기간", "근거"]}
               rows={[
-                ["진료기록부", "10년", "「의료법 시행규칙」 제15조"],
-                ["환자 명부", "5년", "「의료법 시행규칙」 제15조"],
-                ["검사내용 및 검사소견기록", "5년", "「의료법 시행규칙」 제15조"],
-                ["방사선 사진(영상물 포함) 및 그 소견서", "5년", "「의료법 시행규칙」 제15조"],
-                ["진단서 등의 부본", "3년", "「의료법 시행규칙」 제15조"],
-                ["처방전", "2년", "「의료법 시행규칙」 제15조"],
-                ["요양급여비용 청구에 관한 서류", "요양급여가 끝난 날부터 5년", "「국민건강보험법」"],
-                [
-                  "진료 예약 정보",
-                  "예약일로부터 1년(내원하신 경우 위 진료 관련 기록의 보존 기간에 따름)",
-                  "정보주체의 요청에 따른 조치",
-                ],
-                ["홈페이지 상담 신청 정보", "신청일로부터 1년", "정보주체의 동의"],
+                ["상담 신청 정보", "신청일로부터 1년", "정보주체의 동의"],
                 ["휴대폰 인증번호 기록", "발급 후 24시간", "정보주체의 동의"],
-                [
-                  "상담 신청 알림 문자 발송 기록",
-                  "발송일로부터 1년(솔라피 주식회사 보관)",
-                  "수탁자의 발송 내역 보관 정책",
-                ],
+                ["상담 신청 알림 문자 발송 기록", "발송일로부터 1년(솔라피 주식회사 보관)", "수탁자의 발송 내역 보관 정책"],
                 [
                   "홈페이지 접속 기록",
                   `Vercel ${VENDOR_LOG_RETENTION.vercel}, Supabase ${VENDOR_LOG_RETENTION.supabase}`,
@@ -444,55 +409,37 @@ export default function PrivacyPage() {
               ]}
             />
             <p>
-              ② 네이버 예약을 통한 예약 정보는 한의원과 별도로 네이버 주식회사가 자체 개인정보 처리방침에 따라 보관합니다.
+              ② 상담 후 내원하여 진료를 받으시면, 그때부터 처리하는 개인정보는 <ClinicPolicyRef />에서 정한 기간 동안
+              보존합니다.
             </p>
           </Article>
 
           <Article id="destruction">
             <p>① 보유 기간이 지나거나 처리 목적을 달성하는 등 개인정보가 필요 없게 되면 지체 없이 파기합니다.</p>
             <p>
-              ② <strong className="text-ink">파기 절차</strong>: 파기할 개인정보를 정하고, 개인정보 보호책임자의 확인을 거쳐
-              파기합니다. 홈페이지 상담 신청 정보와 휴대폰 인증번호 기록은 보유 기간이 지나면 시스템이 자동으로 삭제합니다.
+              ② <strong className="text-ink">파기 절차</strong>: 상담 신청 정보와 휴대폰 인증번호 기록은 보유 기간이 지나면
+              시스템이 자동으로 삭제합니다. 정보주체가 삭제를 요청하면 개인정보 보호책임자의 확인을 거쳐 바로 삭제합니다.
             </p>
             <p>
-              ③ <strong className="text-ink">파기 방법</strong>: 전자 파일은 다시 복구할 수 없도록 삭제하고, 종이 문서는
-              분쇄하거나 소각합니다.
-            </p>
-            <p>
-              ④ 처리 목적을 달성했더라도 다른 법령에 따라 보존해야 하는 개인정보는 다른 개인정보와 분리하여 보관하고, 그
-              법령에서 정한 목적으로만 이용합니다.
+              ③ <strong className="text-ink">파기 방법</strong>: 전자 파일은 다시 복구할 수 없도록 삭제합니다. 상담 신청을
+              확인하려고 출력한 종이 문서가 있으면 분쇄하거나 소각합니다.
             </p>
           </Article>
 
           <Article id="provision">
             <p>
-              ① 한의원은 정보주체의 개인정보를 <Ref to="purpose" />의 목적 범위에서만 처리하며, 정보주체의 동의가 있거나
-              법률에 특별한 규정이 있는 경우 등 「개인정보 보호법」 제17조·제18조에 해당하는 경우에만 제3자에게 제공합니다.
+              ① 한의원은 홈페이지에서 수집한 개인정보를 <Ref to="purpose" />의 목적 범위에서만 처리하며, 제3자에게
+              제공하지 않습니다.
             </p>
-            <p>② 한의원은 다음과 같이 법령에 근거하여 개인정보를 제공합니다.</p>
-            <Table
-              head={["제공받는 자", "제공 목적", "제공 항목", "근거"]}
-              rows={[
-                [
-                  "국민건강보험공단, 건강보험심사평가원",
-                  "요양급여비용 청구 및 심사",
-                  "성명, 주민등록번호, 진료 내역 등 청구에 필요한 정보",
-                  "「국민건강보험법」",
-                ],
-                [
-                  "자동차보험회사 및 공제조합",
-                  "자동차보험 진료수가 청구",
-                  "성명, 사고접수번호, 진료 내역 등 청구에 필요한 정보",
-                  "「자동차손해배상 보장법」",
-                ],
-              ]}
-            />
-            <p>③ 그 밖에 「의료법」 제21조 등 법령에 근거한 요청이 있으면 법령에서 정한 범위에서 제공합니다.</p>
+            <p>
+              ② 다만 정보주체가 따로 동의한 경우나 법률에 특별한 규정이 있는 경우 등 「개인정보 보호법」 제17조·제18조에
+              해당하는 경우에는 그 범위에서 제공할 수 있습니다.
+            </p>
           </Article>
 
           <Article id="outsourcing">
             <p>
-              ① 한의원은 업무를 원활하게 처리하기 위해 다음과 같이 개인정보 처리업무를 위탁
+              ① 한의원은 홈페이지 업무를 원활하게 처리하기 위해 다음과 같이 개인정보 처리업무를 위탁
               <Gloss>외부 업체에 업무를 맡김</Gloss>하고 있습니다.
             </p>
             <Table head={["수탁자(맡은 업체)", "위탁 업무"]} rows={OUTSOURCING.map((o) => [o.company, o.task])} />
@@ -506,7 +453,7 @@ export default function PrivacyPage() {
           <Article id="overseas">
             <p>
               ① 한의원은 홈페이지 운영을 위해 다음과 같이 개인정보를 국외에 위탁·보관합니다
-              <Gloss>「개인정보 보호법」 제28조의8 제1항 제3호</Gloss>. 진료 관련 정보는 국외로 이전하지 않습니다.
+              <Gloss>「개인정보 보호법」 제28조의8 제1항 제3호</Gloss>.
             </p>
             <Table
               head={["이전받는 자(연락처)", "국가", "이전 항목", "이전 일시·방법", "이용 목적", "보유·이용 기간"]}
@@ -531,22 +478,24 @@ export default function PrivacyPage() {
           </Article>
 
           <Article id="security">
-            <p>한의원은 「개인정보의 안전성 확보조치 기준」에 따라 다음 조치를 하고 있습니다.</p>
+            <p>한의원은 「개인정보의 안전성 확보조치 기준」에 따라 홈페이지에서 다음 조치를 하고 있습니다.</p>
             <List
               items={[
                 <>
-                  <strong className="text-ink">관리적 조치</strong>: 개인정보를 다루는 직원을 필요한 최소 인원으로 정하고,
-                  개인정보 보호 교육을 합니다.
+                  <strong className="text-ink">관리적 조치</strong>: 상담 신청 정보를 볼 수 있는 관리자 화면은 필요한 직원만
+                  사용합니다.
                 </>,
                 <>
-                  <strong className="text-ink">기술적 조치</strong>: 홈페이지 관리자 화면은 비밀번호로 접근을 통제하며, 비밀번호는
-                  작성 규칙을 적용하고 복구할 수 없는 방식(일방향 암호화)으로 저장합니다. 홈페이지의 모든 통신은
-                  암호화(HTTPS)하고, 데이터베이스는 허가된 서버만 접근할 수 있도록 권한을 제한합니다. 보유 기간이 지난 상담
-                  신청 정보는 자동으로 삭제합니다.
+                  <strong className="text-ink">접근 통제</strong>: 관리자 화면은 비밀번호로 접근을 통제하며, 비밀번호는 작성
+                  규칙을 적용하고 복구할 수 없는 방식(일방향 암호화)으로 저장합니다. 데이터베이스는 허가된 서버만 접근할 수
+                  있도록 권한을 제한합니다.
                 </>,
                 <>
-                  <strong className="text-ink">물리적 조치</strong>: 진료기록 등 종이 서류는 외부인이 접근할 수 없는 곳에
-                  보관합니다.
+                  <strong className="text-ink">암호화</strong>: 홈페이지의 모든 통신을 암호화(HTTPS)합니다.
+                </>,
+                <>
+                  <strong className="text-ink">최소 보관</strong>: 보유 기간이 지난 상담 신청 정보와 인증번호 기록은
+                  자동으로 삭제합니다.
                 </>,
               ]}
             />
@@ -576,34 +525,30 @@ export default function PrivacyPage() {
             <Table
               head={["방법", "연락처", "본인 확인"]}
               rows={[
-                ["전화", CLINIC.phone, "이름과 상담 신청·진료 때 쓴 연락처 확인"],
+                ["전화", CLINIC.phone, "이름과 상담 신청 때 쓴 휴대폰 번호 확인"],
                 [
                   "카카오톡 채널",
                   <a key="kakao" href={CLINIC.kakaoChannel} className="underline underline-offset-2" target="_blank" rel="noopener noreferrer">
                     {CLINIC.name} 채널
                   </a>,
-                  "이름과 연락처 확인 후 필요하면 전화로 재확인",
+                  "이름과 휴대폰 번호 확인 후 필요하면 전화로 재확인",
                 ],
                 ["방문", `${CLINIC.address} ${CLINIC.name}`, "신분증 확인"],
               ]}
             />
             <p>
-              ③ 한의원은 요구를 받은 날부터 <strong className="text-ink">10일 이내</strong>에 조치하고 결과를 알려 드립니다.
-              기간 안에 처리하기 어려운 사정이 있으면 그 사유와 처리 가능한 날짜를 먼저 알려 드립니다. 홈페이지 상담 신청
-              정보의 삭제나 동의 철회는 요청하시는 즉시 처리합니다.
+              ③ 상담 신청 정보의 삭제나 동의 철회는 요청하시는 <strong className="text-ink">즉시</strong> 처리합니다. 그 밖의
+              요구는 받은 날부터 <strong className="text-ink">10일 이내</strong>에 조치하고 결과를 알려 드리며, 기간 안에
+              처리하기 어려운 사정이 있으면 그 사유와 처리 가능한 날짜를 먼저 알려 드립니다.
             </p>
             <p>
               ④ 법정대리인이나 위임을 받은 분도 권리를 행사할 수 있으며, 이때는 위임장과 대리인의 신분증을 확인합니다.
             </p>
             <p>
-              ⑤ 진료기록의 열람과 사본 발급은 「의료법」 제21조에서 정한 절차에 따릅니다. 본인은 신분증을, 대리인은 「의료법」
-              에서 정한 동의서·위임장 등을 제출해야 합니다.
+              ⑤ 법령에서 정한 경우 열람이나 처리정지 요구가 제한될 수 있으며, 이 경우 그 사유를 알려 드립니다. 진료기록의
+              열람 등 진료 관련 개인정보에 대한 권리 행사는 <ClinicPolicyRef />을 따릅니다.
             </p>
-            <p>
-              ⑥ 진료기록처럼 다른 법령에서 보존하도록 정한 개인정보는 그 기간 동안 삭제를 요구할 수 없으며, 법령에서 정한
-              경우 열람이나 처리정지 요구가 제한될 수 있습니다. 이 경우 그 사유를 알려 드립니다.
-            </p>
-            <p>⑦ 정보주체는 자신이나 다른 사람의 개인정보를 침해하거나 거짓 정보를 제공해서는 안 됩니다.</p>
+            <p>⑥ 정보주체는 자신이나 다른 사람의 개인정보를 침해하거나 거짓 정보를 제공해서는 안 됩니다.</p>
           </Article>
 
           <Article id="officer">
@@ -636,30 +581,8 @@ export default function PrivacyPage() {
             />
           </Article>
 
-          {CCTV && (
-            <Article id="cctv">
-              <p>한의원은 다음과 같이 고정형 영상정보처리기기(CCTV)를 설치·운영합니다.</p>
-              <Table
-                head={["구분", "내용"]}
-                rows={[
-                  ["설치 목적", CCTV.purpose],
-                  ["설치 대수·위치", `${CCTV.count}대 · ${CCTV.locations}`],
-                  ["촬영 범위", CCTV.range],
-                  ["촬영 시간", CCTV.recordingHours],
-                  ["보관 기간", `촬영일로부터 ${CCTV.retentionDays}일`],
-                  ["보관 장소·처리 방법", CCTV.storage],
-                  ["관리책임자", `${CCTV.manager.name} (${CCTV.manager.position}) ${CCTV.manager.phone}`],
-                ]}
-              />
-              <p>
-                영상 열람·존재 확인·삭제는 관리책임자에게 요청하실 수 있으며, 본인이 촬영된 경우나 명백히 정보주체의 급박한
-                생명·신체·재산 이익을 위해 필요한 경우에 한해 열람을 허용합니다.
-              </p>
-            </Article>
-          )}
-
           <Article id="changes">
-            <p>① 이 개인정보 처리방침은 {EFFECTIVE_DATE_KO}부터 적용됩니다.</p>
+            <p>① 이 처리방침은 {EFFECTIVE_DATE_KO}부터 적용됩니다.</p>
             <p>② 내용을 바꾸는 경우 시행 7일 전부터 홈페이지를 통해 변경 내용과 시행일을 알려 드립니다.</p>
             <Table
               head={["시행일", "변경 내용"]}

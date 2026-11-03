@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSiteData } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
+import { CLINIC_POLICY_URL } from "@/lib/privacy";
 
 export default function Footer() {
   const { clinicInfo } = useSiteData();
@@ -99,6 +100,11 @@ export default function Footer() {
           <Link href="/privacy" className="font-bold opacity-90 hover:opacity-100 hover:underline underline-offset-2">
             {t("footer.privacy")}
           </Link>
+          {CLINIC_POLICY_URL && (
+            <a href={CLINIC_POLICY_URL} className="font-bold opacity-90 hover:opacity-100 hover:underline underline-offset-2">
+              {t("footer.privacy")}(병원)
+            </a>
+          )}
           <span className="opacity-50">&copy; 2026 {clinicInfo.name}. All rights reserved.</span>
         </div>
       </div>
