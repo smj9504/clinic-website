@@ -3,6 +3,8 @@ import { getServiceClient } from "@/lib/supabase";
 import { requireAdminRequest } from "@/lib/adminAuth";
 import { sendReservationNotificationEmail } from "@/lib/email";
 import { sendReservationAdminSms, sendReservationCreatedSms } from "@/lib/sms";
+import { CONSENT_VERSION } from "@/lib/privacy";
+import { purgeExpiredReservations } from "@/lib/retention";
 import {
   isMissingTableError,
   toReservation,
@@ -22,6 +24,8 @@ export async function GET(request: NextRequest) {
   if (denied) return denied;
 
   const supabase = getServiceClient();
+  // 목록을 보여주기 전에 보관기간(신청일로부터 1년)이 지난 신청을 파기한다
+  await purgeExpiredReservations(supabase);
   const { data, error } = await supabase
     .from("reservation_requests")
     .select("*")
@@ -40,7 +44,8 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/reservation-requests — 환자의 예약 신청 접수 (공개)
- * Body: { name, phone, desiredDate, desiredTime?, memo?, verificationToken, selectedServices? }
+ * Body: { name, phone, desiredDate, desiredTime?, memo?, verificationToken, selectedServices?,
+ *         privacyAgreed: true, sensitiveAgreed? }  — memo를 적었으면 sensitiveAgreed도 true여야 한다
  */
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -78,20 +83,39 @@ export async function POST(request: NextRequest) {
   // 토큰 소모 — 같은 토큰으로 예약을 두 번 넣는 것을 막는다 (1회성 보장)
   await supabase.from("sms_verifications").update({ verified_token: null }).eq("id", verification.id);
 
-  const { data, error } = await supabase
+  const nowIso = new Date().toISOString();
+  const memo = draft!.memo?.trim() ?? "";
+  const baseRow = {
+    name: draft!.name!.trim(),
+    phone,
+    desired_date: draft!.desiredDate!.trim(),
+    desired_time: draft!.desiredTime?.trim() ?? "",
+    memo,
+    phone_verified: true,
+    phone_verified_at: nowIso,
+    selected_services: draft!.selectedServices ?? [],
+  };
+  // 동의 기록 — 동의를 받았다는 사실은 병원이 입증해야 하므로 일시와 문구 버전을 남긴다.
+  // 민감정보 동의는 실제로 건강정보(memo)를 받을 때만 기록한다.
+  const consentRow = {
+    privacy_agreed_at: nowIso,
+    sensitive_agreed_at: memo && draft!.sensitiveAgreed === true ? nowIso : null,
+    consent_version: CONSENT_VERSION,
+  };
+
+  let { data, error } = await supabase
     .from("reservation_requests")
-    .insert({
-      name: draft!.name!.trim(),
-      phone,
-      desired_date: draft!.desiredDate!.trim(),
-      desired_time: draft!.desiredTime?.trim() ?? "",
-      memo: draft!.memo?.trim() ?? "",
-      phone_verified: true,
-      phone_verified_at: new Date().toISOString(),
-      selected_services: draft!.selectedServices ?? [],
-    })
+    .insert({ ...baseRow, ...consentRow })
     .select("*")
     .single();
+
+  // 동의 기록 컬럼(supabase-schema.sql 8번)을 아직 만들지 않은 DB에서도 신청은 받아야 한다.
+  // PGRST204 = 없는 컬럼. 이 메시지에도 "schema cache"가 들어 있어 아래
+  // isMissingTableError보다 먼저 걸러야 한다.
+  if (error?.code === "PGRST204") {
+    console.warn("[reservation-requests] 동의 기록 컬럼이 없어 동의 일시 없이 저장합니다. supabase-schema.sql 8번을 실행하세요.");
+    ({ data, error } = await supabase.from("reservation_requests").insert(baseRow).select("*").single());
+  }
 
   if (error) {
     if (isMissingTableError(error)) {
@@ -104,6 +128,7 @@ export async function POST(request: NextRequest) {
   }
 
   const reservation = toReservation(data as ReservationRow);
+  await purgeExpiredReservations(supabase);
 
   // 관리자 알림 이메일 · 환자 알림 SMS · 관리자 알림 SMS — 모두 best-effort 부가 기능.
   // 예약 신청(DB insert)은 이미 성공했으므로, 발송이 실패해도 환자에게는

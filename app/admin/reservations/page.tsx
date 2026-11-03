@@ -366,6 +366,16 @@ function ReservationsAdminPageInner() {
                     <span className="text-xs text-ink-muted">
                       신청일 {new Date(r.createdAt).toLocaleString("ko-KR")}
                     </span>
+                    {r.privacyAgreedAt && (
+                      <span
+                        className="text-xs text-ink-muted"
+                        title={`개인정보 수집·이용 동의 ${new Date(r.privacyAgreedAt).toLocaleString("ko-KR")}${
+                          r.sensitiveAgreedAt ? " / 민감정보 처리 동의" : ""
+                        }`}
+                      >
+                        · 동의: 개인정보{r.sensitiveAgreedAt ? "·민감정보" : ""}
+                      </span>
+                    )}
                   </div>
                   <h3 className="font-semibold mb-1.5" style={{ letterSpacing: "-0.02em", fontSize: "1.0625rem" }}>
                     {r.name} <span className="text-ink-muted font-normal">· {r.phone}</span>

@@ -91,14 +91,15 @@ export default function Footer() {
         </div>
 
         <div
-          className="pt-8 border-t flex flex-wrap justify-between gap-4 opacity-50"
+          className="pt-8 border-t flex flex-wrap items-center gap-x-6 gap-y-2"
           style={{ borderColor: "rgba(251, 250, 247, 0.1)", fontSize: "0.8rem" }}
         >
-          <span>&copy; 2026 {clinicInfo.name}. All rights reserved.</span>
-          <span>
-            <Link href="#">{t("footer.terms")}</Link> &middot;{" "}
-            <Link href="#">{t("footer.privacy")}</Link>
-          </span>
+          {/* 처리방침 작성지침: 처리방침 링크는 다른 고지사항과 구분되게(굵게·밝게) 표시한다.
+              오른쪽 아래는 플로팅 버튼(FloatingActions)이 가리므로 왼쪽에 둔다. */}
+          <Link href="/privacy" className="font-bold opacity-90 hover:opacity-100 hover:underline underline-offset-2">
+            {t("footer.privacy")}
+          </Link>
+          <span className="opacity-50">&copy; 2026 {clinicInfo.name}. All rights reserved.</span>
         </div>
       </div>
     </footer>

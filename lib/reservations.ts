@@ -7,6 +7,8 @@
  * 직원이 관리자 화면에서 확인한 뒤 병원 시스템에 직접 입력한다.
  */
 
+import { PRIVACY_REQUIRED_MESSAGE, SENSITIVE_REQUIRED_MESSAGE } from "./privacy";
+
 export type ReservationStatus = "pending" | "confirmed" | "cancelled";
 
 /** 장바구니에서 선택한 시술의 스냅샷 — 예약 시점의 이름·가격을 그대로 보존한다 */
@@ -34,6 +36,10 @@ export type ReservationRequest = {
   sigmaReservationUuid: string | null;
   /** 확정 처리 시 관리자가 입력한 정확한 예약 일시("YYYY-MM-DD HH:MM") */
   sigmaReservationDt: string | null;
+  /** 개인정보 수집·이용 동의 일시. 동의 기록 컬럼이 생기기 전 신청은 null */
+  privacyAgreedAt: string | null;
+  /** 민감정보(건강정보) 처리 동의 일시. 동의하지 않았으면 null */
+  sensitiveAgreedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -50,6 +56,8 @@ export type ReservationRow = {
   admin_note: string;
   sigma_reservation_uuid: string | null;
   sigma_reservation_dt: string | null;
+  privacy_agreed_at?: string | null;
+  sensitive_agreed_at?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -67,6 +75,8 @@ export function toReservation(row: ReservationRow): ReservationRequest {
     adminNote: row.admin_note ?? "",
     sigmaReservationUuid: row.sigma_reservation_uuid ?? null,
     sigmaReservationDt: row.sigma_reservation_dt ?? null,
+    privacyAgreedAt: row.privacy_agreed_at ?? null,
+    sensitiveAgreedAt: row.sensitive_agreed_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -96,6 +106,10 @@ export type ReservationDraft = {
   /** 휴대폰 본인인증 완료 후 발급받은 1회용 토큰 (app/api/auth/sms/verify 응답) */
   verificationToken: string;
   selectedServices?: CartItemSnapshot[];
+  /** [필수] 개인정보 수집·이용 동의 */
+  privacyAgreed?: boolean;
+  /** [선택] 민감정보(건강정보) 처리 동의 — memo를 적었으면 필요하다 */
+  sensitiveAgreed?: boolean;
 };
 
 /** 신청 폼 입력 검증. 통과하면 null, 실패하면 에러 메시지를 돌려준다. */
@@ -106,6 +120,8 @@ export function validateReservationDraft(draft: Partial<ReservationDraft>): stri
   if (!draft.desiredDate?.trim()) return "희망 날짜를 선택해 주세요.";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.desiredDate.trim())) return "올바른 날짜 형식이 아닙니다.";
   if (!draft.verificationToken?.trim()) return "휴대폰 본인인증을 완료해 주세요.";
+  if (draft.privacyAgreed !== true) return PRIVACY_REQUIRED_MESSAGE;
+  if (draft.memo?.trim() && draft.sensitiveAgreed !== true) return SENSITIVE_REQUIRED_MESSAGE;
   return null;
 }
 

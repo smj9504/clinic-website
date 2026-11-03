@@ -44,7 +44,6 @@ const ko = {
   "footer.blog": "네이버 블로그",
   "footer.instagram": "인스타그램",
   "footer.kakao": "카카오 채널",
-  "footer.terms": "이용약관",
   "footer.privacy": "개인정보 처리방침",
 
   // About page
@@ -229,7 +228,6 @@ const en: Record<keyof typeof ko, string> = {
   "footer.blog": "Naver Blog",
   "footer.instagram": "Instagram",
   "footer.kakao": "Kakao Channel",
-  "footer.terms": "Terms of Service",
   "footer.privacy": "Privacy Policy",
 
   // About page

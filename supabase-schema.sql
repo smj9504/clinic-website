@@ -285,3 +285,19 @@ create table if not exists reservation_sync_log (
 create index if not exists reservation_sync_log_created_at_idx on reservation_sync_log(created_at desc);
 
 alter table reservation_sync_log enable row level security;
+
+
+-- ─────────────────────────────────────────────────────────────
+-- 8) 상담 신청 동의 기록 (supabase-privacy-consent.sql)
+--
+-- 상담 신청 화면의 [필수] 개인정보 수집·이용 동의와 [선택] 민감정보(건강정보)
+-- 처리 동의를 언제, 어떤 문구 버전(lib/privacy.ts의 CONSENT_VERSION)으로
+-- 받았는지 남긴다. 동의를 받았다는 사실은 병원이 입증해야 하기 때문이다.
+--
+-- 이 컬럼이 없어도 상담 신청은 정상 접수된다(동의 일시만 저장되지 않음).
+-- ─────────────────────────────────────────────────────────────
+
+alter table reservation_requests
+  add column if not exists privacy_agreed_at   timestamptz,
+  add column if not exists sensitive_agreed_at timestamptz,
+  add column if not exists consent_version     text;

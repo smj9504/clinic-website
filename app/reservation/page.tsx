@@ -9,6 +9,8 @@ import { submitReservationRequest } from "@/lib/reservationsApi";
 import DatePicker from "@/components/reservation/DatePicker";
 import TimeSelect from "@/components/reservation/TimeSelect";
 import PhoneVerification from "@/components/reservation/PhoneVerification";
+import ConsentCheckboxes from "@/components/reservation/ConsentCheckboxes";
+import { PRIVACY_REQUIRED_MESSAGE, SENSITIVE_REQUIRED_MESSAGE } from "@/lib/privacy";
 
 export default function ReservationPage() {
   const { clinicInfo } = useSiteData();
@@ -23,6 +25,8 @@ export default function ReservationPage() {
   // 선택 목록은 제출 시 selectedServices로 별도 전송된다.
   const [memo, setMemo] = useState("");
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const [sensitiveAgreed, setSensitiveAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -41,6 +45,14 @@ export default function ReservationPage() {
       setError("휴대폰 본인인증을 먼저 완료해 주세요.");
       return;
     }
+    if (!privacyAgreed) {
+      setError(PRIVACY_REQUIRED_MESSAGE);
+      return;
+    }
+    if (memo.trim() && !sensitiveAgreed) {
+      setError(SENSITIVE_REQUIRED_MESSAGE);
+      return;
+    }
 
     setSubmitting(true);
     const result = await submitReservationRequest({
@@ -50,6 +62,8 @@ export default function ReservationPage() {
       desiredTime,
       memo,
       verificationToken,
+      privacyAgreed,
+      sensitiveAgreed,
       selectedServices: cartItems.map((i) => ({
         serviceId: i.serviceId,
         priceId: i.priceId,
@@ -301,11 +315,18 @@ export default function ReservationPage() {
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
                 rows={4}
-                placeholder="불편하신 부분이나 요청사항을 남겨주세요. (선택)"
+                placeholder="불편하신 부분이나 요청사항을 남겨주세요. (선택 · 적으시면 아래 민감정보 처리 동의가 필요합니다)"
                 className="w-full px-4 py-3.5 border border-line rounded text-base outline-none focus:border-accent transition-colors resize-y"
                 style={{ letterSpacing: "-0.01em", lineHeight: 1.7 }}
               />
             </div>
+
+            <ConsentCheckboxes
+              privacyAgreed={privacyAgreed}
+              sensitiveAgreed={sensitiveAgreed}
+              onPrivacyChange={setPrivacyAgreed}
+              onSensitiveChange={setSensitiveAgreed}
+            />
 
             {error && (
               <p className="mb-6 text-sm text-red-600" role="alert">

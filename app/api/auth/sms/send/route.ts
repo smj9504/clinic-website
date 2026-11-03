@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { sendVerificationCodeSms } from "@/lib/sms";
+import { purgeExpiredSmsVerifications } from "@/lib/retention";
 import {
   codeTtlSec,
   generateVerificationCode,
@@ -27,6 +28,8 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getServiceClient();
+  // 발급 후 24시간이 지난 인증번호 기록을 파기한다 (처리방침 보관기간)
+  await purgeExpiredSmsVerifications(supabase);
 
   // 남용 방지 — 같은 번호로 최근 발송 이력이 쿨다운 이내면 재발송을 막는다.
   const cooldownSince = new Date(Date.now() - resendCooldownSec() * 1000).toISOString();
