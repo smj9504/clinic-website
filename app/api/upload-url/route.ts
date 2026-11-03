@@ -18,13 +18,13 @@ const VIDEO_EXT_BY_TYPE: Record<string, string> = {
  * 수십MB짜리 동영상이 413으로 실패하는 문제가 있었다. 이 라우트는 파일명·용량만
  * 담긴 작은 JSON 요청이라 그 한도와 무관하고, 실제 동영상 바이트는 서명된 URL로
  * 브라우저→Supabase 직접 전송되어 서버를 거치지 않는다.
- * Body: { fileName: string, contentType: string, size: number, password: string }
+ * Body: { fileName: string, contentType: string, size: number }  — 관리자 세션 쿠키 필요
  */
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { fileName, contentType, size, password } = body;
+  const { contentType, size } = body;
 
-  const denied = await requireAdmin(password);
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   if (typeof contentType !== "string" || !contentType.startsWith("video/")) {

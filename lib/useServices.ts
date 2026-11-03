@@ -21,13 +21,6 @@ import type {
 
 const EMPTY: ServiceCatalog = { categories: [], subcategories: [], services: [] };
 
-/** 관리자 화면에서 숨김 항목까지 조회할 때만 쓰인다 */
-function adminHeaders(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  const password = sessionStorage.getItem("clinic_admin_pw");
-  return password ? { "x-admin-password": password } : {};
-}
-
 export type CatalogState = ServiceCatalog & {
   loading: boolean;
   /** supabase-schema.sql을 아직 실행하지 않은 상태 */
@@ -47,7 +40,6 @@ export function useServiceCatalog({ includeHidden = false } = {}): CatalogState 
     try {
       const res = await fetch(includeHidden ? "/api/services?includeHidden=1" : "/api/services", {
         cache: "no-store",
-        headers: includeHidden ? adminHeaders() : undefined,
         signal,
       });
       const json = await res.json();
@@ -126,8 +118,7 @@ export function useService(id: string | undefined, { includeHidden = false } = {
         const url = `/api/services/${encodeURIComponent(id)}${includeHidden ? "?includeHidden=1" : ""}`;
         const res = await fetch(url, {
           cache: "no-store",
-          headers: includeHidden ? adminHeaders() : undefined,
-          signal: controller.signal,
+            signal: controller.signal,
         });
         if (controller.signal.aborted) return;
 

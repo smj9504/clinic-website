@@ -10,12 +10,9 @@ function notifyError(message: string) {
   window.dispatchEvent(new CustomEvent("siteDataSaveError", { detail: message }));
 }
 
+/** 관리자 인증은 세션 쿠키(HttpOnly)로 하므로 헤더에는 본문 형식만 넣는다 */
 function headers(withBody: boolean): Record<string, string> {
-  const password = sessionStorage.getItem("clinic_admin_pw") ?? "";
-  return {
-    "x-admin-password": password,
-    ...(withBody ? { "content-type": "application/json" } : {}),
-  };
+  return withBody ? { "content-type": "application/json" } : {};
 }
 
 async function request<T>(

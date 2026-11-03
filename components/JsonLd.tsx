@@ -1,6 +1,7 @@
 import { getServiceClient } from "@/lib/supabase";
 import { clinicInfoShape } from "@/lib/data";
 import { parseHoursRange, isClosedWeekday } from "@/lib/date";
+import { jsonForScriptTag } from "@/lib/sanitizeHtml";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gowoonbit-kmc.com";
 
@@ -122,11 +123,11 @@ export default async function JsonLd() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+        dangerouslySetInnerHTML={{ __html: jsonForScriptTag(localBusinessSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        dangerouslySetInnerHTML={{ __html: jsonForScriptTag(websiteSchema) }}
       />
     </>
   );

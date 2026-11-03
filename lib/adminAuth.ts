@@ -7,6 +7,8 @@
  * RLS 정책이 그 역할을 한다.
  *
  * 비밀번호를 여러 번 틀리면 접속 IP(또는 전체)를 잠시 차단한다 — lib/loginGuard.ts.
+ * 비밀번호는 로그인·비밀번호 변경 때만 확인하고, 그 밖의 관리자 API는 로그인 때 발급한
+ * 세션 쿠키로 확인한다 — lib/adminSession.ts.
  *
  * 저장값은 scrypt 일방향 해시다(「개인정보의 안전성 확보조치 기준」 제7조:
  * 비밀번호는 복호화되지 않도록 일방향 암호화하여 저장). 예전 버전이 평문으로
@@ -17,6 +19,7 @@ import { randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } 
 import { NextResponse } from "next/server";
 import { getServiceClient } from "./supabase";
 import { checkLoginGuard, clearLoginFailures, lockMessage, recordLoginFailure } from "./loginGuard";
+import { endSession, isCrossSiteWrite, startSession, verifySession } from "./adminSession";
 
 const CONFIG_LOCALE = "_config";
 const CONFIG_KEY = "admin_password";
@@ -55,7 +58,7 @@ async function matchesStored(password: string, stored: string): Promise<boolean>
 }
 
 /** DB에 저장된 현재 관리자 비밀번호 값(해시 또는 예전 평문). 없으면 기본값 */
-async function getStoredAdminPassword(): Promise<string> {
+export async function getStoredAdminPassword(): Promise<string> {
   const supabase = getServiceClient();
   const { data } = await supabase
     .from("site_data")
@@ -116,21 +119,38 @@ export async function setAdminPassword(newPassword: string): Promise<{ error: st
   return { error: error?.message ?? null };
 }
 
-/**
- * 관리자 인증 게이트.
- * 통과하면 null, 실패하면 그대로 반환할 401 응답을 돌려준다.
- *
- *   const denied = await requireAdmin(password);
- *   if (denied) return denied;
- */
-export async function requireAdmin(password: unknown): Promise<NextResponse | null> {
+/** 로그인: 비밀번호를 확인하고 맞으면 세션 쿠키를 발급한다 */
+export async function loginAdmin(password: unknown): Promise<AdminCheck> {
   const check = await checkAdminPassword(password);
-  return check.ok ? null : adminCheckResponse(check);
+  if (check.ok) await startSession(await getStoredAdminPassword());
+  return check;
 }
 
-/** 관리자 비밀번호를 헤더로 받는 요청용 게이트 (GET·DELETE처럼 본문이 없는 경우) */
-export const ADMIN_PASSWORD_HEADER = "x-admin-password";
+export async function logoutAdmin(): Promise<void> {
+  await endSession();
+}
 
-export async function requireAdminRequest(request: Request): Promise<NextResponse | null> {
-  return requireAdmin(request.headers.get(ADMIN_PASSWORD_HEADER));
+/** 지금 요청이 유효한 관리자 세션인지 (쿠키 확인 + 30분 연장) */
+export async function hasAdminSession(): Promise<boolean> {
+  return verifySession(await getStoredAdminPassword());
+}
+
+/**
+ * 관리자 인증 게이트 — 세션 쿠키로 확인한다.
+ * 통과하면 null, 실패하면 그대로 반환할 401(만료·미로그인)·403(다른 사이트에서 온 요청) 응답.
+ *
+ *   const denied = await requireAdmin();
+ *   if (denied) return denied;
+ */
+export async function requireAdmin(): Promise<NextResponse | null> {
+  if (await isCrossSiteWrite()) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  if (await hasAdminSession()) return null;
+  return NextResponse.json({ error: "로그인이 만료되었습니다. 다시 로그인해 주세요.", sessionExpired: true }, { status: 401 });
+}
+
+/** 예전 이름 — 요청 객체를 받던 라우트용. 세션 쿠키로 확인한다 */
+export async function requireAdminRequest(_request?: Request): Promise<NextResponse | null> {
+  return requireAdmin();
 }

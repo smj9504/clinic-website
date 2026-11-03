@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useScrollReveal } from "@/lib/useScrollReveal";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -68,7 +69,7 @@ export default function StepProcess({ title, intro, steps, fallbackImage, imageA
           ref={noteRef}
           className="reveal-fade-up prose prose-neutral max-w-none text-ink-soft mt-10 pt-8"
           style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em", borderTop: "1px solid var(--color-line)" }}
-          dangerouslySetInnerHTML={{ __html: note }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(note) }}
         />
       )}
     </div>

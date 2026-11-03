@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * POST /api/admin/reservations/sync — 시그마 상태 수동 동기화 (관리자 전용)
- * Header: x-admin-password
+ * 관리자 세션 쿠키 필요
  *
  * app/instrumentation.ts의 30분 주기 자동 동기화와 동일한 로직을
  * 즉시 1회 실행한다. 관리자 화면의 "지금 동기화" 버튼에서 호출한다.

@@ -50,7 +50,7 @@ export type GuardState = {
  * 병원 PC에서 직접 띄우는 경우처럼 프록시가 없으면 값이 비거나 위조될 수 있는데,
  * 그때는 전체 차단 규칙이 무작위 대입을 막는다.
  */
-async function clientIp(): Promise<string> {
+export async function clientIp(): Promise<string> {
   try {
     const h = await headers();
     const first = (v: string | null) => v?.split(",")[0]?.trim() || "";

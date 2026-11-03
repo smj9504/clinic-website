@@ -15,7 +15,7 @@
 npm install
 npm run dev
 # http://localhost:3000 — 공개 사이트
-# http://localhost:3000/admin — Admin (비밀번호: admin1234)
+# http://localhost:3000/admin — Admin (DB에 비밀번호가 없을 때만 기본값 admin1234)
 ```
 
 ### 최초 1회: 시술 카탈로그 · 예약 신청 테이블 생성
@@ -24,6 +24,23 @@ npm run dev
 SQL Editor에서 `supabase-schema.sql` 을 한 번 실행하세요. (여러 번 실행해도 안전합니다.)
 
 실행 전에도 사이트는 정상 동작하며, 관리자 화면에 안내가 표시됩니다.
+
+## 보안 설정 (2026-11 웹 취약점 점검 후)
+
+- **관리자 로그인:** 비밀번호는 로그인할 때만 확인하고, 이후에는 서명된 세션 쿠키
+  (`admin_session`, HttpOnly·Secure·SameSite=Strict)로 인증한다. 30분 동안 쓰지 않으면
+  자동 로그아웃, 로그인 후 최대 12시간, 비밀번호를 바꾸면 다른 세션은 모두 끊긴다
+  (`lib/adminSession.ts`). 서명 키는 `ADMIN_SESSION_SECRET`(선택), 없으면
+  `SUPABASE_SERVICE_ROLE_KEY`를 쓴다.
+- **시도 제한:** 비밀번호를 15분 안에 같은 IP에서 5회, 전체 30회 틀리면 잠시 잠긴다
+  (`lib/loginGuard.ts`).
+- **인증번호 문자 한도:** 번호당 하루 5회, IP당 10분 5회·하루 20회, 전체 10분 50회·하루
+  300회 (`lib/smsGuard.ts`).
+- **게시글 HTML 필터:** 공지·이벤트·시술 본문은 `lib/sanitizeHtml.ts`를 거쳐 출력한다.
+- **보안 헤더:** `next.config.mjs`의 `SECURITY_HEADERS`.
+- **Supabase에서 한 번씩 실행할 SQL:** `supabase-security-fix.sql`,
+  `supabase-privacy-consent.sql`, `supabase-admin-login-guard.sql`, `supabase-sms-guard.sql`
+  (모두 `supabase-schema.sql`에도 들어 있다).
 
 ## Admin 페이지 기능
 
@@ -172,59 +189,11 @@ clinic-website/
 계층·순서·노출 여부처럼 조건으로 거는 값은 컬럼에, 항목마다 모양이 달라지는
 가격 옵션·상세 블록·번역 텍스트는 JSONB에 둡니다.
 
-## 예약 API 연동 (`/api/reservations`)
+## 예약 API 중계 (`/api/reservations`) — 삭제됨
 
-원내 예약 서버(시그마)로 예약 생성을 중계하는 서버 라우트입니다. 브라우저는 이
-라우트만 호출하므로 API 키가 클라이언트에 노출되지 않습니다.
-
-```
-환자 브라우저 → /api/reservations (병원 내부 서버, 키 보관) → 예약 서버 POST /external/v2/reservations
-```
-
-이 앱은 Vercel이 아니라 병원 내부 PC/서버에서 실행되므로, 예약 서버가 내부망
-사설 IP(`192.168.x.x` 등)여도 문제없이 접근할 수 있습니다.
-
-`.env.local`에 아래 두 개를 등록해야 동작합니다. 미설정 시 503을 반환합니다.
-
-| 환경변수 | 필수 | 설명 |
-|---|---|---|
-| `SIGMA_API_BASE_URL` | 필수 | 예약 서버 주소 (예: `192.168.0.8:57443`). 프로토콜을 생략하면 자동으로 `https://`가 붙습니다 |
-| `SIGMA_API_KEY` | 필수 | 예약 서버 API 키 (`sigma_...`) |
-| `SIGMA_API_SOURCE` | 선택 | 아래 허용값 중 하나. 미설정 시 전송하지 않아 예약 서버 기본값(`internal`)이 적용됨 |
-
-요청 본문은 `reservation_dt`(`YYYY-MM-DD HH:MM`)가 필수이고,
-`patient_uuid` · `reservation_name` · `reservation_phone` 중 최소 하나가 필요합니다.
-허용된 필드만 예약 서버로 전달됩니다.
-
-### reservation_source 주의
-
-예약 서버는 이 값을 정해진 목록으로만 받습니다 (2026-08 실측).
-
-```
-internal, naver, kakao, daangn, doctalk
-```
-
-홈페이지용 값이 목록에 없어서 **기본적으로 이 필드를 보내지 않습니다.** 임의 값
-(`homepage` 등)을 보내면 예약이 400으로 거부되기 때문입니다. 업체가 홈페이지용 값을
-추가해 주면 `SIGMA_API_SOURCE`만 설정하면 되고, 허용되지 않는 값이 들어오면
-경고 로그를 남기고 생략해 예약 자체는 성공시킵니다.
-
-그동안 접수 화면에서 홈페이지 예약을 구분할 수 있도록 **메모 앞에 `[홈페이지]`를
-붙여서** 전송합니다. 불필요하면 `MEMO_PREFIX` 상수를 지우면 됩니다.
-
-생성된 예약은 확정이 아니라 `예약중` 상태로 들어가므로, 직원이 확인·확정하는
-절차가 필요합니다.
-
-| 응답 | 의미 |
-|---|---|
-| 201 | 생성 성공. 본문은 예약 서버 응답 그대로 |
-| 400 | 입력값 오류 |
-| 429 | 요청 과다 (자체 제한 또는 예약 서버 제한) |
-| 502 / 504 | 예약 서버 연결 실패 / 응답 지연 |
-| 503 | 위 환경변수 미설정 |
-
-> 이 라우트는 인증 없이 공개됩니다. 실제 오픈 전에는 캡차 등 추가 방어를 붙이세요.
-> 현재 IP당 분당 5회 제한은 프로세스 메모리 기반이라 서버 재시작 시 초기화되는 best-effort입니다.
+홈페이지에서 시그마로 예약을 바로 만드는 공개 중계 라우트가 있었으나, 사용하는 곳이 없고
+본인인증 없이 예약을 넣을 수 있는 구조라 2026-11 웹 취약점 점검 때 삭제했다. 시그마
+연동은 관리자 확정 처리(`/api/reservation-requests/[id]`, `lib/sigma.ts`)로만 한다.
 
 ## 시그마 상태 동기화 · 취소 연동
 

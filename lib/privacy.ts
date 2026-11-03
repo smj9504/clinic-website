@@ -28,7 +28,7 @@ export const PRIVACY_OFFICER = {
  * 맨 앞 항목의 날짜가 현재 시행일이 된다.
  */
 export const POLICY_HISTORY: { date: string; summary: string }[] = [
-  { date: "2026-11-03", summary: "최초 제정" },
+  { date: "2026-11-03", summary: "최초 제정 (같은 날 자동 수집 장치 조항에 관리자 로그인 쿠키 안내 추가)" },
 ];
 
 /** 처리방침 시행일 (YYYY-MM-DD) */

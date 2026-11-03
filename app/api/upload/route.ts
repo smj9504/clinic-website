@@ -19,19 +19,19 @@ const VIDEO_EXT_BY_TYPE: Record<string, string> = {
 /**
  * POST /api/upload
  * 이미지는 리사이즈/WebP 압축 후, 동영상은 원본 그대로 Supabase Storage에 업로드하고 공개 URL 반환
- * Body: FormData { file: File, password: string }
+ * Body: FormData { file: File }  — 관리자 세션 쿠키 필요
  */
 export async function POST(request: NextRequest) {
+  // 파일을 받기 전에 먼저 로그인 여부를 확인한다
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
-  const password = formData.get("password") as string | null;
 
   if (!file) {
     return NextResponse.json({ error: "file is required" }, { status: 400 });
   }
-
-  const denied = await requireAdmin(password);
-  if (denied) return denied;
 
   const isVideo = file.type.startsWith("video/");
 
@@ -63,17 +63,15 @@ export async function POST(request: NextRequest) {
   let contentType: string;
   let ext: string;
 
+  // SVG는 안에 스크립트를 넣을 수 있는 형식이라 그대로 저장하지 않고 WebP 그림으로 바꾼다.
+  // (300dpi로 그려서 로고 등도 1920px 안에서 선명하게 남는다)
   const isSvg = file.type === "image/svg+xml";
   if (isVideo) {
     optimizedBuffer = inputBuffer;
     contentType = file.type;
     ext = VIDEO_EXT_BY_TYPE[file.type];
-  } else if (isSvg) {
-    optimizedBuffer = inputBuffer;
-    contentType = file.type;
-    ext = "svg";
   } else {
-    optimizedBuffer = await sharp(inputBuffer)
+    optimizedBuffer = await sharp(inputBuffer, isSvg ? { density: 300 } : undefined)
       // 휴대폰 원본 사진은 EXIF 방향값을 갖고 있어 회전 없이는 눕는다
       .rotate()
       .resize(MAX_WIDTH, MAX_HEIGHT, { fit: "inside", withoutEnlargement: true })

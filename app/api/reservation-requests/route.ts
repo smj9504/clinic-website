@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { publicServerError } from "@/lib/apiError";
 import { requireAdminRequest } from "@/lib/adminAuth";
 import { sendReservationNotificationEmail } from "@/lib/email";
 import { sendReservationAdminSms, sendReservationCreatedSms } from "@/lib/sms";
@@ -17,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/reservation-requests — 예약 신청 목록 (관리자 전용)
- * Header: x-admin-password
+ * 관리자 세션 쿠키 필요
  */
 export async function GET(request: NextRequest) {
   const denied = await requireAdminRequest(request);
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (verificationError && !isMissingTableError(verificationError)) {
-    return NextResponse.json({ error: verificationError.message }, { status: 500 });
+    return publicServerError("reservation-requests POST", verificationError);
   }
   if (!verification) {
     return NextResponse.json({ error: "휴대폰 본인인증이 필요합니다." }, { status: 400 });
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return publicServerError("reservation-requests POST", error);
   }
 
   const reservation = toReservation(data as ReservationRow);

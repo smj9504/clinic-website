@@ -5,6 +5,7 @@ import { blockText, type ServiceBlock } from "@/lib/services";
 import type { Locale } from "@/lib/i18n";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -120,7 +121,7 @@ function BlockBody({ block, locale }: { block: ServiceBlock; locale: Locale }) {
         <div
           className="prose prose-neutral max-w-none text-ink-soft"
           style={{ fontSize: "1.02rem", lineHeight: 1.95, letterSpacing: "-0.01em" }}
-          dangerouslySetInnerHTML={{ __html: text.html ?? "" }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(text.html) }}
         />
       );
 

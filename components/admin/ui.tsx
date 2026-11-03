@@ -225,8 +225,6 @@ export function ImageInput({
       return;
     }
 
-    const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
-
     setUploading(true);
     try {
       // 동영상은 병원 내부 서버(또는 그 앞단)의 요청 본문 크기 제한에 걸리기
@@ -240,7 +238,6 @@ export function ImageInput({
             fileName: file.name,
             contentType: file.type,
             size: file.size,
-            password,
           }),
         });
         const urlJson = await urlRes.json();
@@ -271,7 +268,6 @@ export function ImageInput({
 
       const formData = new FormData();
       formData.append("file", upload);
-      formData.append("password", password);
 
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const json = await res.json();

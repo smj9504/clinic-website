@@ -11,6 +11,7 @@ import TimeSelect from "@/components/reservation/TimeSelect";
 import PhoneVerification from "@/components/reservation/PhoneVerification";
 import ConsentCheckboxes from "@/components/reservation/ConsentCheckboxes";
 import { PRIVACY_REQUIRED_MESSAGE, SENSITIVE_REQUIRED_MESSAGE } from "@/lib/privacy";
+import { RESERVATION_LIMITS } from "@/lib/reservations";
 
 export default function ReservationPage() {
   const { clinicInfo } = useSiteData();
@@ -234,6 +235,7 @@ export default function ReservationPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                maxLength={RESERVATION_LIMITS.name}
                 placeholder="홍길동"
                 className="w-full px-4 py-3.5 border border-line rounded text-base outline-none focus:border-accent transition-colors"
                 style={{ letterSpacing: "-0.01em" }}
@@ -314,6 +316,7 @@ export default function ReservationPage() {
                 id="memo"
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
+                maxLength={RESERVATION_LIMITS.memo}
                 rows={4}
                 placeholder="불편하신 부분이나 요청사항을 남겨주세요. (선택 · 적으시면 아래 민감정보 처리 동의가 필요합니다)"
                 className="w-full px-4 py-3.5 border border-line rounded text-base outline-none focus:border-accent transition-colors resize-y"

@@ -107,10 +107,8 @@ export default function RichEditor({
         return;
       }
 
-      const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
       const formData = new FormData();
       formData.append("file", upload);
-      formData.append("password", password);
 
       try {
         const res = await fetch("/api/upload", { method: "POST", body: formData });
@@ -141,8 +139,6 @@ export default function RichEditor({
         return;
       }
 
-      const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
-
       setUploadingVideo(true);
       try {
         // 동영상은 서버를 거치지 않는다 — 병원 내부 서버의 요청 본문 크기
@@ -155,7 +151,6 @@ export default function RichEditor({
             fileName: file.name,
             contentType: file.type,
             size: file.size,
-            password,
           }),
         });
         const urlJson = await urlRes.json();

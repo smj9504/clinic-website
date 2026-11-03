@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { publicServerError } from "@/lib/apiError";
 import { requireAdmin } from "@/lib/adminAuth";
 
 /**
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     .single();
 
   if (error && error.code !== "PGRST116") {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return publicServerError("site-data GET", error);
   }
 
   // PGRST116 = no rows found → return null so client uses defaults
@@ -41,11 +42,11 @@ export async function GET(request: NextRequest) {
 /**
  * PUT /api/site-data
  * 사이트 데이터 저장 (어드민 전용)
- * Body: { locale: "ko"|"en", data: SiteData, password: string }
+ * Body: { locale: "ko"|"en", data: SiteData }  — 관리자 세션 쿠키 필요
  */
 export async function PUT(request: NextRequest) {
   const body = await request.json();
-  const { locale, data, password } = body;
+  const { locale, data } = body;
 
   if (!locale || !data) {
     return NextResponse.json({ error: "locale and data required" }, { status: 400 });
@@ -54,7 +55,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "invalid locale" }, { status: 400 });
   }
 
-  const denied = await requireAdmin(password);
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   const supabase = getServiceClient();

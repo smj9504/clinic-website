@@ -11,15 +11,6 @@ export type HolidayItem = {
  * GET /api/holidays?year=2026&month=06
  */
 export async function GET(request: NextRequest) {
-  const apiKey = process.env.HOLIDAY_API_KEY;
-
-  if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
-    return NextResponse.json(
-      { error: "API 키가 설정되지 않았습니다. .env.local에 HOLIDAY_API_KEY를 설정하세요." },
-      { status: 500 }
-    );
-  }
-
   const { searchParams } = new URL(request.url);
   const year = searchParams.get("year");
   const month = searchParams.get("month");
@@ -31,33 +22,41 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const solMonth = month.padStart(2, "0");
+  // 외부 API 주소에 그대로 붙이므로 숫자 형식만 받는다 (다른 파라미터를 끼워 넣지 못하게)
+  const y = Number(year);
+  const m = Number(month);
+  if (!/^\d{4}$/.test(year) || !/^\d{1,2}$/.test(month) || y < 2000 || y > 2100 || m < 1 || m > 12) {
+    return NextResponse.json({ error: "year는 2000~2100, month는 1~12로 입력해 주세요." }, { status: 400 });
+  }
+  const solMonth = String(m).padStart(2, "0");
+
+  const apiKey = process.env.HOLIDAY_API_KEY;
+  if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
+    console.error("[holidays] HOLIDAY_API_KEY가 설정되지 않았습니다");
+    return NextResponse.json({ error: "공휴일 정보를 불러오지 못했습니다." }, { status: 503 });
+  }
 
   try {
     // serviceKey는 이미 인코딩된 값일 수 있으므로 직접 문자열로 조합 (이중 인코딩 방지)
     const baseUrl =
       "https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo";
     const queryString =
-      `serviceKey=${apiKey}&solYear=${year}&solMonth=${solMonth}&_type=json&numOfRows=30`;
+      `serviceKey=${apiKey}&solYear=${y}&solMonth=${solMonth}&_type=json&numOfRows=30`;
     const fullUrl = `${baseUrl}?${queryString}`;
 
     const res = await fetch(fullUrl, { next: { revalidate: 86400 } });
 
     if (!res.ok) {
-      return NextResponse.json(
-        { error: `API 요청 실패: ${res.status}` },
-        { status: 502 }
-      );
+      console.error(`[holidays] 공휴일 API 응답 ${res.status}`);
+      return NextResponse.json({ error: "공휴일 정보를 불러오지 못했습니다." }, { status: 502 });
     }
 
     const data = await res.json();
 
     const body = data?.response?.body;
     if (!body) {
-      return NextResponse.json(
-        { error: "API 응답 형식이 올바르지 않습니다.", raw: data },
-        { status: 502 }
-      );
+      console.error("[holidays] 공휴일 API 응답 형식 오류:", JSON.stringify(data).slice(0, 500));
+      return NextResponse.json({ error: "공휴일 정보를 불러오지 못했습니다." }, { status: 502 });
     }
 
     // items가 없으면 해당 월에 공휴일 없음
@@ -84,9 +83,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ holidays });
   } catch (err) {
-    return NextResponse.json(
-      { error: `API 요청 중 오류: ${err instanceof Error ? err.message : String(err)}` },
-      { status: 502 }
-    );
+    console.error("[holidays] 공휴일 API 요청 오류:", err instanceof Error ? err.message : String(err));
+    return NextResponse.json({ error: "공휴일 정보를 불러오지 못했습니다." }, { status: 502 });
   }
 }

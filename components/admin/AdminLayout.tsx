@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { isLoggedIn, logout, resetSiteData, translateAndSyncToEnglish } from "@/lib/storage";
+import { useEffect, useRef, useState } from "react";
+import { checkAdminSession, isLoggedIn, logout, markLoggedIn, resetSiteData, translateAndSyncToEnglish } from "@/lib/storage";
 import { useSiteDataForLocale } from "@/lib/useSiteData";
 import { AdminLocaleProvider, useAdminLocale } from "@/lib/adminLocale";
 import { Toast } from "@/components/admin/ui";
@@ -125,6 +125,70 @@ function LocaleToggle() {
   );
 }
 
+/** 30분 동안 마우스·키보드 입력이 없으면 자동 로그아웃 (「개인정보의 안전성 확보조치 기준」 제6조) */
+const IDLE_LOGOUT_MS = 30 * 60 * 1000;
+/** 입력이 있는 동안 서버 세션(30분 만료)을 이 간격으로 연장한다 */
+const SESSION_REFRESH_MS = 5 * 60 * 1000;
+
+/**
+ * 관리자 화면 자동 로그아웃.
+ * - 마지막 입력 후 30분이 지나면 로그아웃한다.
+ * - 입력이 있는 동안은 5분마다 서버 세션을 확인·연장한다. 오래 글을 쓰다 저장할 때
+ *   서버 세션만 먼저 끝나 있는 일을 막는다.
+ * - 서버가 세션이 끝났다고 하면(다른 곳에서 비밀번호 변경, 12시간 경과 등) 바로 로그아웃한다.
+ */
+function useAdminIdleLogout(active: boolean, onLogout: (reason: "idle" | "expired") => void) {
+  const lastInput = useRef(Date.now());
+  const lastRefresh = useRef(Date.now());
+  const onLogoutRef = useRef(onLogout);
+  onLogoutRef.current = onLogout;
+
+  useEffect(() => {
+    if (!active) return;
+    lastInput.current = Date.now();
+    let stopped = false;
+    const stop = (reason: "idle" | "expired") => {
+      if (stopped) return;
+      stopped = true;
+      onLogoutRef.current(reason);
+    };
+
+    const markInput = () => {
+      lastInput.current = Date.now();
+    };
+    const events = ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "wheel"] as const;
+    events.forEach((e) => window.addEventListener(e, markInput, { passive: true }));
+
+    const tick = async () => {
+      const now = Date.now();
+      if (now - lastInput.current >= IDLE_LOGOUT_MS) return stop("idle");
+      // 최근 5분 안에 입력이 있었고 마지막 연장 후 5분이 지났으면 서버 세션을 연장한다
+      if (now - lastRefresh.current >= SESSION_REFRESH_MS && now - lastInput.current < SESSION_REFRESH_MS) {
+        lastRefresh.current = now;
+        if (!(await checkAdminSession())) stop("expired");
+      }
+    };
+    const timer = window.setInterval(tick, 30 * 1000);
+    // 다른 탭에 있다가 돌아왔을 때 바로 확인한다
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    // 화면을 열 때 서버 세션이 살아 있는지 확인한다 (쿠키가 만료됐으면 로그인 화면으로)
+    void checkAdminSession().then((ok) => {
+      if (!ok) stop("expired");
+    });
+
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+      events.forEach((e) => window.removeEventListener(e, markInput));
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [active]);
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "";
   const router = useRouter();
@@ -152,11 +216,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return;
     }
     if (!isLoggedIn()) {
-      router.replace("/admin/login");
-      return;
+      // 새 탭(예: 알림 메일의 관리자 링크)에서 열면 이 탭에는 로그인 표시가 없다.
+      // 서버 세션 쿠키가 살아 있으면 다시 로그인하지 않고 이어서 쓴다.
+      let cancelled = false;
+      void checkAdminSession().then((ok) => {
+        if (cancelled) return;
+        if (ok) {
+          markLoggedIn();
+          setReady(true);
+        } else {
+          router.replace("/admin/login");
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
     }
     setReady(true);
   }, [pathname, router]);
+
+  useAdminIdleLogout(pathname !== "/admin/login" && ready, (reason) => {
+    logout();
+    router.replace(`/admin/login?reason=${reason}`);
+  });
 
   if (!ready) {
     return (

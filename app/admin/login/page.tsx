@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { login, getSiteData } from "@/lib/storage";
 
@@ -11,6 +11,13 @@ export default function LoginPage() {
   const clinicName = typeof window !== "undefined" ? getSiteData("ko").clinicInfo.name : "";
 
   const [loading, setLoading] = useState(false);
+  // 자동 로그아웃으로 돌아온 경우 이유를 알려 준다 (AdminLayout의 ?reason=)
+  const [notice, setNotice] = useState("");
+  useEffect(() => {
+    const reason = new URLSearchParams(window.location.search).get("reason");
+    if (reason === "idle") setNotice("30분 동안 사용하지 않아 자동으로 로그아웃되었습니다.");
+    else if (reason === "expired") setNotice("로그인이 만료되었습니다. 다시 로그인해 주세요.");
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +71,12 @@ export default function LoginPage() {
             style={{ letterSpacing: "-0.01em" }}
             placeholder="비밀번호를 입력하세요"
           />
+
+          {notice && !error && (
+            <p className="text-sm text-ink-muted mt-3 break-keep" role="status" style={{ letterSpacing: "-0.02em" }}>
+              {notice}
+            </p>
+          )}
 
           {error && (
             <p className="text-sm text-red-600 mt-3 break-keep" style={{ letterSpacing: "-0.02em" }}>

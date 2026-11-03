@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { publicServerError } from "@/lib/apiError";
 import { requireAdminRequest } from "@/lib/adminAuth";
 import { todayKST } from "@/lib/date";
 import {
@@ -28,7 +29,7 @@ const EMPTY_CATALOG: ServiceCatalog = { categories: [], subcategories: [], servi
  * GET /api/services
  * 카테고리 + 서브카테고리 + 시술 카드를 한 번에 반환한다. blocks는 제외.
  *
- * ?includeHidden=1 → 숨김·기간 밖 항목까지 포함 (관리자 전용, x-admin-password 헤더 필요)
+ * ?includeHidden=1 → 숨김·기간 밖 항목까지 포함 (관리자 전용, 관리자 세션 쿠키 필요)
  */
 export async function GET(request: NextRequest) {
   const includeHidden = request.nextUrl.searchParams.get("includeHidden") === "1";
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
     if (isMissingTableError(firstError)) {
       return NextResponse.json({ ...EMPTY_CATALOG, setupRequired: true });
     }
-    return NextResponse.json({ error: firstError.message }, { status: 500 });
+    return publicServerError("services GET", firstError);
   }
 
   let categories = ((catRes.data ?? []) as CategoryRow[]).map(toCategory);
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/services — 시술 생성
- * Header: x-admin-password
+ * 관리자 세션 쿠키 필요
  * Body: { service: Partial<Service> }  (subcategoryId 필수)
  */
 export async function POST(request: NextRequest) {
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * PATCH /api/services — 여러 시술의 일부 필드를 한 번에 수정 (순서 변경·숨김 토글용)
- * Header: x-admin-password
+ * 관리자 세션 쿠키 필요
  * Body: { updates: [{ id, ...변경할 필드 }] }
  */
 export async function PATCH(request: NextRequest) {

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useScrollReveal, useScrollRevealGroup } from "@/lib/useScrollReveal";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 type PointCardsProps = {
   /** 카드 그리드 위에 표시되는 섹션 제목 (선택 사항 — 없으면 카드만 표시) */
@@ -120,7 +121,7 @@ export default function PointCards({ title, points, fallbackImage, imageAlt = ""
           ref={noteRef}
           className="reveal-fade-up prose prose-neutral max-w-none text-ink-soft mt-10 pt-8"
           style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em", borderTop: "1px solid var(--color-line)" }}
-          dangerouslySetInnerHTML={{ __html: note }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(note) }}
         />
       )}
     </div>

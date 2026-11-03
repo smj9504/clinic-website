@@ -8,7 +8,7 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * GET /api/admin/available-slots?date=YYYY-MM-DD — 관리자 전용
- * Header: x-admin-password
+ * 관리자 세션 쿠키 필요
  *
  * 시그마(한의원 내부 예약 시스템)에서 해당 날짜에 이미 잡혀 있는 예약
  * 시각을 조회해, 관리자가 확정 처리 시 시간 슬롯 그리드에서 "예약됨"

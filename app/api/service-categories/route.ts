@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * 카테고리 · 서브카테고리 CRUD (조회는 GET /api/services 에 함께 들어 있다)
- * 모든 요청에 x-admin-password 헤더가 필요하다.
+ * 모든 요청에 관리자 세션 쿠키가 필요하다.
  */
 
 type Kind = "category" | "subcategory";

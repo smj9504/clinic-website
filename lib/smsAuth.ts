@@ -14,6 +14,8 @@
  *      같이 검증해야 다른 번호로 받은 토큰을 붙이는 우회도 막을 수 있다.)
  */
 
+import { randomInt } from "crypto";
+
 export type SmsVerificationRow = {
   id: string;
   phone: string;
@@ -49,9 +51,9 @@ export function maxAttempts(): number {
   return MAX_ATTEMPTS;
 }
 
-/** 6자리 인증번호 생성 */
+/** 6자리 인증번호 생성 — 예측할 수 없도록 보안용 난수(crypto)를 쓴다 */
 export function generateVerificationCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(randomInt(100000, 1000000));
 }
 
 export function isMissingTableError(

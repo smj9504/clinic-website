@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * POST /api/services/translate — 시술 카탈로그 한국어 → 영어 자동 번역
- * Header: x-admin-password
+ * 관리자 세션 쿠키 필요
  * Body: { cursor?: number, limit?: number }
  *
  * 한 번에 몇 건씩만 처리하고 다음 커서를 돌려준다. 시술이 수십 건이면

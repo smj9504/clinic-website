@@ -23,10 +23,8 @@ async function uploadFile(file: File): Promise<string> {
   if (upload.size > MAX_REQUEST_BYTES) {
     throw new Error("이미지를 압축하지 못했습니다. JPG 또는 PNG로 변환한 뒤 다시 시도해주세요.");
   }
-  const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
   const formData = new FormData();
   formData.append("file", upload);
-  formData.append("password", password);
   const res = await fetch("/api/upload", { method: "POST", body: formData });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || res.statusText);

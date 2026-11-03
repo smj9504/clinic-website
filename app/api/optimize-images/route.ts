@@ -13,8 +13,7 @@ const WEBP_QUALITY = 80;
  * site_data 테이블의 URL도 갱신하는 1회성 마이그레이션 API
  */
 export async function POST(request: NextRequest) {
-  const { password } = await request.json();
-  const denied = await requireAdmin(password);
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   const supabase = getServiceClient();

@@ -322,3 +322,15 @@ create index if not exists admin_login_failures_created_at_idx on admin_login_fa
 create index if not exists admin_login_failures_ip_idx on admin_login_failures(ip, created_at desc);
 
 alter table admin_login_failures enable row level security;
+
+
+-- ─────────────────────────────────────────────────────────────
+-- 10) 인증번호 문자 발송 한도용 접속 IP (supabase-sms-guard.sql)
+--
+-- 같은 IP에서 10분 5회·하루 20회를 넘으면 인증번호 발송을 막는다(lib/smsGuard.ts).
+-- ─────────────────────────────────────────────────────────────
+
+alter table sms_verifications add column if not exists ip text;
+
+create index if not exists sms_verifications_created_at_idx on sms_verifications(created_at desc);
+create index if not exists sms_verifications_ip_idx on sms_verifications(ip, created_at desc);

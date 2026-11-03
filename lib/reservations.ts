@@ -113,11 +113,40 @@ export type ReservationDraft = {
 };
 
 /** 신청 폼 입력 검증. 통과하면 null, 실패하면 에러 메시지를 돌려준다. */
+/** 상담 신청 입력 길이 한도 — 화면(maxLength)과 서버 검증이 같은 값을 쓴다 */
+export const RESERVATION_LIMITS = {
+  name: 30,
+  desiredTime: 30,
+  memo: 1000,
+  selectedServices: 30,
+  serviceText: 200,
+} as const;
+
+function isValidSnapshot(item: unknown): boolean {
+  if (!item || typeof item !== "object") return false;
+  const it = item as Record<string, unknown>;
+  const text = (v: unknown) => typeof v === "string" && v.length <= RESERVATION_LIMITS.serviceText;
+  const price = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v < 1e9;
+  return text(it.serviceId) && text(it.priceId) && text(it.serviceName) && text(it.priceLabel) && price(it.originalPrice) && price(it.finalPrice);
+}
+
 export function validateReservationDraft(draft: Partial<ReservationDraft>): string | null {
-  if (!draft.name?.trim()) return "이름을 입력해 주세요.";
-  if (!draft.phone?.trim()) return "연락처를 입력해 주세요.";
+  if (typeof draft.name !== "string" || !draft.name.trim()) return "이름을 입력해 주세요.";
+  if (draft.name.trim().length > RESERVATION_LIMITS.name) return `이름은 ${RESERVATION_LIMITS.name}자 이내로 입력해 주세요.`;
+  if (draft.desiredTime !== undefined && (typeof draft.desiredTime !== "string" || draft.desiredTime.length > RESERVATION_LIMITS.desiredTime))
+    return "희망 시간대 형식이 올바르지 않습니다.";
+  if (draft.memo !== undefined && typeof draft.memo !== "string") return "증상·요청사항 형식이 올바르지 않습니다.";
+  if (typeof draft.memo === "string" && draft.memo.trim().length > RESERVATION_LIMITS.memo)
+    return `증상·요청사항은 ${RESERVATION_LIMITS.memo.toLocaleString()}자 이내로 입력해 주세요.`;
+  if (draft.selectedServices !== undefined) {
+    if (!Array.isArray(draft.selectedServices) || draft.selectedServices.length > RESERVATION_LIMITS.selectedServices)
+      return `선택한 시술은 ${RESERVATION_LIMITS.selectedServices}개까지 신청할 수 있습니다.`;
+    if (!draft.selectedServices.every(isValidSnapshot)) return "선택한 시술 정보가 올바르지 않습니다.";
+  }
+  if (typeof draft.verificationToken === "string" && draft.verificationToken.length > 100) return "휴대폰 본인인증을 다시 진행해 주세요.";
+  if (typeof draft.phone !== "string" || !draft.phone.trim()) return "연락처를 입력해 주세요.";
   if (!/^[0-9-]{9,14}$/.test(draft.phone.trim())) return "올바른 연락처 형식이 아닙니다.";
-  if (!draft.desiredDate?.trim()) return "희망 날짜를 선택해 주세요.";
+  if (typeof draft.desiredDate !== "string" || !draft.desiredDate.trim()) return "희망 날짜를 선택해 주세요.";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.desiredDate.trim())) return "올바른 날짜 형식이 아닙니다.";
   if (!draft.verificationToken?.trim()) return "휴대폰 본인인증을 완료해 주세요.";
   if (draft.privacyAgreed !== true) return PRIVACY_REQUIRED_MESSAGE;

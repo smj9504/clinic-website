@@ -5,14 +5,14 @@ import { translateTexts } from "@/lib/translate";
 /**
  * POST /api/translate
  * Google Translate 무료 엔드포인트를 사용한 텍스트 번역
- * Body: { texts: string[], source: "ko"|"en", target: "ko"|"en", password: string }
+ * Body: { texts: string[], source: "ko"|"en", target: "ko"|"en" }  — 관리자 세션 쿠키 필요
  *
  * 여러 텍스트를 한 번에 번역하여 네트워크 오버헤드 최소화
  */
 export async function POST(request: NextRequest) {
-  const { texts, source = "ko", target = "en", password } = await request.json();
+  const { texts, source = "ko", target = "en" } = await request.json();
 
-  const denied = await requireAdmin(password);
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   if (!Array.isArray(texts) || texts.length === 0) {

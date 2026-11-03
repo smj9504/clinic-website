@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { publicServerError } from "@/lib/apiError";
 import { sendVerificationCodeSms } from "@/lib/sms";
 import { purgeExpiredSmsVerifications } from "@/lib/retention";
+import { checkSmsSendLimits } from "@/lib/smsGuard";
 import {
   codeTtlSec,
   generateVerificationCode,
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    return NextResponse.json({ error: recentError.message }, { status: 500 });
+    return publicServerError("sms/send", recentError);
   }
   if (recent) {
     return NextResponse.json(
@@ -58,17 +60,31 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 번호·접속 IP·사이트 전체 발송 한도 (lib/smsGuard.ts)
+  const quota = await checkSmsSendLimits(supabase, phone);
+  if (!quota.ok) {
+    const res = NextResponse.json({ error: quota.error }, { status: 429 });
+    res.headers.set("Retry-After", String(quota.retryAfterSec));
+    return res;
+  }
+
   const code = generateVerificationCode();
   const expiresAt = new Date(Date.now() + codeTtlSec() * 1000).toISOString();
 
-  const { data: inserted, error: insertError } = await supabase
+  const row: Record<string, string> = { phone, code, expires_at: expiresAt };
+  let { data: inserted, error: insertError } = await supabase
     .from("sms_verifications")
-    .insert({ phone, code, expires_at: expiresAt })
+    .insert(quota.ipColumn ? { ...row, ip: quota.ip } : row)
     .select("id")
     .single();
+  // ip 컬럼(supabase-sms-guard.sql)이 아직 없으면 IP 없이 저장한다
+  if (insertError?.code === "PGRST204" && quota.ipColumn) {
+    ({ data: inserted, error: insertError } = await supabase.from("sms_verifications").insert(row).select("id").single());
+  }
 
-  if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
+  if (insertError || !inserted) {
+    console.error("[sms/send] 인증 기록 저장 실패:", insertError?.message);
+    return NextResponse.json({ error: "인증번호를 발송하지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 500 });
   }
 
   // 인증번호 발송은 필수 성공 경로다 — best-effort로 무시하면 사용자가

@@ -23,6 +23,7 @@ import SequentialChecklist from "@/components/subpages/SequentialChecklist";
 import PointCards from "@/components/subpages/PointCards";
 import ChecklistBlocks from "@/components/subpages/ChecklistBlocks";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -376,7 +377,7 @@ export default function SubPageDetail() {
             }}
           />
           {page.tabs.note && (
-            <div className="prose prose-neutral max-w-none text-ink-soft" dangerouslySetInnerHTML={{ __html: page.tabs.note }} />
+            <div className="prose prose-neutral max-w-none text-ink-soft" dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.tabs.note) }} />
           )}
         </div>
       ) : null,
@@ -435,7 +436,7 @@ export default function SubPageDetail() {
                 />
               );
             }
-            return <div key={i} dangerouslySetInnerHTML={{ __html: segment.html }} />;
+            return <div key={i} dangerouslySetInnerHTML={{ __html: sanitizeHtml(segment.html) }} />;
           })}
         </div>
       ) : (

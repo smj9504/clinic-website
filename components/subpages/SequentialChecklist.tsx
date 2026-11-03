@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useScrollReveal } from "@/lib/useScrollReveal";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 const ADVANCE_MS = 2200;
 
@@ -181,7 +182,7 @@ export default function SequentialChecklist({ title, items, images, itemImages, 
           ref={noteRef}
           className="reveal-fade-up prose prose-neutral max-w-none text-ink-soft mt-10 pt-8"
           style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em", borderTop: "1px solid var(--color-line)" }}
-          dangerouslySetInnerHTML={{ __html: note }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(note) }}
         />
       )}
     </div>

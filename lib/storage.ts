@@ -541,13 +541,12 @@ export async function setSiteData(data: SiteData, locale: Locale = "ko"): Promis
   } catch {}
   window.dispatchEvent(new CustomEvent("siteDataUpdated"));
 
-  // DB에 저장 (완료 대기)
-  const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
+  // DB에 저장 (완료 대기) — 관리자 인증은 세션 쿠키로 한다
   try {
     const res = await fetch("/api/site-data", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ locale, data, password }),
+      body: JSON.stringify({ locale, data }),
     });
     if (!res.ok) {
       const msg = await res.text();
@@ -664,16 +663,15 @@ export function resetSiteData() {
     localStorage.removeItem("clinic_site_data_v1");
   } catch {}
   // DB도 기본값으로 리셋
-  const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
   fetch("/api/site-data", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ locale: "ko", data: getDefaultSiteData("ko"), password }),
+    body: JSON.stringify({ locale: "ko", data: getDefaultSiteData("ko") }),
   });
   fetch("/api/site-data", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ locale: "en", data: getDefaultSiteData("en"), password }),
+    body: JSON.stringify({ locale: "en", data: getDefaultSiteData("en") }),
   });
   window.dispatchEvent(new CustomEvent("siteDataUpdated"));
 }
@@ -684,13 +682,12 @@ export function resetSiteData() {
  * (시술은 site_data가 아니라 전용 테이블에 있어 별도 엔드포인트를 쓴다)
  */
 async function translateServicesToEnglish(): Promise<void> {
-  const password = sessionStorage.getItem("clinic_admin_pw") || "";
   let cursor: number | null = 0;
   let guard = 0;
   while (cursor !== null && guard++ < 500) {
     const res: Response = await fetch("/api/services/translate", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cursor }),
     });
     if (!res.ok) throw new Error(`시술 번역 실패 (${res.status})`);
@@ -705,7 +702,6 @@ async function translateServicesToEnglish(): Promise<void> {
 export async function translateAndSyncToEnglish(): Promise<{ success: boolean; error?: string }> {
   const koData = getSiteData("ko");
   const enData = getSiteData("en");
-  const password = sessionStorage.getItem("clinic_admin_pw") || "admin1234";
 
   // 번역할 텍스트 수집 (key로 위치 추적)
   const textsToTranslate: string[] = [];
@@ -784,7 +780,7 @@ export async function translateAndSyncToEnglish(): Promise<{ success: boolean; e
       const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texts: batch, source: "ko", target: "en", password }),
+        body: JSON.stringify({ texts: batch, source: "ko", target: "en" }),
       });
       if (!res.ok) throw new Error(`Translation API error: ${res.status}`);
       const { translations } = await res.json();
@@ -1005,8 +1001,8 @@ export async function login(password: string): Promise<{ ok: true } | { ok: fals
       body: JSON.stringify({ password }),
     });
     if (res.ok) {
+      // 비밀번호는 브라우저에 남기지 않는다 — 서버가 세션 쿠키(HttpOnly)를 발급한다
       sessionStorage.setItem(AUTH_KEY, "true");
-      sessionStorage.setItem("clinic_admin_pw", password);
       return { ok: true };
     }
     if (res.status === 429) {
@@ -1027,17 +1023,33 @@ export async function changePassword(currentPassword: string, newPassword: strin
       body: JSON.stringify({ currentPassword, newPassword }),
     });
     const json = await res.json();
-    if (res.ok) {
-      sessionStorage.setItem("clinic_admin_pw", newPassword);
-      return { success: true };
-    }
+    if (res.ok) return { success: true };
     return { success: false, error: json.error };
   } catch {
     return { success: false, error: "네트워크 오류" };
   }
 }
 
+/** 로그아웃 — 서버의 세션 쿠키를 지우고 화면 상태를 정리한다 */
 export function logout() {
   sessionStorage.removeItem(AUTH_KEY);
+  // 예전 버전이 남겨 둔 비밀번호가 있으면 지운다
   sessionStorage.removeItem("clinic_admin_pw");
+  fetch("/api/admin-session", { method: "DELETE", keepalive: true }).catch(() => {});
+}
+
+/** 서버 세션이 살아 있음을 확인한 뒤 이 탭에 로그인 표시를 남긴다 */
+export function markLoggedIn() {
+  sessionStorage.setItem(AUTH_KEY, "true");
+}
+
+/** 서버 세션이 살아 있는지 확인한다 (확인하면서 30분 연장된다) */
+export async function checkAdminSession(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin-session", { cache: "no-store" });
+    return res.ok;
+  } catch {
+    // 네트워크 오류는 만료로 보지 않는다 — 다음 확인 때 다시 본다
+    return true;
+  }
 }

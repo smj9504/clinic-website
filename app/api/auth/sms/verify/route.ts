@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { publicServerError } from "@/lib/apiError";
 import { getServiceClient } from "@/lib/supabase";
 import { isMissingTableError, isValidMobilePhone, maxAttempts, type SmsVerificationRow } from "@/lib/smsAuth";
 
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    return NextResponse.json({ error: matchError.message }, { status: 500 });
+    return publicServerError("sms/verify", matchError);
   }
 
   if (!match) {
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
     .eq("id", (match as SmsVerificationRow).id);
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+    return publicServerError("sms/verify", updateError);
   }
 
   return NextResponse.json({ verificationToken });

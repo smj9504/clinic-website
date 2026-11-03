@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useSiteData, getBannerImage, getMenuLabel } from "@/lib/useSiteData";
 import { useT } from "@/lib/i18n";
 import { stripImagePosition, getImageCropStyle } from "@/lib/imagePosition";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 const BLUR_PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyQzI2MjAiLz48L3N2Zz4=";
@@ -101,7 +102,7 @@ export default function NoticeDetailPage() {
               <div
                 className="prose prose-neutral max-w-none text-ink-soft"
                 style={{ fontSize: "1.05rem", lineHeight: 2, letterSpacing: "-0.01em" }}
-                dangerouslySetInnerHTML={{ __html: notice.content }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(notice.content) }}
               />
             ) : (
               <div

@@ -18,7 +18,7 @@ const ALLOWED_STATUSES: ReservationStatus[] = ["pending", "confirmed", "cancelle
 
 /**
  * PATCH /api/reservation-requests/[id] — 상태·메모 변경 (관리자 전용)
- * Header: x-admin-password
+ * 관리자 세션 쿠키 필요
  * Body: { status?: "pending" | "confirmed" | "cancelled", adminNote?: string, reservationDt?: string }
  *
  * status를 "confirmed"로 바꾸는 요청은 reservationDt("YYYY-MM-DD HH:MM")가
@@ -154,7 +154,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
 /**
  * DELETE /api/reservation-requests/[id] — 신청 삭제 (관리자 전용)
- * Header: x-admin-password
+ * 관리자 세션 쿠키 필요
  */
 export async function DELETE(request: NextRequest, { params }: Params) {
   const denied = await requireAdminRequest(request);
