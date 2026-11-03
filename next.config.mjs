@@ -1,5 +1,30 @@
+/**
+ * 모든 응답에 붙이는 보안 헤더 (홈페이지 웹 취약점 점검 3.3.5 후속 조치).
+ *
+ * - X-Frame-Options / CSP frame-ancestors: 다른 사이트가 이 홈페이지를 iframe으로
+ *   끼워 넣어 클릭을 가로채는 것(클릭재킹)을 막는다. 사이트 안에서 자기 자신을
+ *   iframe으로 쓰는 곳이 없어 SAMEORIGIN으로 충분하다.
+ * - X-Content-Type-Options: 브라우저가 파일 형식을 추측해 다른 형식으로 실행하지 않게 한다.
+ * - Referrer-Policy: 외부 링크로 나갈 때 전체 주소 대신 도메인만 넘긴다.
+ * - Permissions-Policy: 쓰지 않는 카메라·마이크·위치 등 브라우저 기능을 끈다.
+ *
+ * CSP는 화면 삽입 차단 등 깨질 위험이 없는 지시어만 둔다. script-src 등을 넣으려면
+ * 인라인 스크립트·외부 이미지 출처를 모두 정리해야 해서 따로 진행한다.
+ * HSTS는 Vercel이 이미 붙인다(max-age=63072000).
+ */
+const SECURITY_HEADERS = [
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
   images: {
     // Vercel 이미지 최적화(/_next/image)를 쓰지 않고 원본 URL을 그대로 쓴다.
     // Hobby 플랜 변환 한도를 넘으면 402로 이미지가 깨지는데, 업로드 시
