@@ -37,7 +37,8 @@ SQL Editor에서 `supabase-schema.sql` 을 한 번 실행하세요. (여러 번 
 - **인증번호 문자 한도:** 번호당 하루 5회, IP당 10분 5회·하루 20회, 전체 10분 50회·하루
   300회 (`lib/smsGuard.ts`).
 - **게시글 HTML 필터:** 공지·이벤트·시술 본문은 `lib/sanitizeHtml.ts`를 거쳐 출력한다.
-- **보안 헤더:** `next.config.mjs`의 `SECURITY_HEADERS`.
+- **보안 헤더:** `next.config.mjs`의 `SECURITY_HEADERS`. 개인정보가 오가는 API(상담 신청·인증번호·관리자)는
+  `Cache-Control: no-store`로 응답을 저장하지 않게 하고, 관리자 화면은 `noindex`로 검색 노출을 막는다.
 - **Supabase에서 한 번씩 실행할 SQL:** `supabase-security-fix.sql`,
   `supabase-privacy-consent.sql`, `supabase-admin-login-guard.sql`, `supabase-sms-guard.sql`
   (모두 `supabase-schema.sql`에도 들어 있다).

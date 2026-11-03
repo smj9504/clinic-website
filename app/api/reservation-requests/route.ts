@@ -152,5 +152,7 @@ export async function POST(request: NextRequest) {
     console.error("관리자 새 상담 신청 알림 SMS 발송 실패:", smsError);
   }
 
-  return NextResponse.json({ reservation }, { status: 201 });
+  // 접수 결과만 돌려준다. 저장된 행 전체(관리자 메모·연동 정보 등)를 공개 API 응답에
+  // 담을 이유가 없다 — 화면(lib/reservationsApi.ts)도 성공 여부만 본다.
+  return NextResponse.json({ ok: true }, { status: 201 });
 }

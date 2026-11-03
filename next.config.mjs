@@ -20,10 +20,32 @@ const SECURITY_HEADERS = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
 ];
 
+/**
+ * 개인정보(이름·연락처·증상, 인증번호 관련 응답, 관리자 세션)가 오가는 API는
+ * 브라우저·프록시가 응답을 저장하지 않게 한다. 기본값 "public, max-age=0"은
+ * 공용 캐시에 저장을 허용하는 뜻이라, 공용 PC 뒤로 가기나 중간 프록시에 남을 수 있다.
+ */
+const NO_STORE_HEADERS = [
+  { key: "Cache-Control", value: "private, no-store, max-age=0" },
+  { key: "X-Robots-Tag", value: "noindex, nofollow" },
+];
+const PERSONAL_DATA_API_PATHS = [
+  "/api/reservation-requests/:path*",
+  "/api/auth/:path*",
+  "/api/admin/:path*",
+  "/api/admin-session",
+  "/api/admin-password",
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      ...PERSONAL_DATA_API_PATHS.map((source) => ({ source, headers: NO_STORE_HEADERS })),
+      // 관리자 화면은 검색에 노출하지 않는다 (app/admin/layout.tsx의 noindex와 같은 뜻)
+      { source: "/admin/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+    ];
   },
   images: {
     // Vercel 이미지 최적화(/_next/image)를 쓰지 않고 원본 URL을 그대로 쓴다.
